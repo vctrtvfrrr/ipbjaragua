@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Boletim IPB Jaraguá do Sul",
-  description: "Boletim da Igreja Presbiteriana do Brasil em Jaraguá do Sul",
+  title: "IPB Jaraguá do Sul",
+  description: "Enraizados na Palavra, Crescendo no Amor",
 };
 
 export default function RootLayout({
