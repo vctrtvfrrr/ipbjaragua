@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Prepare Nuxt types
+        run: bunx nuxi prepare
+
       - name: Type check
         run: bun run type-check
 

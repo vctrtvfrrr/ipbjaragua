@@ -23,10 +23,10 @@ export type BulletinSections = z.infer<typeof BulletinSectionsSchema>;
 export type BulletinDetail = z.infer<typeof BulletinFrontmatterSchema> & { sections: BulletinSections };
 
 const SECTION_HEADING_MAP: Record<string, keyof BulletinSections> = {
-  'Estudo': 'article',
+  Estudo: 'article',
   'Agenda Semanal': 'weekly_agenda',
-  'Avisos': 'announcements',
-  'Aniversariantes': 'birthdays',
+  Avisos: 'announcements',
+  Aniversariantes: 'birthdays',
   'Liturgia do Culto': 'liturgy',
 };
 
