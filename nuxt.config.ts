@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import svgLoader from 'vite-svg-loader';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -21,6 +22,16 @@ export default defineNuxtConfig({
   nitro: {
     externals: {
       inline: ['gray-matter', 'marked'],
+    },
+  },
+
+  hooks: {
+    'prerender:routes'({ routes }) {
+      routes.add('/');
+      const files = readdirSync('./content').filter((f) => f.endsWith('.md'));
+      for (const file of files) {
+        routes.add(`/${file.replace('.md', '')}`);
+      }
     },
   },
   devServer: {
