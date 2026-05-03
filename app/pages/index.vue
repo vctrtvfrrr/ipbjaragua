@@ -1,23 +1,29 @@
 <template>
-  <div class="thousand-generated-frames-animation flex h-screen w-screen items-center justify-center p-10">
-    <div class="flex flex-col items-center gap-12 rounded-4xl bg-gray-900 p-12 drop-shadow-2xl">
-      <!-- // TODO: instead of having a single module add the content of the readme.md and extend it by adding interactive components that do stuff, to explain what is happening and why.  -->
-      <NuxtStarter />
-      <StarterButton />
-      <p class="hidden">This is a secret env - it won't get exposed to the client: {{ config.apiSecret }}</p>
-      <p class="hidden">And this is a public variable - it can be found within the DOM: {{ config.public.apiBase }}</p>
-    </div>
+  <div class="min-h-screen p-8">
+    <h1 class="mb-8 text-2xl font-bold">Boletins Dominicais</h1>
+    <ul class="space-y-2">
+      <li
+        v-for="slug in slugs"
+        :key="slug"
+      >
+        <NuxtLink
+          :to="`/${slug}`"
+          class="text-blue-600 hover:underline"
+        >
+          {{ formatDate(slug) }}
+        </NuxtLink>
+      </li>
+    </ul>
   </div>
 </template>
 
-<script setup>
-// NOTE: now that Nuxt 4 uses an app directory import routes for Nitro need to be configured specifically, in the current configuration one should use '~' to refer to the server directory, and '@' to refer to the app directory.
-import NuxtStarter from '@/components/nuxt-starter/NuxtStarter.vue';
-import StarterButton from '@/components/start-button/StarterButton.vue';
+<script setup lang="ts">
+import { useAsyncData } from '#app';
 
-definePageMeta({
-  middleware: ['demo'],
-});
+const { data: slugs } = await useAsyncData('bulletins', () => $fetch<string[]>('/api/content'));
 
-const config = useRuntimeConfig();
+function formatDate(slug: string): string {
+  const date = new Date(`${slug}T12:00:00`);
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
 </script>
