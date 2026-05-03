@@ -14,7 +14,7 @@ export default defineNuxtConfig({
       link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
-  modules: ['@pinia/nuxt', '@nuxt/devtools'],
+  modules: ['@pinia/nuxt', '@nuxt/devtools', '@nuxt/fonts'],
   css: ['@/assets/style/animations.scss', '@/assets/style/tailwind.css'],
   vite: {
     plugins: [svgLoader(), tailwindcss()],
