@@ -11,16 +11,7 @@
   "arrowParens": "always",
   "insertFinalNewline": true,
   "embeddedLanguageFormatting": "auto",
-  "ignorePatterns": [
-    "node_modules",
-    "coverage",
-    "dist",
-    ".output",
-    ".github",
-    ".nuxt",
-    "**/*.md",
-    "**/*.mdx",
-  ],
+  "ignorePatterns": ["node_modules", "coverage", "dist", ".output", ".github", ".nuxt", "**/*.md"],
   "sortTailwindcss": {
     "stylesheet": "./app/assets/style/tailwind.css",
   },
