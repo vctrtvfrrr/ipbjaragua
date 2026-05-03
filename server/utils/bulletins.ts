@@ -74,7 +74,11 @@ export async function parseSections(body: string): Promise<BulletinSections> {
 
   const sections: BulletinSections = {};
   for (const chunk of chunks) {
-    const html = String(await marked(chunk.lines.join('\n').trim()));
+    const body = chunk.lines
+      .join('\n')
+      .replace(/[\s\n]*---\s*$/, '')
+      .trim();
+    const html = String(await marked(body));
     sections[chunk.key] = chunk.key === 'article' ? promoteHeadings(html) : html;
   }
   return sections;

@@ -1,17 +1,12 @@
 @import 'tailwindcss';
 
-@theme {
-  --text-base: 1.1rem;
-  --font-sans: 'Alegreya Sans', ui-sans-serif, system-ui, sans-serif;
-}
-
 @layer base {
   body {
     @apply text-base;
   }
 
   .bulletin-content h2 {
-    @apply mt-8 mb-3 text-xl font-bold;
+    @apply mt-8 mb-3 text-center text-3xl font-bold text-green-900;
   }
 
   .bulletin-content h3 {

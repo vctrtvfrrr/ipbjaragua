@@ -51,7 +51,7 @@
         <hr />
 
         <div v-if="bulletin.sections.liturgy">
-          <h2 class="text-center text-3xl font-bold text-green-900">Liturgia do Culto</h2>
+          <h2>Liturgia do Culto</h2>
           <div
             class="bulletin-liturgy"
             v-html="bulletin.sections.liturgy"

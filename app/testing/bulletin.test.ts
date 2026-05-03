@@ -112,6 +112,14 @@ describe('parseSections', () => {
     expect(sections.article).not.toContain('<h4>');
   });
 
+  test('strips trailing --- delimiter from section body', async () => {
+    const body = '## Avisos\n\nTexto dos avisos.\n\n---\n\n## Aniversariantes\n\nNomes.';
+    const sections = await parseSections(body);
+    expect(sections.announcements).not.toContain('<hr>');
+    expect(sections.announcements).toContain('Texto dos avisos.');
+    expect(sections.birthdays).toContain('Nomes.');
+  });
+
   test('does not promote headings in other sections', async () => {
     const body = '## Liturgia do Culto\n\n### Adoração';
     const sections = await parseSections(body);
