@@ -1,0 +1,29 @@
+{
+  "files": [],
+  "exclude": ["node_modules", "build", "dist"],
+  "references": [
+    {
+      "path": "./.nuxt/tsconfig.json"
+    }
+  ],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "es2022",
+    "moduleResolution": "Bundler",
+    "importHelpers": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": false,
+    "sourceMap": true,
+    "strict": true,
+    "noEmit": true,
+    "experimentalDecorators": true,
+    "types": ["@types/bun", "@pinia/nuxt"],
+    "baseUrl": ".",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true
+  }
+}
