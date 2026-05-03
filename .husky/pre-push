@@ -15,7 +15,7 @@ echo "🐶 Husky: 🎉 Formatter found no rule violations ..."
 
 # 4. Unit-Testing
 echo "🐶 Husky: 🧪 Executing test:coverage ..."
-bun --bun test:coverage || { echo "🐶 Husky: ❌ Tests failed. Aborting push."; exit 1; }
+bun run test:coverage || { echo "🐶 Husky: ❌ Tests failed. Aborting push."; exit 1; }
 echo "🐶 Husky: 🎉 All unit-tests passed successfully!"
 
 # 6. Success
