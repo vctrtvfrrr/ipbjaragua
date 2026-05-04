@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { useAsyncData, useRoute } from '#app';
+import { formatDate } from '#imports';
 
 type BulletinSections = {
   article?: string;
@@ -85,9 +86,4 @@ const route = useRoute();
 const slug = route.params.slug as string;
 
 const { data: bulletin } = await useAsyncData(`bulletin-${slug}`, () => $fetch<BulletinDetail>(`/api/content/${slug}`));
-
-function formatDate(dateStr: string): string {
-  const date = new Date(`${dateStr}T12:00:00`);
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-}
 </script>
