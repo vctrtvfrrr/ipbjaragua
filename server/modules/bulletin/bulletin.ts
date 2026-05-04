@@ -84,7 +84,7 @@ export async function parseSections(body: string): Promise<BulletinSections> {
   return sections;
 }
 
-export async function parseBulletin(slug: string): Promise<BulletinDetail> {
+export async function parseContent(slug: string): Promise<BulletinDetail> {
   const filePath = join(process.cwd(), 'content', `${slug}.md`);
   const raw = readFileSync(filePath, 'utf-8');
   const { data, body } = parseFrontmatter(raw);

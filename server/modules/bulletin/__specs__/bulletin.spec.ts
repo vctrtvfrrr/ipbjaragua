@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import * as z from 'zod';
-import { parseSections } from '../../server/utils/bulletins';
+import { parseSections } from '../bulletin';
 
 const BulletinFrontmatterSchema = z.object({
   title: z.string(),

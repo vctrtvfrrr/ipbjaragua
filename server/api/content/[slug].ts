@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createError, defineEventHandler, getRouterParam } from 'h3';
-import { parseBulletin } from '../../utils/bulletins';
+import { Bulletin } from '../../modules/bulletin';
 
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug');
@@ -14,5 +14,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Boletim não encontrado' });
   }
 
-  return parseBulletin(slug);
+  return Bulletin.parseContent(slug);
 });
