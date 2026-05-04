@@ -15,7 +15,7 @@ export default defineNuxtConfig({
     },
   },
   modules: ['@pinia/nuxt', '@nuxt/devtools', '@nuxt/fonts'],
-  css: ['@/assets/style/animations.scss', '@/assets/style/tailwind.css'],
+  css: ['@/assets/style/tailwind.css'],
   vite: {
     plugins: [svgLoader(), tailwindcss()],
   },
