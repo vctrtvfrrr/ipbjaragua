@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 # 1. TypeScript
 echo "🐶 Husky: 🌊 Enforcing TypeScript types check ..."
 bun --bun type-check || { echo "🐶 Husky: ❌ Enforcing types check failed. Aborting push."; exit 1; }
