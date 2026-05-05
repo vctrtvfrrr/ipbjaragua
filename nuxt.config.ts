@@ -23,6 +23,7 @@ export default defineNuxtConfig({
     externals: {
       inline: ['gray-matter', 'marked'],
     },
+    ignore: ['**/__specs__/**'],
   },
 
   hooks: {

@@ -58,13 +58,13 @@ bun --bun run lint            # Run oxlint
 bun --bun run lint:fix        # Run oxlint with auto-fix
 bun --bun run format          # Format with oxfmt
 bun --bun run format:check    # Check formatting (used in CI/pre-push)
-bun --bun run test            # Run Vitest (watch mode)
-bun --bun run test:ui         # Run Vitest with browser UI
-bun --bun run test:coverage   # Run Vitest with v8 coverage (used in pre-push)
+bun run test                  # Run Vitest (watch mode)
+bun run test:ui               # Run Vitest with browser UI
+bun run test:coverage         # Run Vitest with v8 coverage (used in pre-push)
 bun --bun run analyze         # Bundle analysis via nuxi analyze
 ```
 
-Run `bun --bun run type-check`, `bun --bun run lint`, and `bun --bun run test:coverage` before pushing — Husky enforces all three on pre-push.
+Run `bun --bun run type-check`, `bun --bun run lint`, and `bun run test:coverage` before pushing — Husky enforces all three on pre-push.
 
 ## Critical Rules
 
@@ -116,7 +116,9 @@ This keeps runtime and TypeScript in sync.
 
 - Vitest config is in `vitest.config.ts` — check there for aliases and setup.
 - Coverage provider is `v8`, not Istanbul.
-- Run `bun --bun run test` to verify nothing is broken before finishing any task.
+- Tests live co-located with source inside `__specs__/` directories.
+- Follow the naming convention `<subject>.spec.js` for unit tests, `<subject>.e2e.ts` for E2E tests, and `<subject>.nuxt.ts` for Vue component tests.
+- Run `bun run test` to verify nothing is broken before finishing any task.
 
 ## Gotchas
 
