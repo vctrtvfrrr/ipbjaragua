@@ -131,7 +131,6 @@ This project disables auto imports in `nuxt.config.ts`.
 
 ```ts
 export default defineNuxtConfig({
-  components: { dirs: [] },
   imports: { autoImport: false },
 })
 ```

@@ -16,47 +16,13 @@
         </p>
       </header>
       <div class="bulletin-content">
-        <div
-          v-if="bulletin.sections.article"
-          class="bulletin-article"
-          v-html="bulletin.sections.article"
-        />
-
+        <BulletinArticle :html="bulletin.sections.article" />
         <hr />
-
-        <div v-if="bulletin.sections.weekly_agenda">
-          <h2>Agenda Semanal</h2>
-          <div
-            class="bulletin-weekly-agenda"
-            v-html="bulletin.sections.weekly_agenda"
-          />
-        </div>
-
-        <div v-if="bulletin.sections.announcements">
-          <h2>Avisos</h2>
-          <div
-            class="bulletin-announcements"
-            v-html="bulletin.sections.announcements"
-          />
-        </div>
-
-        <div v-if="bulletin.sections.birthdays">
-          <h2>Aniversariantes</h2>
-          <div
-            class="bulletin-birthdays"
-            v-html="bulletin.sections.birthdays"
-          />
-        </div>
-
+        <BulletinWeeklyAgenda :html="bulletin.sections.weekly_agenda" />
+        <BulletinAnnouncements :html="bulletin.sections.announcements" />
+        <BulletinBirthdays :html="bulletin.sections.birthdays" />
         <hr />
-
-        <div v-if="bulletin.sections.liturgy">
-          <h2>Liturgia do Culto</h2>
-          <div
-            class="bulletin-liturgy"
-            v-html="bulletin.sections.liturgy"
-          />
-        </div>
+        <BulletinLiturgy :html="bulletin.sections.liturgy" />
       </div>
     </template>
   </div>
@@ -65,6 +31,13 @@
 <script setup lang="ts">
 import { useAsyncData, useRoute } from '#app';
 import { formatDate } from '#imports';
+import {
+  BulletinArticle,
+  BulletinAnnouncements,
+  BulletinBirthdays,
+  BulletinLiturgy,
+  BulletinWeeklyAgenda,
+} from '#components';
 
 type BulletinSections = {
   article?: string;
@@ -85,5 +58,7 @@ type BulletinDetail = {
 const route = useRoute();
 const slug = route.params.slug as string;
 
-const { data: bulletin } = await useAsyncData(`bulletin-${slug}`, () => $fetch<BulletinDetail>(`/api/content/${slug}`));
+const { data: bulletin } = await useAsyncData(`bulletin-${slug}`, () =>
+  $fetch<BulletinDetail>(`/api/bulletins/${slug}`),
+);
 </script>

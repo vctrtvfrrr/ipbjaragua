@@ -5,7 +5,6 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineNuxtConfig({
   compatibilityDate: '2024-12-05',
   devtools: { enabled: true },
-  components: { dirs: [] },
   imports: { autoImport: false },
   app: {
     baseURL: process.env.BASE_URL,
