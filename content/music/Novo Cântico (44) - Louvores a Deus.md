@@ -1,0 +1,1 @@
+1. Louvemos ao Senhor, ao Pai da eternidade que mostra tanto amor à pobre humanidade! Seu Filho aqui sofreu por nossa redenção e com o Pai nos deu bendita comunhão!

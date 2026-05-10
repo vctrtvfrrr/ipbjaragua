@@ -1,0 +1,1 @@
+Eu quero ser, Senhor amado, / como um vaso nas mãos do oleiro. / Quebra minha vida e faze-a de novo. / Eu quero ser, / eu quero ser / um vaso novo.

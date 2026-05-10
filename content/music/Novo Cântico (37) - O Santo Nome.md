@@ -1,0 +1,3 @@
+1. Jesus, teu nome é santo, / amável teu querer. / Louvor supremo e puro amor / queremos te render! / Poder e honra e glória, a ti, / nós vimos tributar, / e com sincera devoção, / teu culto celebrar!
+2. Jesus, teu nome é santo, / merece o nosso amor! / És nosso Deus, que estás nos céus, / e nosso protetor. / Incomparável és, Senhor, / em tua compaixão; / Quiseste, para o mal vencer, / fazer-te nosso irmão!
+3. Jesus, teu nome é santo, / venceste sobre a cruz! / O teu sofrer, o teu penar, / à vida nos conduz. / Glorificado estás nos céus, / atento à adoração / que vimos nós, fiéis, prestar / com grato coração. Amém!

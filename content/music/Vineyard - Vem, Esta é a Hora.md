@@ -1,0 +1,2 @@
+1. Vem, esta é a hora da adoração. Vem dar a ele teu coração. Vem, assim como estás, para adorar. Vem, assim como estás diante do Pai.
+2. Toda língua confessará o Senhor; Todo joelho se dobrará. Mas aquele que a ti escolher, o tesouro maior terá.

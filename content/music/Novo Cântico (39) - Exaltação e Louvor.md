@@ -1,0 +1,4 @@
+1. Oh, vinde crentes dar louvor ao grande Rei Jesus que, para a nossa redenção, morreu na amarga cruz. Seu sangue derramou, de tudo me lavou, mais alvo do que a neve me tornou.
+**O sangue de Jesus me lavou, me lavou! O sangue de Jesus me lavou, me lavou! Alegre, cantarei louvores ao meu Rei; ao meu Senhor Jesus que me salvou.**
+2. Oh, vinde unir-vos a Jesus na luta contra o mal e com o grande Salvador em marcha triunfal. A todos proclamar que sem amor sem par, o fez na cruz seu sangue derramar.
+3. O chefe da milícia é Jesus, meu Salvador, o Rei dos reis, o Redentor, o eterno e bom Senhor. A tudo vencerá. Vitória nos dará e à glória eterna os seus conduzirá.

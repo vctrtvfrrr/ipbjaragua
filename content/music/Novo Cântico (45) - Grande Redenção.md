@@ -1,0 +1,4 @@
+1. Milhares de milhares ouço cantando a Deus com gratidão, a Cristo, o Salvador, louvando por sua grande redenção. "A Deus louvai!" - em coro clamam: "A Deus louvai, pois nos amou e pelo sangue do Cordeiro de toda mancha nos lavou."
+2. O mesmo salmo triunfante em tons de santa exultação por todo o mundo vai subindo a Deus, Autor da redenção. "A Deus louvai" - nos vales soa, e os montes fazem ecoar: "A Deus louvai, o Deus da graça, que aos pecadores quer salvar."
+3. E nós, teus santos pés cercando enquanto militando aqui, as nossas vozes elevamos para exaltar, Senhor, a ti. "A Deus louvai" - também clamamos: "A Deus louvai, Supremo Rei, e glória, honra, majestade a Cristo, o Salvador, rendei."
+4. Das trevas fomos nós chamados à tua pura e santa luz; da escravidão e do pecado nos libertaste pela cruz. "A Deus louvai!" - cantemos todos: "A Deus louvai, que nos remiu, e filhos seus e seus herdeiros em Cristo, nos constituiu."

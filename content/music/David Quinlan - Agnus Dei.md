@@ -1,0 +1,13 @@
+Aleluia! Aleluia!
+Poderoso é o Senhor nosso Deus.
+Aleluia! Aleluia!
+Poderoso é o Senhor nosso Deus.
+
+Aleluia! Santo! Santo!
+É o Senhor Deus, poderoso.
+Digno de louvor. Digno de louvor.
+
+Tu és Santo! Santo!
+É o Senhor Deus, poderoso.
+Digno de louvor. Digno de louvor.
+Amém.

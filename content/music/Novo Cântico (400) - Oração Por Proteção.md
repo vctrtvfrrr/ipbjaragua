@@ -1,0 +1,2 @@
+1. Grande Deus! Em paz, agora despedimo-nos, Senhor. Certos de fruir as bênçãos que provêm do teu amor. Dá-nos forças, dá-nos forças neste mundo de amargor. Dá-nos forças, dá-nos forças neste mundo de amargor.
+2. Graças, graças nós rendemos pela tua redenção e termos, jubilosos, tua santa proteção. Deus eterno, Deus eterno, reina em cada coração. Deus eterno, Deus eterno, reina em cada coração. Amém.

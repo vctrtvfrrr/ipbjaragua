@@ -1,0 +1,4 @@
+1. Mil vezes, mil louvores rendamos a Jesus. Que da mais alta glória desceu até a cruz. Por sua imensa graça, por seu insigne amor, por todos, seja sempre louvado o Salvador.
+**Mil vezes, sim! Mil vezes, sim, louvores ao Senhor. Que nos amou e nos salvou; bendito Salvador.**
+2. Eis, ao redor do trono do redentor Jesus, milhares de milhares em refulgente luz. Com reverência, adoram o grande Salvador e ao bom Cordeiro rendem a honra e o louvor.
+3. Oh! Vinde agora, todos, também a celebrar as glórias sempiternas do redentor sem par. Com vozes de vitória, seu nome proclamai mil vezes. Mil louvores a Cristo tributai.
