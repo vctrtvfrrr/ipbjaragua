@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Slug obrigatório' });
   }
 
-  const filePath = join(process.cwd(), 'content', `${slug}.md`);
+  const filePath = join(process.cwd(), 'content/bulletins', `${slug}.md`);
   if (!existsSync(filePath)) {
     throw createError({ statusCode: 404, message: 'Boletim não encontrado' });
   }

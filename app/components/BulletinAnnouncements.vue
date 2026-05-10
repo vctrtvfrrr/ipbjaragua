@@ -1,17 +1,10 @@
 <template>
   <div v-if="html">
     <h2>Avisos</h2>
-    <<<<<<< Updated upstream
     <div
       class="bulletin-announcements"
       v-html="html"
     />
-    =======
-    <div
-      class="bulletin-announcements"
-      v-html="html"
-    />
-    >>>>>>> Stashed changes
   </div>
 </template>
 

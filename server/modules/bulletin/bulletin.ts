@@ -20,7 +20,9 @@ export const BulletinSectionsSchema = z.object({
 
 export type BulletinSections = z.infer<typeof BulletinSectionsSchema>;
 
-export type BulletinDetail = z.infer<typeof BulletinFrontmatterSchema> & { sections: BulletinSections };
+export type BulletinDetail = z.infer<typeof BulletinFrontmatterSchema> & {
+  sections: BulletinSections;
+};
 
 const SECTION_HEADING_MAP: Record<string, keyof BulletinSections> = {
   Estudo: 'article',
@@ -30,7 +32,10 @@ const SECTION_HEADING_MAP: Record<string, keyof BulletinSections> = {
   'Liturgia do Culto': 'liturgy',
 };
 
-function parseFrontmatter(raw: string): { data: Record<string, unknown>; body: string } {
+function parseFrontmatter(raw: string): {
+  data: Record<string, unknown>;
+  body: string;
+} {
   const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!match || match[1] === undefined || match[2] === undefined) return { data: {}, body: raw };
   const data: Record<string, unknown> = {};
@@ -85,7 +90,7 @@ export async function parseSections(body: string): Promise<BulletinSections> {
 }
 
 export async function parseContent(slug: string): Promise<BulletinDetail> {
-  const filePath = join(process.cwd(), 'content', `${slug}.md`);
+  const filePath = join(process.cwd(), 'content/bulletins', `${slug}.md`);
   const raw = readFileSync(filePath, 'utf-8');
   const { data, body } = parseFrontmatter(raw);
   const meta = BulletinFrontmatterSchema.parse(data);
