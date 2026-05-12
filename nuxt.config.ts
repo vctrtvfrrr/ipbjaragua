@@ -19,6 +19,7 @@ export default defineNuxtConfig({
     plugins: [svgLoader(), tailwindcss()],
   },
   nitro: {
+    preset: 'bun',
     externals: {
       inline: ['gray-matter', 'marked'],
     },
