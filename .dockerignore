@@ -1,0 +1,15 @@
+.git
+.gitea
+.nuxt
+.output
+.data
+node_modules
+*.log
+.env
+.env.local
+.DS_Store
+tests
+**/__specs__
+coverage
+README.md
+CLAUDE.md
