@@ -10,6 +10,7 @@ RUN bun run build
 FROM oven/bun:1
 WORKDIR /app
 COPY --from=build /app/.output ./.output
+COPY --from=build /app/content ./content
 ENV NODE_ENV=production \
     NITRO_PORT=3000 \
     NITRO_HOST=0.0.0.0
