@@ -46,3 +46,6 @@ pnpm-debug.log*
 .vscode/
 *.sublime-workspace
 *.code-workspace
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md

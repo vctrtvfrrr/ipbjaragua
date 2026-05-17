@@ -1,9 +1,6 @@
 # CLAUDE.md
 
-## Project
-
-Nuxt 4 Starter Kit — a batteries-included template for real-world Nuxt 4 / Vue 3 applications.
-MIT-licensed, maintained by Ali Soueidan (@lazercaveman).
+Repository: https://git.codelab.tec.br/codelab/ipbjaragua.git
 
 ## Tech Stack
 
