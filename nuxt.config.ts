@@ -21,7 +21,8 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'bun',
     externals: {
-      inline: ['gray-matter', 'marked'],
+      external: ['bun:sqlite'],
+      inline: ['marked'],
     },
     ignore: ['**/__specs__/**'],
   },

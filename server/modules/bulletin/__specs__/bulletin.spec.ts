@@ -1,129 +1,133 @@
-import { describe, expect, test } from 'vitest';
-import * as z from 'zod';
-import { parseSections } from '../bulletin';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { beforeEach, describe, expect, test } from 'vitest';
+import * as schema from '../../../db/schema';
+import { _injectDb, listDates, parseContent } from '../bulletin';
 
-const BulletinFrontmatterSchema = z.object({
-  title: z.string(),
-  date: z.string(),
-  index: z.number(),
-  year: z.number(),
-});
+const testDb = drizzle(new Database(':memory:'), { schema });
+migrate(testDb, { migrationsFolder: './server/db/migrations' });
+_injectDb(testDb);
 
-describe('BulletinFrontmatterSchema', () => {
-  test('validates valid frontmatter', () => {
-    const result = BulletinFrontmatterSchema.safeParse({
-      title: 'Boletim Dominical',
-      date: '2026-05-03',
-      index: 68,
-      year: 2,
-    });
-    expect(result.success).toBe(true);
+describe('listDates', () => {
+  beforeEach(() => {
+    testDb.delete(schema.articles).run();
   });
 
-  test('fails on missing title', () => {
-    const result = BulletinFrontmatterSchema.safeParse({
-      date: '2026-05-03',
-      index: 68,
-      year: 2,
-    });
-    expect(result.success).toBe(false);
+  test('returns empty array when no articles exist', () => {
+    expect(listDates()).toEqual([]);
   });
 
-  test('fails on wrong type for index', () => {
-    const result = BulletinFrontmatterSchema.safeParse({
-      title: 'Boletim Dominical',
-      date: '2026-05-03',
-      index: '68',
-      year: 2,
-    });
-    expect(result.success).toBe(false);
-  });
-
-  test('fails when all fields are missing', () => {
-    const result = BulletinFrontmatterSchema.safeParse({});
-    expect(result.success).toBe(false);
+  test('returns dates ordered most recent first', () => {
+    testDb
+      .insert(schema.articles)
+      .values([
+        { title: 'B1', date: '2026-04-19', index: 1, year: 1, content: 'A' },
+        { title: 'B2', date: '2026-05-17', index: 5, year: 2, content: 'B' },
+        { title: 'B3', date: '2026-05-03', index: 3, year: 2, content: 'C' },
+      ])
+      .run();
+    expect(listDates()).toEqual(['2026-05-17', '2026-05-03', '2026-04-19']);
   });
 });
 
-describe('parseSections', () => {
-  test('parses a single known section', async () => {
-    const body = '## Estudo\n\nConteúdo do estudo.';
-    const sections = await parseSections(body);
-    expect(sections.article).toContain('Conteúdo do estudo.');
-    expect(sections.liturgy).toBeUndefined();
+describe('parseContent', () => {
+  beforeEach(() => {
+    testDb.delete(schema.agenda).run();
+    testDb.delete(schema.announcements).run();
+    testDb.delete(schema.members).run();
+    testDb.delete(schema.articles).run();
   });
 
-  test('parses multiple known sections', async () => {
-    const body = '## Estudo\n\nTexto do estudo.\n\n## Liturgia do Culto\n\nTexto da liturgia.';
-    const sections = await parseSections(body);
-    expect(sections.article).toContain('Texto do estudo.');
-    expect(sections.liturgy).toContain('Texto da liturgia.');
+  test('throws when no article exists for the given date', async () => {
+    await expect(parseContent('2026-05-17')).rejects.toThrow();
   });
 
-  test('returns empty object when no known sections are present', async () => {
-    const body = '## Seção Desconhecida\n\nConteúdo ignorado.';
-    const sections = await parseSections(body);
-    expect(Object.keys(sections)).toHaveLength(0);
+  test('returns bulletin for exact date match', async () => {
+    testDb
+      .insert(schema.articles)
+      .values({ title: 'Boletim Dominical', date: '2026-05-17', index: 70, year: 2, content: 'Texto do estudo.' })
+      .run();
+
+    const bulletin = await parseContent('2026-05-17');
+    expect(bulletin.title).toBe('Boletim Dominical');
+    expect(bulletin.date).toBe('2026-05-17');
+    expect(bulletin.index).toBe(70);
+    expect(bulletin.year).toBe(2);
+    expect(bulletin.sections.article).toContain('Texto do estudo.');
   });
 
-  test('ignores unrecognized headings between known sections', async () => {
-    const body = '## Estudo\n\nTexto A.\n\n## Seção Ignorada\n\nTexto B.\n\n## Avisos\n\nTexto C.';
-    const sections = await parseSections(body);
-    expect(sections.article).toContain('Texto A.');
-    expect(sections.announcements).toContain('Texto C.');
-    expect(Object.keys(sections)).toHaveLength(2);
+  test('returns most recent article when no exact date match', async () => {
+    testDb
+      .insert(schema.articles)
+      .values({ title: 'Antigo', date: '2026-04-19', index: 67, year: 2, content: 'Conteúdo antigo.' })
+      .run();
+
+    const bulletin = await parseContent('2026-05-17');
+    expect(bulletin.date).toBe('2026-04-19');
   });
 
-  test('discards content before the first recognized heading', async () => {
-    const body = '# Título do Boletim\n\nConteúdo antes.\n\n## Avisos\n\nTexto dos avisos.';
-    const sections = await parseSections(body);
-    expect(sections.announcements).toContain('Texto dos avisos.');
-    expect(sections.announcements).not.toContain('Conteúdo antes.');
-  });
+  test('renders article markdown as HTML', async () => {
+    testDb
+      .insert(schema.articles)
+      .values({ title: 'Test', date: '2026-05-17', index: 1, year: 1, content: '**Texto em negrito**' })
+      .run();
 
-  test('does not include the heading line in rendered HTML', async () => {
-    const body = '## Estudo\n\nParágrafo do estudo.';
-    const sections = await parseSections(body);
-    expect(sections.article).not.toContain('<h2>');
-    expect(sections.article).not.toContain('Estudo');
-  });
-
-  test('returns undefined for absent sections', async () => {
-    const body = '## Estudo\n\nTexto.';
-    const sections = await parseSections(body);
-    expect(sections.weekly_agenda).toBeUndefined();
-    expect(sections.announcements).toBeUndefined();
-    expect(sections.birthdays).toBeUndefined();
-    expect(sections.liturgy).toBeUndefined();
-  });
-
-  test('renders section body as HTML', async () => {
-    const body = '## Avisos\n\n**Aviso importante**';
-    const sections = await parseSections(body);
-    expect(sections.announcements).toContain('<strong>Aviso importante</strong>');
+    const bulletin = await parseContent('2026-05-17');
+    expect(bulletin.sections.article).toContain('<strong>Texto em negrito</strong>');
   });
 
   test('promotes headings by one level in article section', async () => {
-    const body = '## Estudo\n\n### Subtítulo\n\n#### Sub-subtítulo';
-    const sections = await parseSections(body);
-    expect(sections.article).toContain('<h2>');
-    expect(sections.article).toContain('<h3>');
-    expect(sections.article).not.toContain('<h3>Subtítulo</h3>');
-    expect(sections.article).not.toContain('<h4>');
+    testDb
+      .insert(schema.articles)
+      .values({ title: 'Test', date: '2026-05-17', index: 1, year: 1, content: '### Subtítulo\n\n#### Sub-subtítulo' })
+      .run();
+
+    const bulletin = await parseContent('2026-05-17');
+    expect(bulletin.sections.article).toContain('<h2>');
+    expect(bulletin.sections.article).toContain('<h3>');
+    expect(bulletin.sections.article).not.toContain('<h3>Subtítulo</h3>');
   });
 
-  test('strips trailing --- delimiter from section body', async () => {
-    const body = '## Avisos\n\nTexto dos avisos.\n\n---\n\n## Aniversariantes\n\nNomes.';
-    const sections = await parseSections(body);
-    expect(sections.announcements).not.toContain('<hr>');
-    expect(sections.announcements).toContain('Texto dos avisos.');
-    expect(sections.birthdays).toContain('Nomes.');
+  test('returns undefined sections when related tables are empty', async () => {
+    testDb
+      .insert(schema.articles)
+      .values({ title: 'Test', date: '2026-05-17', index: 1, year: 1, content: 'Conteúdo.' })
+      .run();
+
+    const bulletin = await parseContent('2026-05-17');
+    expect(bulletin.sections.weekly_agenda).toBeUndefined();
+    expect(bulletin.sections.announcements).toBeUndefined();
+    expect(bulletin.sections.birthdays).toBeUndefined();
+    expect(bulletin.sections.liturgy).toBeUndefined();
   });
 
-  test('does not promote headings in other sections', async () => {
-    const body = '## Liturgia do Culto\n\n### Adoração';
-    const sections = await parseSections(body);
-    expect(sections.liturgy).toContain('<h3>');
-    expect(sections.liturgy).not.toContain('<h2>Adoração</h2>');
+  test('includes weekly_agenda section when agenda rows exist', async () => {
+    testDb.insert(schema.articles).values({ title: 'Test', date: '2026-05-18', index: 1, year: 1, content: 'x' }).run();
+    testDb
+      .insert(schema.agenda)
+      .values({ title: 'Momento de Oração', weekday: 3, time: '19:30', is_recurring: true })
+      .run();
+
+    const bulletin = await parseContent('2026-05-18');
+    expect(bulletin.sections.weekly_agenda).toContain('Momento de Oração');
+    expect(bulletin.sections.weekly_agenda).toContain('19:30');
+  });
+
+  test('includes announcements when active announcements exist', async () => {
+    testDb.insert(schema.articles).values({ title: 'Test', date: '2026-05-17', index: 1, year: 1, content: 'x' }).run();
+    testDb
+      .insert(schema.announcements)
+      .values({
+        title: 'Conferência da Fé',
+        description: '29 e 30 de maio',
+        created_at: '2026-05-01',
+        expires_at: '2026-06-01',
+      })
+      .run();
+
+    const bulletin = await parseContent('2026-05-17');
+    expect(bulletin.sections.announcements).toContain('Conferência da Fé');
+    expect(bulletin.sections.announcements).toContain('29 e 30 de maio');
   });
 });

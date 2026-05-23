@@ -1,53 +1,68 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { and, asc, between, desc, gte, lte, sql } from 'drizzle-orm';
+import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
 import { marked } from 'marked';
-import * as z from 'zod';
+import {
+  agenda,
+  announcements,
+  articles,
+  liturgies,
+  liturgyActs,
+  liturgyMoments,
+  members,
+  songs,
+} from '../../db/schema';
 
-export const BulletinFrontmatterSchema = z.object({
-  title: z.string(),
-  date: z.string(),
-  index: z.number(),
-  year: z.number(),
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Db = BaseSQLiteDatabase<'sync', void, any>;
 
-export const BulletinSectionsSchema = z.object({
-  article: z.string().optional(),
-  weekly_agenda: z.string().optional(),
-  announcements: z.string().optional(),
-  birthdays: z.string().optional(),
-  liturgy: z.string().optional(),
-});
+// Injected by the Nitro startup plugin — never imported at module level to avoid
+// pulling bun:sqlite into the static import chain during Nuxt's build analysis.
+let _db: Db | null = null;
 
-export type BulletinSections = z.infer<typeof BulletinSectionsSchema>;
+export function _injectDb(db: Db): void {
+  _db = db;
+}
 
-export type BulletinDetail = z.infer<typeof BulletinFrontmatterSchema> & {
+function useDb(): Db {
+  if (!_db) throw new Error('DB not initialized. Call _injectDb before use.');
+  return _db;
+}
+
+export type BulletinSections = {
+  article?: string;
+  weekly_agenda?: string;
+  announcements?: string;
+  birthdays?: string;
+  liturgy?: string;
+};
+
+export type BulletinDetail = {
+  title: string;
+  date: string;
+  index: number;
+  year: number;
   sections: BulletinSections;
 };
 
-const SECTION_HEADING_MAP: Record<string, keyof BulletinSections> = {
-  Estudo: 'article',
-  'Agenda Semanal': 'weekly_agenda',
-  Avisos: 'announcements',
-  Aniversariantes: 'birthdays',
-  'Liturgia do Culto': 'liturgy',
-};
+const WEEKDAY_NAMES = [
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+];
 
-function parseFrontmatter(raw: string): {
-  data: Record<string, unknown>;
-  body: string;
-} {
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!match || match[1] === undefined || match[2] === undefined) return { data: {}, body: raw };
-  const data: Record<string, unknown> = {};
-  for (const line of match[1].split('\n')) {
-    const colon = line.indexOf(':');
-    if (colon === -1) continue;
-    const key = line.slice(0, colon).trim();
-    const val = line.slice(colon + 1).trim();
-    data[key] = isNaN(Number(val)) ? val : Number(val);
-  }
-  return { data, body: match[2] };
-}
+const MOMENT_TYPE_LABELS: Record<string, string> = {
+  bible_reading: 'Leitura Bíblica',
+  song: 'Cântico',
+  prayer: 'Oração',
+  sermon: 'Mensagem',
+  sacrament: 'Sacramento',
+  pastoral_act: 'Ato Pastoral',
+  other: 'Momento',
+};
 
 function promoteHeadings(html: string): string {
   return html.replace(/<(\/?)h([3-6])(\s|>)/g, (_, slash: string, level: string, suffix: string) => {
@@ -55,45 +70,215 @@ function promoteHeadings(html: string): string {
   });
 }
 
-export async function parseSections(body: string): Promise<BulletinSections> {
-  const lines = body.split('\n');
-  const chunks: { key: keyof BulletinSections; lines: string[] }[] = [];
-  let current: { key: keyof BulletinSections; lines: string[] } | null = null;
-
-  for (const line of lines) {
-    const h2Match = line.match(/^## (.+)$/);
-    if (h2Match && h2Match[1] !== undefined) {
-      const key = SECTION_HEADING_MAP[h2Match[1].trim()];
-      if (key !== undefined) {
-        current = { key, lines: [] };
-        chunks.push(current);
-      } else {
-        current = null;
-      }
-      continue;
-    }
-    if (current !== null) {
-      current.lines.push(line);
-    }
-  }
-
-  const sections: BulletinSections = {};
-  for (const chunk of chunks) {
-    const body = chunk.lines
-      .join('\n')
-      .replace(/[\s\n]*---\s*$/, '')
-      .trim();
-    const html = String(await marked(body));
-    sections[chunk.key] = chunk.key === 'article' ? promoteHeadings(html) : html;
-  }
-  return sections;
+function addDays(isoDate: string, days: number): string {
+  const d = new Date(isoDate + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
-export async function parseContent(slug: string): Promise<BulletinDetail> {
-  const filePath = join(process.cwd(), 'content/bulletins', `${slug}.md`);
-  const raw = readFileSync(filePath, 'utf-8');
-  const { data, body } = parseFrontmatter(raw);
-  const meta = BulletinFrontmatterSchema.parse(data);
-  const sections = await parseSections(body);
-  return { ...meta, sections };
+function formatDayMonth(isoDate: string): string {
+  const [, month, day] = isoDate.split('-');
+  return `${day}/${month}`;
+}
+
+function isoWeekday(isoDate: string): number {
+  return new Date(isoDate + 'T12:00:00Z').getUTCDay();
+}
+
+export function listDates(): string[] {
+  return useDb()
+    .select({ date: articles.date })
+    .from(articles)
+    .orderBy(desc(articles.date))
+    .all()
+    .map((r) => r.date);
+}
+
+export async function parseContent(date: string): Promise<BulletinDetail> {
+  const db = useDb();
+
+  const article = db
+    .select()
+    .from(articles)
+    .where(lte(articles.date, date))
+    .orderBy(desc(articles.date))
+    .limit(1)
+    .get();
+
+  if (!article) throw new Error(`No article found for date ${date}`);
+
+  const sections: BulletinSections = {};
+
+  sections.article = promoteHeadings(String(await marked(article.content)));
+
+  const weeklyAgenda = buildWeeklyAgendaSection(db, date);
+  if (weeklyAgenda) sections.weekly_agenda = weeklyAgenda;
+
+  const announcementsSection = buildAnnouncementsSection(db, date);
+  if (announcementsSection) sections.announcements = announcementsSection;
+
+  const birthdaysSection = buildBirthdaysSection(db, date);
+  if (birthdaysSection) sections.birthdays = birthdaysSection;
+
+  const liturgySection = buildLiturgySection(db, date);
+  if (liturgySection) sections.liturgy = liturgySection;
+
+  return { title: article.title, date: article.date, index: article.index, year: article.year, sections };
+}
+
+function buildWeeklyAgendaSection(db: Db, sunday: string): string | null {
+  const monday = addDays(sunday, 1);
+  const nextSunday = addDays(sunday, 7);
+
+  const rows = db
+    .select()
+    .from(agenda)
+    .where(
+      sql`${agenda.is_recurring} = 1 OR (${agenda.event_date} IS NOT NULL AND ${agenda.event_date} BETWEEN ${monday} AND ${nextSunday})`,
+    )
+    .orderBy(asc(agenda.weekday), asc(agenda.event_date), asc(agenda.time))
+    .all();
+
+  if (rows.length === 0) return null;
+
+  const byDay = new Map<number, typeof rows>();
+  for (const row of rows) {
+    const day = row.is_recurring && row.weekday !== null ? row.weekday : isoWeekday(row.event_date!);
+    const existing = byDay.get(day) ?? [];
+    existing.push(row);
+    byDay.set(day, existing);
+  }
+
+  const parts: string[] = [];
+  for (const [day, events] of [...byDay.entries()].sort(([a], [b]) => a - b)) {
+    parts.push(`<h3>${WEEKDAY_NAMES[day]}</h3><ul>`);
+    for (const e of events) {
+      const time = e.time ? `<strong>${e.time}</strong> — ` : '';
+      const desc = e.description ? `<br><em>${e.description}</em>` : '';
+      parts.push(`<li>${time}${e.title}${desc}</li>`);
+    }
+    parts.push('</ul>');
+  }
+
+  return parts.join('');
+}
+
+function buildAnnouncementsSection(db: Db, sunday: string): string | null {
+  const rows = db
+    .select()
+    .from(announcements)
+    .where(gte(announcements.expires_at, sunday))
+    .orderBy(asc(announcements.created_at))
+    .all();
+
+  if (rows.length === 0) return null;
+
+  return rows
+    .map((a) => {
+      const link = a.url ? ` <a href="${a.url}">Mais informações</a>` : '';
+      const desc = a.description ? `<p>${a.description}${link}</p>` : link ? `<p>${link}</p>` : '';
+      return `<h3>${a.title}</h3>${desc}`;
+    })
+    .join('');
+}
+
+function buildBirthdaysSection(db: Db, sunday: string): string | null {
+  const saturday = addDays(sunday, 6);
+  const sundayMD = sunday.slice(5);
+  const saturdayMD = saturday.slice(5);
+
+  const condition =
+    sundayMD <= saturdayMD
+      ? between(sql`strftime('%m-%d', ${members.birth_date})`, sundayMD, saturdayMD)
+      : sql`strftime('%m-%d', ${members.birth_date}) >= ${sundayMD} OR strftime('%m-%d', ${members.birth_date}) <= ${saturdayMD}`;
+
+  const rows = db
+    .select()
+    .from(members)
+    .where(and(sql`${members.status} = 'active'`, condition))
+    .orderBy(asc(sql`strftime('%m-%d', ${members.birth_date})`))
+    .all();
+
+  if (rows.length === 0) return null;
+
+  const byDate = new Map<string, string[]>();
+  for (const m of rows) {
+    const dateKey = m.birth_date!.slice(5);
+    const existing = byDate.get(dateKey) ?? [];
+    existing.push(m.full_name);
+    byDate.set(dateKey, existing);
+  }
+
+  const parts: string[] = [];
+  for (const [md, names] of byDate.entries()) {
+    const isoDate = sunday.slice(0, 4) + '-' + md;
+    const weekday = WEEKDAY_NAMES[isoWeekday(isoDate)];
+    parts.push(`<h3>${formatDayMonth(isoDate)} — ${weekday}</h3><ul>`);
+    for (const name of names) parts.push(`<li>${name}</li>`);
+    parts.push('</ul>');
+  }
+
+  return parts.join('');
+}
+
+function buildLiturgySection(db: Db, date: string): string | null {
+  const liturgy = db
+    .select()
+    .from(liturgies)
+    .where(sql`${liturgies.date} = ${date}`)
+    .limit(1)
+    .get();
+  if (!liturgy) return null;
+
+  const acts = db
+    .select()
+    .from(liturgyActs)
+    .where(sql`${liturgyActs.liturgy_id} = ${liturgy.id}`)
+    .orderBy(asc(liturgyActs.position))
+    .all();
+
+  if (acts.length === 0) return null;
+
+  const parts: string[] = [];
+  for (const act of acts) {
+    parts.push(`<h2>${act.name}</h2><ul>`);
+
+    const moments = db
+      .select({ moment: liturgyMoments, songTitle: songs.title, songAlbum: songs.album, songTrack: songs.track })
+      .from(liturgyMoments)
+      .where(sql`${liturgyMoments.act_id} = ${act.id}`)
+      .leftJoin(songs, sql`${songs.id} = ${liturgyMoments.song_id}`)
+      .orderBy(asc(liturgyMoments.position))
+      .all();
+
+    for (const { moment, songTitle, songAlbum, songTrack } of moments) {
+      const label = MOMENT_TYPE_LABELS[moment.type] ?? moment.type;
+      let detail = '';
+
+      if (moment.type === 'song' && songTitle) {
+        const ref = songAlbum && songTrack ? ` — ${songTrack}. ${songAlbum}` : '';
+        detail = `${songTitle}${ref}`;
+      } else if (moment.type === 'bible_reading' && moment.scripture_passages) {
+        try {
+          const passages = JSON.parse(moment.scripture_passages) as Array<{ reference: string }>;
+          detail = passages.map((p) => p.reference).join('; ');
+        } catch {
+          detail = moment.scripture_passages;
+        }
+      } else if (moment.type === 'sermon') {
+        const theme = moment.sermon_theme ? `<em>${moment.sermon_theme}</em>` : '';
+        const ref = moment.sermon_reference ? ` (${moment.sermon_reference})` : '';
+        detail = `${theme}${ref}`;
+      } else if (moment.description) {
+        detail = moment.description;
+      }
+
+      const content = detail ? `<strong>${label}:</strong> ${detail}` : `<strong>${label}</strong>`;
+      parts.push(`<li>${content}</li>`);
+    }
+
+    parts.push('</ul>');
+  }
+
+  return parts.join('');
 }

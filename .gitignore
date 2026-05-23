@@ -27,6 +27,9 @@ pnpm-debug.log*
 # Environment & secrets
 .env
 
+# Local SQLite database
+/data
+
 # OS
 .DS_Store
 
