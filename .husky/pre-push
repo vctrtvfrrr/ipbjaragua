@@ -3,22 +3,22 @@ set -eu
 
 # 1. TypeScript
 echo "🐶 Husky: 🌊 Enforcing TypeScript types check ..."
-bun --bun type-check || { echo "🐶 Husky: ❌ Enforcing types check failed. Aborting push."; exit 1; }
+pnpm type-check || { echo "🐶 Husky: ❌ Enforcing types check failed. Aborting push."; exit 1; }
 echo "🐶 Husky: 🎉 TypeScript found no rule violations ..."
 
 # 2. Linting
 echo "🐶 Husky: 👮‍♂️ Executing Oxlint ..."
-bun --bun lint:fix || { echo "🐶 Husky: ❌ Oxlint found issues. Aborting push - you should install the Oxc extension!"; exit 1; }
+pnpm lint:fix || { echo "🐶 Husky: ❌ Oxlint found issues. Aborting push - you should install the Oxc extension!"; exit 1; }
 echo "🐶 Husky: 🎉 Linter found no rule violations ..."
 
 # 3. Formatting
 echo "🐶 Husky: 🍰 Executing OxFmt ..."
-bun --bun format || { echo "🐶 Husky: ❌ OxFmt found issues. Aborting push - you should install the Oxc extension!"; exit 1; }
+pnpm format || { echo "🐶 Husky: ❌ OxFmt found issues. Aborting push - you should install the Oxc extension!"; exit 1; }
 echo "🐶 Husky: 🎉 Formatter found no rule violations ..."
 
 # 4. Unit-Testing
 echo "🐶 Husky: 🧪 Executing test:coverage ..."
-bun run test:coverage || { echo "🐶 Husky: ❌ Tests failed. Aborting push."; exit 1; }
+pnpm test:coverage || { echo "🐶 Husky: ❌ Tests failed. Aborting push."; exit 1; }
 echo "🐶 Husky: 🎉 All unit-tests passed successfully!"
 
 # 6. Success

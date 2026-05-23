@@ -1,11 +1,13 @@
 import svgLoader from 'vite-svg-loader';
 import { defineConfig } from 'vitest/config';
-import { defineVitestProject } from '@nuxt/test-utils/config';
 
 export default defineConfig({
   test: {
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    coverage: {
+      provider: 'v8',
+    },
     projects: [
       {
         test: {
@@ -21,13 +23,6 @@ export default defineConfig({
           environment: 'node',
         },
       },
-      await defineVitestProject({
-        test: {
-          name: 'nuxt',
-          include: ['**/*.{test,nuxt}.ts'],
-          environment: 'nuxt',
-        },
-      }),
     ],
   },
   plugins: [svgLoader()],

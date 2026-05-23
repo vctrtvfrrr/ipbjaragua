@@ -6,7 +6,8 @@ Repository: https://git.codelab.tec.br/codelab/ipbjaragua.git
 
 MUST FOLLOW THESE RULES, NO EXCEPTIONS
 
-- **Runtime and Package Manager:** Bun (version can be found in `package.json` enforced via `engines`)
+- **Runtime:** Node.js v24 (LTS)
+- **Package Manager:** pnpm (version pinned in `packageManager` field of `package.json`, enforced via corepack)
 - **Framework:** Nuxt 4 (Vue 3, `app/` directory structure)
 - **Language:** TypeScript (strict mode)
 - **Build:** Vite (native Nuxt integration)
@@ -34,6 +35,7 @@ Keep this section up to date.
 ├── server/               # Nitro server routes & API
 │   └── api/
 ├── public/               # Static assets
+├── .npmrc                # pnpm config (shamefully-hoist, dedupe-peer-dependents)
 ├── .oxlintrc.jsonc       # Oxlint config — DO NOT create .eslintrc files
 ├── .oxfmtrc.jsonc        # Oxfmt formatter config
 ├── vitest.config.ts      # Vitest configuration
@@ -44,24 +46,25 @@ Keep this section up to date.
 ## Commands
 
 ```bash
-bun install                   # Install dependencies
-bun --bun run dev             # Start dev server
-bun --bun run build           # Production build
-bun --bun run generate        # Static site generation
-bun --bun run preview         # Preview production build
-bun --bun run start           # Start production server
-bun --bun run type-check      # Run vue-tsc type checking
-bun --bun run lint            # Run oxlint
-bun --bun run lint:fix        # Run oxlint with auto-fix
-bun --bun run format          # Format with oxfmt
-bun --bun run format:check    # Check formatting (used in CI/pre-push)
-bun run test                  # Run Vitest (watch mode)
-bun run test:ui               # Run Vitest with browser UI
-bun run test:coverage         # Run Vitest with v8 coverage (used in pre-push)
-bun --bun run analyze         # Bundle analysis via nuxi analyze
+pnpm install                  # Install dependencies
+pnpm dev                  # Start dev server
+pnpm build                # Production build
+pnpm generate             # Static site generation
+pnpm preview              # Preview production build
+pnpm start                # Start production server
+pnpm type-check           # Run vue-tsc type checking
+pnpm lint                 # Run oxlint
+pnpm lint:fix             # Run oxlint with auto-fix
+pnpm format               # Format with oxfmt
+pnpm format:check         # Check formatting (used in CI/pre-push)
+pnpm test                 # Run Vitest (watch mode)
+pnpm test:ui              # Run Vitest with browser UI
+pnpm test:coverage        # Run Vitest with v8 coverage (used in pre-push)
+pnpm analyze              # Bundle analysis via nuxi analyze
+pnpm db:seed              # Seed the SQLite database from content files
 ```
 
-Run `bun --bun run type-check`, `bun --bun run lint`, and `bun run test:coverage` before pushing — Husky enforces all three on pre-push.
+Run `pnpm type-check`, `pnpm lint`, and `pnpm test:coverage` before pushing — Husky enforces all three on pre-push.
 
 ## Critical Rules
 
@@ -73,7 +76,21 @@ Run `bun --bun run type-check`, `bun --bun run lint`, and `bun run test:coverage
 - **Auto imports are disabled project wide.** Always import everything.
 - **Pinia for state.** No other state management. Stores go in `app/stores/`.
 - **Tests next to code or in `app/tests/`.** Use Vitest, not Jest. Test files use `.test.ts` or `.spec.ts` suffix.
-- **Bun only.** Do not use npm, yarn or pnpm. Lock file is `bun.lock`.
+- **pnpm only.** Do not use npm, yarn or Bun. Lock file is `pnpm-lock.yaml`.
+
+## Commit Rules
+
+Commit messages uses Conventional Commit format:
+
+- Format: `<type>: <short imperative summary>`
+- Lowercase subject, imperative mood, no trailing period, max 72 chars.
+- Types:
+  - `feat`: A new feature
+  - `fix`: A bug fix
+  - `docs`: Documentation only changes
+  - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+  - `refact`: A code change that neither fixes a bug nor adds a feature
+  - `chore`: Everything else
 
 ## Styling Guidelines
 
@@ -86,7 +103,7 @@ Run `bun --bun run type-check`, `bun --bun run lint`, and `bun run test:coverage
 
 - Oxfmt is the sole formatter — never use Prettier or Biome alongside it.
 - Config is in `.oxfmtrc.jsonc`: `printWidth: 120`, single quotes, semicolons, 2-space indent.
-- Run `bun --bun run format` to format in place, `bun --bun run format:check` to verify without writing (used in pre-push).
+- Run `pnpm format` to format in place, `pnpm format:check` to verify without writing (used in pre-push).
 - VS Code auto-formats on save via the `oxc.oxfmt` extension (`editor.defaultFormatter`).
 
 ## Vue Component Conventions
@@ -112,15 +129,16 @@ This keeps runtime and TypeScript in sync.
 ## Testing Conventions
 
 - Vitest config is in `vitest.config.ts` — check there for aliases and setup.
-- Coverage provider is `v8`, not Istanbul.
+- Coverage provider is `v8` (`@vitest/coverage-v8`).
 - Tests live co-located with source inside `__specs__/` directories.
 - Follow the naming convention `<subject>.spec.js` for unit tests, `<subject>.e2e.ts` for E2E tests, and `<subject>.nuxt.ts` for Vue component tests.
-- Run `bun run test` to verify nothing is broken before finishing any task.
+- Run `pnpm test` to verify nothing is broken before finishing any task.
 
 ## Gotchas
 
 - The Husky pre-push hook runs: type-check (`vue-tsc`) → lint (oxlint) → format check (oxfmt) → `test:coverage`. If any step fails, the push is rejected.
 - `tsconfig.tsbuildinfo` is committed — don't delete it, TypeScript incremental builds depend on it.
+- `vite` is declared as an explicit devDependency to prevent pnpm from resolving multiple Vite instances (which causes TypeScript type errors in `nuxt.config.ts`).
 
 ## Imports and Auto Imports
 

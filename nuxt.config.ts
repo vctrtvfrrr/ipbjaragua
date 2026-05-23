@@ -19,9 +19,9 @@ export default defineNuxtConfig({
     plugins: [svgLoader(), tailwindcss()],
   },
   nitro: {
-    preset: 'bun',
+    preset: 'node-server',
     externals: {
-      external: ['bun:sqlite'],
+      external: ['better-sqlite3'],
       inline: ['marked'],
     },
     ignore: ['**/__specs__/**'],

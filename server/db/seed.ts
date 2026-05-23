@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './client';
 import { articles, songs } from './schema';
 
@@ -153,7 +153,7 @@ for (const file of bulletinFiles) {
   db.insert(articles).values({ title, date, index, year, content }).run();
   articleCount++;
 }
-console.log(`Seeded ${articleCount} articles`);
+console.warn(`Seeded ${articleCount} articles`);
 
 // ─── Seed songs ────────────────────────────────────────────────────────────────
 
@@ -186,4 +186,4 @@ for (const file of musicFiles) {
     .run();
   songCount++;
 }
-console.log(`Seeded ${songCount} songs`);
+console.warn(`Seeded ${songCount} songs`);

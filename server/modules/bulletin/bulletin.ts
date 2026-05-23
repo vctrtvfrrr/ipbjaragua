@@ -143,7 +143,7 @@ function buildWeeklyAgendaSection(db: Db, sunday: string): string | null {
 
   const byDay = new Map<number, typeof rows>();
   for (const row of rows) {
-    const day = row.is_recurring && row.weekday !== null ? row.weekday : isoWeekday(row.event_date!);
+    const day = row.is_recurring && row.weekday !== null ? row.weekday : isoWeekday(row.event_date ?? '');
     const existing = byDay.get(day) ?? [];
     existing.push(row);
     byDay.set(day, existing);
@@ -203,7 +203,8 @@ function buildBirthdaysSection(db: Db, sunday: string): string | null {
 
   const byDate = new Map<string, string[]>();
   for (const m of rows) {
-    const dateKey = m.birth_date!.slice(5);
+    const dateKey = m.birth_date?.slice(5);
+    if (!dateKey) continue;
     const existing = byDate.get(dateKey) ?? [];
     existing.push(m.full_name);
     byDate.set(dateKey, existing);
