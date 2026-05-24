@@ -50,8 +50,6 @@ type BulletinSections = {
 type BulletinDetail = {
   title: string;
   date: string;
-  index: number;
-  year: number;
   sections: BulletinSections;
 };
 

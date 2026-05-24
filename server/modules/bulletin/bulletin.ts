@@ -39,8 +39,6 @@ export type BulletinSections = {
 export type BulletinDetail = {
   title: string;
   date: string;
-  index: number;
-  year: number;
   sections: BulletinSections;
 };
 
@@ -123,7 +121,7 @@ export async function parseContent(date: string): Promise<BulletinDetail> {
   const liturgySection = buildLiturgySection(db, date);
   if (liturgySection) sections.liturgy = liturgySection;
 
-  return { title: article.title, date: article.date, index: article.index, year: article.year, sections };
+  return { title: article.title, date: article.date, sections };
 }
 
 function buildWeeklyAgendaSection(db: Db, sunday: string): string | null {
@@ -245,31 +243,50 @@ function buildLiturgySection(db: Db, date: string): string | null {
     parts.push(`<h2>${act.name}</h2><ul>`);
 
     const moments = db
-      .select({ moment: liturgyMoments, songTitle: songs.title, songAlbum: songs.album, songTrack: songs.track })
+      .select({
+        moment: liturgyMoments,
+        songTitle: songs.title,
+        songAlbum: songs.album,
+        songTrack: songs.track,
+        songLyrics: songs.lyrics,
+      })
       .from(liturgyMoments)
       .where(sql`${liturgyMoments.act_id} = ${act.id}`)
       .leftJoin(songs, sql`${songs.id} = ${liturgyMoments.song_id}`)
       .orderBy(asc(liturgyMoments.position))
       .all();
 
-    for (const { moment, songTitle, songAlbum, songTrack } of moments) {
+    for (const { moment, songTitle, songAlbum, songTrack, songLyrics } of moments) {
       const label = MOMENT_TYPE_LABELS[moment.type] ?? moment.type;
       let detail = '';
 
       if (moment.type === 'song' && songTitle) {
         const ref = songAlbum && songTrack ? ` — ${songTrack}. ${songAlbum}` : '';
-        detail = `${songTitle}${ref}`;
+        const lyricsHtml = songLyrics ? `<p>${songLyrics.replace(/\n/g, '<br>')}</p>` : '';
+        detail = `${songTitle}${ref}${lyricsHtml}`;
       } else if (moment.type === 'bible_reading' && moment.scripture_passages) {
         try {
-          const passages = JSON.parse(moment.scripture_passages) as Array<{ reference: string }>;
-          detail = passages.map((p) => p.reference).join('; ');
+          const passages = JSON.parse(moment.scripture_passages) as Array<{
+            reference: string;
+            text?: string;
+            version?: string;
+          }>;
+          detail = passages
+            .map((p) => {
+              const header = p.version ? `${p.reference} (${p.version})` : p.reference;
+              const body = p.text ? `<p><em>${p.text.replace(/\n/g, '<br>')}</em></p>` : '';
+              return `${header}${body}`;
+            })
+            .join('');
         } catch {
           detail = moment.scripture_passages;
         }
       } else if (moment.type === 'sermon') {
+        const speaker = moment.sermon_speaker ?? '';
         const theme = moment.sermon_theme ? `<em>${moment.sermon_theme}</em>` : '';
         const ref = moment.sermon_reference ? ` (${moment.sermon_reference})` : '';
-        detail = `${theme}${ref}`;
+        const themeRef = `${theme}${ref}`;
+        detail = [speaker, themeRef].filter(Boolean).join(' — ');
       } else if (moment.description) {
         detail = moment.description;
       }
