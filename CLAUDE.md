@@ -61,7 +61,6 @@ pnpm test                 # Run Vitest (watch mode)
 pnpm test:ui              # Run Vitest with browser UI
 pnpm test:coverage        # Run Vitest with v8 coverage (used in pre-push)
 pnpm analyze              # Bundle analysis via nuxi analyze
-pnpm db:seed              # Seed the SQLite database from content files
 ```
 
 Run `pnpm type-check`, `pnpm lint`, and `pnpm test:coverage` before pushing — Husky enforces all three on pre-push.

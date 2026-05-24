@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "cb394a25-b3e2-45b7-9821-d875ae14f92e",
+  "id": "486c6c28-f9d1-4151-8eeb-bb7bcc1235cb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "agenda": {
@@ -146,20 +146,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "index": {
-          "name": "index",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "year": {
-          "name": "year",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "content": {
           "name": "content",
           "type": "text",
@@ -243,8 +229,12 @@
           "name": "liturgy_acts_liturgy_id_liturgies_id_fk",
           "tableFrom": "liturgy_acts",
           "tableTo": "liturgies",
-          "columnsFrom": ["liturgy_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "liturgy_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -305,6 +295,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "sermon_speaker": {
+          "name": "sermon_speaker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "sermon_reference": {
           "name": "sermon_reference",
           "type": "text",
@@ -333,8 +330,12 @@
           "name": "liturgy_moments_act_id_liturgy_acts_id_fk",
           "tableFrom": "liturgy_moments",
           "tableTo": "liturgy_acts",
-          "columnsFrom": ["act_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "act_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -342,8 +343,12 @@
           "name": "liturgy_moments_song_id_songs_id_fk",
           "tableFrom": "liturgy_moments",
           "tableTo": "songs",
-          "columnsFrom": ["song_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "song_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -369,15 +374,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "mother_name": {
-          "name": "mother_name",
+        "sex": {
+          "name": "sex",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "father_name": {
-          "name": "father_name",
+        "mother": {
+          "name": "mother",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "father": {
+          "name": "father",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -385,6 +397,13 @@
         },
         "birth_date": {
           "name": "birth_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "birth_place": {
+          "name": "birth_place",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -404,8 +423,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "spouse_name": {
-          "name": "spouse_name",
+        "spouse": {
+          "name": "spouse",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -446,20 +465,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "home_church": {
-          "name": "home_church",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "birth_place": {
-          "name": "birth_place",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "nationality": {
           "name": "nationality",
           "type": "text",
@@ -467,8 +472,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "sex": {
-          "name": "sex",
+        "education": {
+          "name": "education",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -481,8 +486,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "education": {
-          "name": "education",
+        "home_church": {
+          "name": "home_church",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -502,15 +507,15 @@
           "notNull": false,
           "autoincrement": false
         },
-        "profession_of_faith_year": {
-          "name": "profession_of_faith_year",
+        "prof_faith_year": {
+          "name": "prof_faith_year",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "profession_of_faith_place": {
-          "name": "profession_of_faith_place",
+        "prof_faith_place": {
+          "name": "prof_faith_place",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -607,7 +612,9 @@
       "indexes": {
         "songs_slug_unique": {
           "name": "songs_slug_unique",
-          "columns": ["slug"],
+          "columns": [
+            "slug"
+          ],
           "isUnique": true
         }
       },

@@ -19,8 +19,7 @@
     "type-check": "vue-tsc --build",
     "analyze": "npx nuxi analyze",
     "project-info": "npx nuxi info",
-    "prepare": "husky",
-    "db:seed": "node --experimental-strip-types server/db/seed.ts"
+    "prepare": "husky"
   },
   "dependencies": {
     "@nuxt/fonts": "0.14.0",

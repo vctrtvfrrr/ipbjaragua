@@ -12,7 +12,7 @@
           <small class="block text-xl font-normal text-mist-600 italic">Igreja Presbiteriana de jaraguá do Sul</small>
         </h1>
         <p class="text-sm text-mist-800">
-          {{ formatDate(bulletin.date) }} &middot; N° {{ bulletin.index }} &middot; Ano {{ bulletin.year }}
+          {{ formatDate(bulletin.date) }}
         </p>
       </header>
       <div class="bulletin-content">
