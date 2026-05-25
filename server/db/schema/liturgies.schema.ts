@@ -1,48 +1,40 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { deletedAt, id, timestamps } from "./common-fields";
-import { songs } from "./songs.schema";
+import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { deletedAt, id, timestamps } from './common-fields';
+import { songs } from './songs.schema';
 
-export const liturgies = sqliteTable("liturgies", {
+export const liturgies = sqliteTable('liturgies', {
   id: id(),
-  date: text("date").notNull(),
-  theme: text("theme"),
+  date: text('date').notNull(),
+  theme: text('theme'),
   ...timestamps(),
   ...deletedAt(),
 });
 
-export const liturgyActs = sqliteTable("liturgy_acts", {
+export const liturgyActs = sqliteTable('liturgy_acts', {
   id: id(),
-  liturgy_id: int("liturgy_id")
+  liturgy_id: int('liturgy_id')
     .notNull()
     .references(() => liturgies.id),
-  position: int("position").notNull(),
-  name: text("name").notNull(),
+  position: int('position').notNull(),
+  name: text('name').notNull(),
   ...timestamps(),
 });
 
-export const liturgyMoments = sqliteTable("liturgy_moments", {
+export const liturgyMoments = sqliteTable('liturgy_moments', {
   id: id(),
-  act_id: int("act_id")
+  act_id: int('act_id')
     .notNull()
     .references(() => liturgyActs.id),
-  position: int("position").notNull(),
-  type: text("type", {
-    enum: [
-      "bible_reading",
-      "song",
-      "prayer",
-      "sermon",
-      "sacrament",
-      "pastoral_act",
-      "other",
-    ],
+  position: int('position').notNull(),
+  type: text('type', {
+    enum: ['bible_reading', 'song', 'prayer', 'sermon', 'sacrament', 'pastoral_act', 'other'],
   }).notNull(),
-  song_id: int("song_id").references(() => songs.id),
-  scripture_passages: text("scripture_passages"),
-  description: text("description"),
-  sermon_speaker: text("sermon_speaker"),
-  sermon_reference: text("sermon_reference"),
-  sermon_theme: text("sermon_theme"),
-  sacrament_type: text("sacrament_type", { enum: ["baptism", "eucharist"] }),
+  song_id: int('song_id').references(() => songs.id),
+  scripture_passages: text('scripture_passages'),
+  description: text('description'),
+  sermon_speaker: text('sermon_speaker'),
+  sermon_reference: text('sermon_reference'),
+  sermon_theme: text('sermon_theme'),
+  sacrament_type: text('sacrament_type', { enum: ['baptism', 'eucharist'] }),
   ...timestamps(),
 });

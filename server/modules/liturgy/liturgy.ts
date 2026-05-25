@@ -14,7 +14,12 @@ export type LiturgyMoment =
   | (BaseMoment & { type: 'song'; song: SongData | null })
   | (BaseMoment & { type: 'bible_reading'; scripture_passages: ScripturePassage[] | null })
   | (BaseMoment & { type: 'prayer'; description: string | null })
-  | (BaseMoment & { type: 'sermon'; sermon_speaker: string | null; sermon_reference: string | null; sermon_theme: string | null })
+  | (BaseMoment & {
+      type: 'sermon';
+      sermon_speaker: string | null;
+      sermon_reference: string | null;
+      sermon_theme: string | null;
+    })
   | (BaseMoment & { type: 'sacrament'; sacrament_type: 'baptism' | 'eucharist' | null })
   | (BaseMoment & { type: 'pastoral_act'; description: string | null })
   | (BaseMoment & { type: 'other'; description: string | null });
@@ -31,7 +36,10 @@ export type LiturgyListResponse = {
 };
 
 export function listLiturgies(db: DbInstance, page: number, limit: number): LiturgyListResponse {
-  const totalRow = db.select({ count: sql<number>`COUNT(*)` }).from(liturgies).get();
+  const totalRow = db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(liturgies)
+    .get();
   const total = totalRow?.count ?? 0;
 
   const data = db
@@ -55,14 +63,27 @@ type MomentRow = {
   songLyrics: string | null;
 };
 
-function buildSongReference(track: number | null, album: string | null, performer: string | null, songwriter: string | null): string | null {
+function buildSongReference(
+  track: number | null,
+  album: string | null,
+  performer: string | null,
+  songwriter: string | null,
+): string | null {
   if (track !== null && album !== null) return `${track}. ${album}`;
   if (performer !== null) return performer;
   if (songwriter !== null) return songwriter;
   return null;
 }
 
-function buildMoment({ moment, songTitle, songSongwriter, songPerformer, songAlbum, songTrack, songLyrics }: MomentRow): LiturgyMoment {
+function buildMoment({
+  moment,
+  songTitle,
+  songSongwriter,
+  songPerformer,
+  songAlbum,
+  songTrack,
+  songLyrics,
+}: MomentRow): LiturgyMoment {
   const base = { position: moment.position };
 
   switch (moment.type) {
@@ -76,7 +97,11 @@ function buildMoment({ moment, songTitle, songSongwriter, songPerformer, songAlb
         }
       }
       const song: SongData | null = songTitle
-        ? { title: songTitle, reference: buildSongReference(songTrack, songAlbum, songPerformer, songSongwriter), lyrics }
+        ? {
+            title: songTitle,
+            reference: buildSongReference(songTrack, songAlbum, songPerformer, songSongwriter),
+            lyrics,
+          }
         : null;
       return { ...base, type: 'song', song };
     }
@@ -94,7 +119,13 @@ function buildMoment({ moment, songTitle, songSongwriter, songPerformer, songAlb
     case 'prayer':
       return { ...base, type: 'prayer', description: moment.description };
     case 'sermon':
-      return { ...base, type: 'sermon', sermon_speaker: moment.sermon_speaker, sermon_reference: moment.sermon_reference, sermon_theme: moment.sermon_theme };
+      return {
+        ...base,
+        type: 'sermon',
+        sermon_speaker: moment.sermon_speaker,
+        sermon_reference: moment.sermon_reference,
+        sermon_theme: moment.sermon_theme,
+      };
     case 'sacrament':
       return { ...base, type: 'sacrament', sacrament_type: moment.sacrament_type };
     case 'pastoral_act':

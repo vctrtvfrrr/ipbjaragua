@@ -36,12 +36,7 @@ describe('listLiturgies', () => {
   test('paginates correctly', () => {
     testDb
       .insert(schema.liturgies)
-      .values([
-        { date: '2026-05-17' },
-        { date: '2026-05-10' },
-        { date: '2026-05-03' },
-        { date: '2026-04-26' },
-      ])
+      .values([{ date: '2026-05-17' }, { date: '2026-05-10' }, { date: '2026-05-03' }, { date: '2026-04-26' }])
       .run();
 
     const page1 = listLiturgies(testDb, 1, 2);
@@ -77,8 +72,16 @@ describe('getLiturgy', () => {
   test('orders acts by position, not by insertion order', () => {
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
     // Insert in reverse position order so id order diverges from position order
-    const [act2] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 2, name: 'Mensagem' }).returning().all();
-    const [act1] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Abertura' }).returning().all();
+    const [act2] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 2, name: 'Mensagem' })
+      .returning()
+      .all();
+    const [act1] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Abertura' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act2.id, position: 1, type: 'sermon' }).run();
     testDb.insert(schema.liturgyMoments).values({ act_id: act1.id, position: 1, type: 'prayer' }).run();
 
@@ -89,7 +92,11 @@ describe('getLiturgy', () => {
 
   test('orders moments by position, not by insertion order', () => {
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Abertura' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Abertura' })
+      .returning()
+      .all();
     // Insert in reverse position order so id order diverges from position order
     testDb
       .insert(schema.liturgyMoments)
@@ -111,7 +118,11 @@ describe('getLiturgy', () => {
       .returning()
       .all();
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -126,7 +137,11 @@ describe('getLiturgy', () => {
       .returning()
       .all();
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -141,7 +156,11 @@ describe('getLiturgy', () => {
       .returning()
       .all();
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -152,7 +171,11 @@ describe('getLiturgy', () => {
   test('song moment: reference is null when no track, album, performer, or songwriter', () => {
     const [song] = testDb.insert(schema.songs).values({ slug: 'sem-info', title: 'Sem Informação' }).returning().all();
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -164,11 +187,21 @@ describe('getLiturgy', () => {
     const stanzas = [{ type: 'verse', number: 1, content: 'Letra' }];
     const [song] = testDb
       .insert(schema.songs)
-      .values({ slug: 'ainda-que-a-figueira', title: 'Ainda Que a Figueira', album: 'Álbum', track: 3, lyrics: JSON.stringify(stanzas) })
+      .values({
+        slug: 'ainda-que-a-figueira',
+        title: 'Ainda Que a Figueira',
+        album: 'Álbum',
+        track: 3,
+        lyrics: JSON.stringify(stanzas),
+      })
       .returning()
       .all();
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -179,7 +212,11 @@ describe('getLiturgy', () => {
 
   test('song moment: song is null when no song_id', () => {
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song' }).run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -194,7 +231,11 @@ describe('getLiturgy', () => {
       .returning()
       .all();
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' })
+      .returning()
+      .all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -205,7 +246,11 @@ describe('getLiturgy', () => {
   test('bible_reading moment: includes parsed scripture_passages, excludes unrelated fields', () => {
     const passages = [{ reference: 'João 3:16', text: 'Porque Deus amou...', version: 'ARA' }];
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Leitura' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Leitura' })
+      .returning()
+      .all();
     testDb
       .insert(schema.liturgyMoments)
       .values({ act_id: act.id, position: 1, type: 'bible_reading', scripture_passages: JSON.stringify(passages) })
@@ -219,7 +264,11 @@ describe('getLiturgy', () => {
 
   test('bible_reading moment: scripture_passages null when JSON is invalid', () => {
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Leitura' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Leitura' })
+      .returning()
+      .all();
     testDb
       .insert(schema.liturgyMoments)
       .values({ act_id: act.id, position: 1, type: 'bible_reading', scripture_passages: 'not valid json{{{' })
@@ -232,10 +281,21 @@ describe('getLiturgy', () => {
 
   test('sermon moment: includes sermon fields, excludes unrelated fields', () => {
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Mensagem' }).returning().all();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Mensagem' })
+      .returning()
+      .all();
     testDb
       .insert(schema.liturgyMoments)
-      .values({ act_id: act.id, position: 1, type: 'sermon', sermon_speaker: 'Pr. João', sermon_reference: 'Rm 8:28', sermon_theme: 'Providência' })
+      .values({
+        act_id: act.id,
+        position: 1,
+        type: 'sermon',
+        sermon_speaker: 'Pr. João',
+        sermon_reference: 'Rm 8:28',
+        sermon_theme: 'Providência',
+      })
       .run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
@@ -248,8 +308,15 @@ describe('getLiturgy', () => {
 
   test('sacrament moment: includes sacrament_type, excludes unrelated fields', () => {
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Sacramento' }).returning().all();
-    testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'sacrament', sacrament_type: 'eucharist' }).run();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Sacramento' })
+      .returning()
+      .all();
+    testDb
+      .insert(schema.liturgyMoments)
+      .values({ act_id: act.id, position: 1, type: 'sacrament', sacrament_type: 'eucharist' })
+      .run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'sacrament') return;
@@ -259,8 +326,15 @@ describe('getLiturgy', () => {
 
   test('prayer moment: includes description, excludes unrelated fields', () => {
     const [liturgy] = testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all();
-    const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Oração' }).returning().all();
-    testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'prayer', description: 'Oração de intercessão' }).run();
+    const [act] = testDb
+      .insert(schema.liturgyActs)
+      .values({ liturgy_id: liturgy.id, position: 1, name: 'Oração' })
+      .returning()
+      .all();
+    testDb
+      .insert(schema.liturgyMoments)
+      .values({ act_id: act.id, position: 1, type: 'prayer', description: 'Oração de intercessão' })
+      .run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'prayer') return;

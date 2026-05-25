@@ -79,7 +79,6 @@ export function listDates(db: Db): string[] {
 }
 
 export async function parseContent(db: Db, date: string): Promise<BulletinDetail> {
-
   const article = db
     .select()
     .from(articles)
