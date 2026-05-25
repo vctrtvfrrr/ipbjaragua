@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3';
 import { z } from 'zod';
+import { useDb } from '../../db/client';
 import { listLiturgies } from '../../modules/liturgy/liturgy';
 
 const QuerySchema = z.object({
@@ -14,5 +15,5 @@ export default defineEventHandler((event) => {
   }
 
   const { page, limit } = parsed.data;
-  return listLiturgies(page, limit);
+  return listLiturgies(useDb(), page, limit);
 });

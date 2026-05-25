@@ -5,7 +5,10 @@ CREATE TABLE `agenda` (
 	`weekday` integer,
 	`time` text,
 	`is_recurring` integer NOT NULL,
-	`event_date` text
+	`event_date` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`deleted_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `announcements` (
@@ -13,8 +16,10 @@ CREATE TABLE `announcements` (
 	`title` text NOT NULL,
 	`description` text,
 	`url` text,
-	`created_at` text NOT NULL,
-	`expires_at` text NOT NULL
+	`expires_at` text NOT NULL,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`deleted_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `articles` (
@@ -22,13 +27,19 @@ CREATE TABLE `articles` (
 	`title` text NOT NULL,
 	`author` text,
 	`date` text NOT NULL,
-	`content` text NOT NULL
+	`content` text NOT NULL,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`deleted_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `liturgies` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`date` text NOT NULL,
-	`theme` text
+	`theme` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`deleted_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `liturgy_acts` (
@@ -36,6 +47,8 @@ CREATE TABLE `liturgy_acts` (
 	`liturgy_id` integer NOT NULL,
 	`position` integer NOT NULL,
 	`name` text NOT NULL,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	FOREIGN KEY (`liturgy_id`) REFERENCES `liturgies`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -51,6 +64,8 @@ CREATE TABLE `liturgy_moments` (
 	`sermon_reference` text,
 	`sermon_theme` text,
 	`sacrament_type` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	FOREIGN KEY (`act_id`) REFERENCES `liturgy_acts`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`song_id`) REFERENCES `songs`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -81,7 +96,10 @@ CREATE TABLE `members` (
 	`prof_faith_place` text,
 	`member_since` text,
 	`member_until` text,
-	`status` text NOT NULL
+	`status` text NOT NULL,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`deleted_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `songs` (
@@ -92,7 +110,10 @@ CREATE TABLE `songs` (
 	`performer` text,
 	`album` text,
 	`track` integer,
-	`lyrics` text
+	`lyrics` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`deleted_at` text
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `songs_slug_unique` ON `songs` (`slug`);

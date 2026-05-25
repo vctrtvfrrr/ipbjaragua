@@ -3,11 +3,10 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, test } from 'vitest';
 import * as schema from '../../../db/schema';
-import { _injectDb, getLiturgy, listLiturgies } from '../liturgy';
+import { getLiturgy, listLiturgies } from '../liturgy';
 
 const testDb = drizzle(new Database(':memory:'), { schema });
 migrate(testDb, { migrationsFolder: './server/db/migrations' });
-_injectDb(testDb);
 
 describe('listLiturgies', () => {
   beforeEach(() => {
@@ -15,7 +14,7 @@ describe('listLiturgies', () => {
   });
 
   test('returns empty data with zero total when no liturgies exist', () => {
-    const result = listLiturgies(1, 10);
+    const result = listLiturgies(testDb, 1, 10);
     expect(result).toEqual({ data: [], pagination: { page: 1, limit: 10, total: 0 } });
   });
 
@@ -29,7 +28,7 @@ describe('listLiturgies', () => {
       ])
       .run();
 
-    const result = listLiturgies(1, 10);
+    const result = listLiturgies(testDb, 1, 10);
     expect(result.data.map((l) => l.date)).toEqual(['2026-05-17', '2026-05-03', '2026-04-19']);
     expect(result.pagination.total).toBe(3);
   });
@@ -45,11 +44,11 @@ describe('listLiturgies', () => {
       ])
       .run();
 
-    const page1 = listLiturgies(1, 2);
+    const page1 = listLiturgies(testDb, 1, 2);
     expect(page1.data.map((l) => l.date)).toEqual(['2026-05-17', '2026-05-10']);
     expect(page1.pagination).toEqual({ page: 1, limit: 2, total: 4 });
 
-    const page2 = listLiturgies(2, 2);
+    const page2 = listLiturgies(testDb, 2, 2);
     expect(page2.data.map((l) => l.date)).toEqual(['2026-05-03', '2026-04-26']);
     expect(page2.pagination).toEqual({ page: 2, limit: 2, total: 4 });
   });
@@ -64,13 +63,13 @@ describe('getLiturgy', () => {
   });
 
   test('returns null when no liturgy exists for the date', () => {
-    expect(getLiturgy('2026-05-17')).toBeNull();
+    expect(getLiturgy(testDb, '2026-05-17')).toBeNull();
   });
 
   test('returns liturgy with empty acts array when no acts exist', () => {
     testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).run();
 
-    const result = getLiturgy('2026-05-17');
+    const result = getLiturgy(testDb, '2026-05-17');
     expect(result).not.toBeNull();
     expect(result?.acts).toEqual([]);
   });
@@ -83,7 +82,7 @@ describe('getLiturgy', () => {
     testDb.insert(schema.liturgyMoments).values({ act_id: act2.id, position: 1, type: 'sermon' }).run();
     testDb.insert(schema.liturgyMoments).values({ act_id: act1.id, position: 1, type: 'prayer' }).run();
 
-    const result = getLiturgy('2026-05-17');
+    const result = getLiturgy(testDb, '2026-05-17');
     expect(result?.acts[0].name).toBe('Abertura');
     expect(result?.acts[1].name).toBe('Mensagem');
   });
@@ -100,7 +99,7 @@ describe('getLiturgy', () => {
       ])
       .run();
 
-    const result = getLiturgy('2026-05-17');
+    const result = getLiturgy(testDb, '2026-05-17');
     expect(result?.acts[0].moments[0].type).toBe('other');
     expect(result?.acts[0].moments[1].type).toBe('prayer');
   });
@@ -115,7 +114,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song?.reference).toBe('45. Novo Cântico');
   });
@@ -130,7 +129,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song?.reference).toBe('Aline Barros');
   });
@@ -145,7 +144,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song?.reference).toBe('Autor Desconhecido');
   });
@@ -156,7 +155,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song?.reference).toBeNull();
   });
@@ -172,7 +171,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song).toEqual({ title: 'Ainda Que a Figueira', reference: '3. Álbum', lyrics: stanzas });
     expect(Object.keys(moment)).toEqual(['position', 'type', 'song']);
@@ -183,7 +182,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song' }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song).toBeNull();
   });
@@ -198,7 +197,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Louvor' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'song', song_id: song.id }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song?.lyrics).toBeNull();
   });
@@ -212,7 +211,7 @@ describe('getLiturgy', () => {
       .values({ act_id: act.id, position: 1, type: 'bible_reading', scripture_passages: JSON.stringify(passages) })
       .run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'bible_reading') return;
     expect(moment.scripture_passages).toEqual(passages);
     expect(Object.keys(moment)).toEqual(['position', 'type', 'scripture_passages']);
@@ -226,7 +225,7 @@ describe('getLiturgy', () => {
       .values({ act_id: act.id, position: 1, type: 'bible_reading', scripture_passages: 'not valid json{{{' })
       .run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'bible_reading') return;
     expect(moment.scripture_passages).toBeNull();
   });
@@ -239,7 +238,7 @@ describe('getLiturgy', () => {
       .values({ act_id: act.id, position: 1, type: 'sermon', sermon_speaker: 'Pr. João', sermon_reference: 'Rm 8:28', sermon_theme: 'Providência' })
       .run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'sermon') return;
     expect(moment.sermon_speaker).toBe('Pr. João');
     expect(moment.sermon_reference).toBe('Rm 8:28');
@@ -252,7 +251,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Sacramento' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'sacrament', sacrament_type: 'eucharist' }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'sacrament') return;
     expect(moment.sacrament_type).toBe('eucharist');
     expect(Object.keys(moment)).toEqual(['position', 'type', 'sacrament_type']);
@@ -263,7 +262,7 @@ describe('getLiturgy', () => {
     const [act] = testDb.insert(schema.liturgyActs).values({ liturgy_id: liturgy.id, position: 1, name: 'Oração' }).returning().all();
     testDb.insert(schema.liturgyMoments).values({ act_id: act.id, position: 1, type: 'prayer', description: 'Oração de intercessão' }).run();
 
-    const moment = getLiturgy('2026-05-17')?.acts[0].moments[0];
+    const moment = getLiturgy(testDb, '2026-05-17')?.acts[0].moments[0];
     if (moment?.type !== 'prayer') return;
     expect(moment.description).toBe('Oração de intercessão');
     expect(Object.keys(moment)).toEqual(['position', 'type', 'description']);

@@ -1,22 +1,6 @@
 import { asc, desc, eq, sql } from 'drizzle-orm';
-import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
+import type { DbInstance } from '../../db/client';
 import { liturgies, liturgyActs, liturgyMoments, songs } from '../../db/schema';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Db = BaseSQLiteDatabase<'sync', void, any>;
-
-// Injected by the Nitro startup plugin — never imported at module level to avoid
-// pulling better-sqlite3 into the static import chain during Nuxt's build analysis.
-let _db: Db | null = null;
-
-export function _injectDb(db: Db): void {
-  _db = db;
-}
-
-function useDb(): Db {
-  if (!_db) throw new Error('DB not initialized. Call _injectDb before use.');
-  return _db;
-}
 
 export type ScripturePassage = { reference: string; text?: string; version?: string };
 
@@ -46,9 +30,7 @@ export type LiturgyListResponse = {
   pagination: { page: number; limit: number; total: number };
 };
 
-export function listLiturgies(page: number, limit: number): LiturgyListResponse {
-  const db = useDb();
-
+export function listLiturgies(db: DbInstance, page: number, limit: number): LiturgyListResponse {
   const totalRow = db.select({ count: sql<number>`COUNT(*)` }).from(liturgies).get();
   const total = totalRow?.count ?? 0;
 
@@ -122,9 +104,7 @@ function buildMoment({ moment, songTitle, songSongwriter, songPerformer, songAlb
   }
 }
 
-export function getLiturgy(date: string): LiturgyDetail | null {
-  const db = useDb();
-
+export function getLiturgy(db: DbInstance, date: string): LiturgyDetail | null {
   const liturgy = db.select().from(liturgies).where(eq(liturgies.date, date)).limit(1).get();
   if (!liturgy) return null;
 

@@ -22,7 +22,6 @@
     "noEmit": true,
     "experimentalDecorators": true,
     "types": ["node", "@pinia/nuxt"],
-    "baseUrl": ".",
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   }

@@ -1,5 +1,5 @@
 import { and, asc, between, desc, gte, lte, sql } from 'drizzle-orm';
-import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
+import type { DbInstance } from '../../db/client';
 import { marked } from 'marked';
 import {
   agenda,
@@ -12,21 +12,7 @@ import {
   songs,
 } from '../../db/schema';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Db = BaseSQLiteDatabase<'sync', void, any>;
-
-// Injected by the Nitro startup plugin — never imported at module level to avoid
-// pulling bun:sqlite into the static import chain during Nuxt's build analysis.
-let _db: Db | null = null;
-
-export function _injectDb(db: Db): void {
-  _db = db;
-}
-
-function useDb(): Db {
-  if (!_db) throw new Error('DB not initialized. Call _injectDb before use.');
-  return _db;
-}
+type Db = DbInstance;
 
 export type BulletinSections = {
   article?: string;
@@ -83,8 +69,8 @@ function isoWeekday(isoDate: string): number {
   return new Date(isoDate + 'T12:00:00Z').getUTCDay();
 }
 
-export function listDates(): string[] {
-  return useDb()
+export function listDates(db: Db): string[] {
+  return db
     .select({ date: articles.date })
     .from(articles)
     .orderBy(desc(articles.date))
@@ -92,8 +78,7 @@ export function listDates(): string[] {
     .map((r) => r.date);
 }
 
-export async function parseContent(date: string): Promise<BulletinDetail> {
-  const db = useDb();
+export async function parseContent(db: Db, date: string): Promise<BulletinDetail> {
 
   const article = db
     .select()

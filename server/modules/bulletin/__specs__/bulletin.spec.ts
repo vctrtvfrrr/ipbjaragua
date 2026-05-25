@@ -3,11 +3,10 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, test } from 'vitest';
 import * as schema from '../../../db/schema';
-import { _injectDb, listDates, parseContent } from '../bulletin';
+import { listDates, parseContent } from '../bulletin';
 
 const testDb = drizzle(new Database(':memory:'), { schema });
 migrate(testDb, { migrationsFolder: './server/db/migrations' });
-_injectDb(testDb);
 
 describe('listDates', () => {
   beforeEach(() => {
@@ -15,7 +14,7 @@ describe('listDates', () => {
   });
 
   test('returns empty array when no articles exist', () => {
-    expect(listDates()).toEqual([]);
+    expect(listDates(testDb)).toEqual([]);
   });
 
   test('returns dates ordered most recent first', () => {
@@ -27,7 +26,7 @@ describe('listDates', () => {
         { title: 'B3', date: '2026-05-03', content: 'C' },
       ])
       .run();
-    expect(listDates()).toEqual(['2026-05-17', '2026-05-03', '2026-04-19']);
+    expect(listDates(testDb)).toEqual(['2026-05-17', '2026-05-03', '2026-04-19']);
   });
 });
 
@@ -40,7 +39,7 @@ describe('parseContent', () => {
   });
 
   test('throws when no article exists for the given date', async () => {
-    await expect(parseContent('2026-05-17')).rejects.toThrow();
+    await expect(parseContent(testDb, '2026-05-17')).rejects.toThrow();
   });
 
   test('returns bulletin for exact date match', async () => {
@@ -49,7 +48,7 @@ describe('parseContent', () => {
       .values({ title: 'Boletim Dominical', date: '2026-05-17', content: 'Texto do estudo.' })
       .run();
 
-    const bulletin = await parseContent('2026-05-17');
+    const bulletin = await parseContent(testDb, '2026-05-17');
     expect(bulletin.title).toBe('Boletim Dominical');
     expect(bulletin.date).toBe('2026-05-17');
     expect(bulletin.sections.article).toContain('Texto do estudo.');
@@ -61,7 +60,7 @@ describe('parseContent', () => {
       .values({ title: 'Antigo', date: '2026-04-19', content: 'Conteúdo antigo.' })
       .run();
 
-    const bulletin = await parseContent('2026-05-17');
+    const bulletin = await parseContent(testDb, '2026-05-17');
     expect(bulletin.date).toBe('2026-04-19');
   });
 
@@ -71,7 +70,7 @@ describe('parseContent', () => {
       .values({ title: 'Test', date: '2026-05-17', content: '**Texto em negrito**' })
       .run();
 
-    const bulletin = await parseContent('2026-05-17');
+    const bulletin = await parseContent(testDb, '2026-05-17');
     expect(bulletin.sections.article).toContain('<strong>Texto em negrito</strong>');
   });
 
@@ -81,7 +80,7 @@ describe('parseContent', () => {
       .values({ title: 'Test', date: '2026-05-17', content: '### Subtítulo\n\n#### Sub-subtítulo' })
       .run();
 
-    const bulletin = await parseContent('2026-05-17');
+    const bulletin = await parseContent(testDb, '2026-05-17');
     expect(bulletin.sections.article).toContain('<h2>');
     expect(bulletin.sections.article).toContain('<h3>');
     expect(bulletin.sections.article).not.toContain('<h3>Subtítulo</h3>');
@@ -93,7 +92,7 @@ describe('parseContent', () => {
       .values({ title: 'Test', date: '2026-05-17', content: 'Conteúdo.' })
       .run();
 
-    const bulletin = await parseContent('2026-05-17');
+    const bulletin = await parseContent(testDb, '2026-05-17');
     expect(bulletin.sections.weekly_agenda).toBeUndefined();
     expect(bulletin.sections.announcements).toBeUndefined();
     expect(bulletin.sections.birthdays).toBeUndefined();
@@ -107,7 +106,7 @@ describe('parseContent', () => {
       .values({ title: 'Momento de Oração', weekday: 3, time: '19:30', is_recurring: true })
       .run();
 
-    const bulletin = await parseContent('2026-05-18');
+    const bulletin = await parseContent(testDb, '2026-05-18');
     expect(bulletin.sections.weekly_agenda).toContain('Momento de Oração');
     expect(bulletin.sections.weekly_agenda).toContain('19:30');
   });
@@ -124,7 +123,7 @@ describe('parseContent', () => {
       })
       .run();
 
-    const bulletin = await parseContent('2026-05-17');
+    const bulletin = await parseContent(testDb, '2026-05-17');
     expect(bulletin.sections.announcements).toContain('Conferência da Fé');
     expect(bulletin.sections.announcements).toContain('29 e 30 de maio');
   });
