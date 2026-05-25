@@ -29,6 +29,7 @@
     "marked": "^18.0.3",
     "nuxt": "^4.4.2",
     "pinia": "^3.0.4",
+    "slugify": "^1.6.9",
     "zod": "^4.4.2"
   },
   "devDependencies": {

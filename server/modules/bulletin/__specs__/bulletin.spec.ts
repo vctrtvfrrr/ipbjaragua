@@ -21,9 +21,9 @@ describe('listDates', () => {
     testDb
       .insert(schema.articles)
       .values([
-        { title: 'B1', date: '2026-04-19', content: 'A' },
-        { title: 'B2', date: '2026-05-17', content: 'B' },
-        { title: 'B3', date: '2026-05-03', content: 'C' },
+        { slug: 'b1', title: 'B1', date: '2026-04-19', content: 'A' },
+        { slug: 'b2', title: 'B2', date: '2026-05-17', content: 'B' },
+        { slug: 'b3', title: 'B3', date: '2026-05-03', content: 'C' },
       ])
       .run();
     expect(listDates(testDb)).toEqual(['2026-05-17', '2026-05-03', '2026-04-19']);
@@ -45,7 +45,12 @@ describe('parseContent', () => {
   test('returns bulletin for exact date match', async () => {
     testDb
       .insert(schema.articles)
-      .values({ title: 'Boletim Dominical', date: '2026-05-17', content: 'Texto do estudo.' })
+      .values({
+        slug: 'boletim-dominical',
+        title: 'Boletim Dominical',
+        date: '2026-05-17',
+        content: 'Texto do estudo.',
+      })
       .run();
 
     const bulletin = await parseContent(testDb, '2026-05-17');
@@ -57,7 +62,7 @@ describe('parseContent', () => {
   test('returns most recent article when no exact date match', async () => {
     testDb
       .insert(schema.articles)
-      .values({ title: 'Antigo', date: '2026-04-19', content: 'Conteúdo antigo.' })
+      .values({ slug: 'antigo', title: 'Antigo', date: '2026-04-19', content: 'Conteúdo antigo.' })
       .run();
 
     const bulletin = await parseContent(testDb, '2026-05-17');
@@ -67,7 +72,7 @@ describe('parseContent', () => {
   test('renders article markdown as HTML', async () => {
     testDb
       .insert(schema.articles)
-      .values({ title: 'Test', date: '2026-05-17', content: '**Texto em negrito**' })
+      .values({ slug: 'test-md', title: 'Test', date: '2026-05-17', content: '**Texto em negrito**' })
       .run();
 
     const bulletin = await parseContent(testDb, '2026-05-17');
@@ -77,7 +82,12 @@ describe('parseContent', () => {
   test('promotes headings by one level in article section', async () => {
     testDb
       .insert(schema.articles)
-      .values({ title: 'Test', date: '2026-05-17', content: '### Subtítulo\n\n#### Sub-subtítulo' })
+      .values({
+        slug: 'test-headings',
+        title: 'Test',
+        date: '2026-05-17',
+        content: '### Subtítulo\n\n#### Sub-subtítulo',
+      })
       .run();
 
     const bulletin = await parseContent(testDb, '2026-05-17');
@@ -89,7 +99,7 @@ describe('parseContent', () => {
   test('returns undefined sections when related tables are empty', async () => {
     testDb
       .insert(schema.articles)
-      .values({ title: 'Test', date: '2026-05-17', content: 'Conteúdo.' })
+      .values({ slug: 'test-empty', title: 'Test', date: '2026-05-17', content: 'Conteúdo.' })
       .run();
 
     const bulletin = await parseContent(testDb, '2026-05-17');
@@ -100,7 +110,10 @@ describe('parseContent', () => {
   });
 
   test('includes weekly_agenda section when agenda rows exist', async () => {
-    testDb.insert(schema.articles).values({ title: 'Test', date: '2026-05-18', content: 'x' }).run();
+    testDb
+      .insert(schema.articles)
+      .values({ slug: 'test-agenda', title: 'Test', date: '2026-05-18', content: 'x' })
+      .run();
     testDb
       .insert(schema.agenda)
       .values({ title: 'Momento de Oração', weekday: 3, time: '19:30', is_recurring: true })
@@ -112,7 +125,10 @@ describe('parseContent', () => {
   });
 
   test('includes announcements when active announcements exist', async () => {
-    testDb.insert(schema.articles).values({ title: 'Test', date: '2026-05-17', content: 'x' }).run();
+    testDb
+      .insert(schema.articles)
+      .values({ slug: 'test-announcements', title: 'Test', date: '2026-05-17', content: 'x' })
+      .run();
     testDb
       .insert(schema.announcements)
       .values({
