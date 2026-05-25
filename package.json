@@ -37,6 +37,7 @@
     "@pinia/testing": "^1.0.3",
     "@tailwindcss/vite": "^4.2.2",
     "@types/better-sqlite3": "latest",
+    "@types/node": "^25.9.1",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vitest/coverage-v8": "^4.1.7",
     "@vitest/ui": "^4.1.7",
@@ -61,12 +62,5 @@
     "node": ">=24.0.0"
   },
   "engineStrict": true,
-  "packageManager": "pnpm@10.33.4",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "@parcel/watcher",
-      "esbuild"
-    ]
-  }
+  "packageManager": "pnpm@11.3.0"
 }
