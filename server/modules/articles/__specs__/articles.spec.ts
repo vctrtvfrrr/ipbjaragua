@@ -81,8 +81,8 @@ describe('listArticles', () => {
       .run();
 
     const result = listArticles(testDb, 1, 10);
-    expect(Object.keys(result.data[0]!)).toEqual(['id', 'slug', 'title', 'author', 'date', 'excerpt']);
-    expect(result.data[0]!.excerpt).toBe('Resumo');
+    expect(Object.keys(result.data[0] ?? {})).toEqual(['id', 'slug', 'title', 'author', 'date', 'excerpt']);
+    expect(result.data[0]?.excerpt).toBe('Resumo');
   });
 });
 
