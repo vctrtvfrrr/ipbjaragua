@@ -1,26 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-# 1. TypeScript
-echo "🐶 Husky: 🌊 Enforcing TypeScript types check ..."
-pnpm type-check || { echo "🐶 Husky: ❌ Enforcing types check failed. Aborting push."; exit 1; }
-echo "🐶 Husky: 🎉 TypeScript found no rule violations ..."
+pnpm test:coverage || { echo "Husky: ❌ Tests failed. Aborting push."; exit 1; }
 
-# 2. Linting
-echo "🐶 Husky: 👮‍♂️ Executing Oxlint ..."
-pnpm lint:fix || { echo "🐶 Husky: ❌ Oxlint found issues. Aborting push - you should install the Oxc extension!"; exit 1; }
-echo "🐶 Husky: 🎉 Linter found no rule violations ..."
-
-# 3. Formatting
-echo "🐶 Husky: 🍰 Executing OxFmt ..."
-pnpm format || { echo "🐶 Husky: ❌ OxFmt found issues. Aborting push - you should install the Oxc extension!"; exit 1; }
-echo "🐶 Husky: 🎉 Formatter found no rule violations ..."
-
-# 4. Unit-Testing
-echo "🐶 Husky: 🧪 Executing test:coverage ..."
-pnpm test:coverage || { echo "🐶 Husky: ❌ Tests failed. Aborting push."; exit 1; }
-echo "🐶 Husky: 🎉 All unit-tests passed successfully!"
-
-# 6. Success
-echo "🐶 Husky: 🎉 Pushing to git successfully - thank you for contributing!"
+echo "Husky: 🎉 Pushing to git successfully!"
 exit 0

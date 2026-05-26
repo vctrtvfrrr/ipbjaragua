@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -eu
+
+pnpm type-check || { echo "Husky: ❌ Enforcing types check failed. Aborting commit."; exit 1; }
+pnpm lint:fix || { echo "Husky: ❌ Oxlint found issues. Aborting commit."; exit 1; }
+pnpm format || { echo "Husky: ❌ OxFmt found issues. Aborting commit."; exit 1; }
+
+echo "Husky: 🎉 Committing to git successfully!"
+exit 0

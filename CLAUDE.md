@@ -17,7 +17,7 @@ MUST FOLLOW THESE RULES, NO EXCEPTIONS
 - **Linting:** Oxlint (`oxlint`) — configured in `.oxlintrc.jsonc` with `typescript` and `vue` plugins
 - **Formatting:** Oxfmt (`oxfmt`) — configured in `.oxfmtrc.jsonc`
 - **Testing:** Vitest + `@vitest/coverage-v8` + `@vitest/ui`
-- **Git Hooks:** Husky (pre-push: lint + test)
+- **Git Hooks:** Husky (pre-commit: type-check + lint + format; pre-push: tests)
 
 ## Directory Layout
 
@@ -56,14 +56,14 @@ pnpm type-check           # Run vue-tsc type checking
 pnpm lint                 # Run oxlint
 pnpm lint:fix             # Run oxlint with auto-fix
 pnpm format               # Format with oxfmt
-pnpm format:check         # Check formatting (used in CI/pre-push)
+pnpm format:check         # Check formatting (used in CI/pre-commit)
 pnpm test                 # Run Vitest (watch mode)
 pnpm test:ui              # Run Vitest with browser UI
 pnpm test:coverage        # Run Vitest with v8 coverage (used in pre-push)
 pnpm analyze              # Bundle analysis via nuxi analyze
 ```
 
-Run `pnpm type-check`, `pnpm lint`, and `pnpm test:coverage` before pushing — Husky enforces all three on pre-push.
+Husky runs `pnpm type-check`, `pnpm lint:fix`, and `pnpm format` on pre-commit, and `pnpm test:coverage` on pre-push.
 
 ## Critical Rules
 
@@ -102,7 +102,7 @@ Commit messages uses Conventional Commit format:
 
 - Oxfmt is the sole formatter — never use Prettier or Biome alongside it.
 - Config is in `.oxfmtrc.jsonc`: `printWidth: 120`, single quotes, semicolons, 2-space indent.
-- Run `pnpm format` to format in place, `pnpm format:check` to verify without writing (used in pre-push).
+- Run `pnpm format` to format in place, `pnpm format:check` to verify without writing (used in pre-commit).
 - VS Code auto-formats on save via the `oxc.oxfmt` extension (`editor.defaultFormatter`).
 
 ## Vue Component Conventions
@@ -135,7 +135,7 @@ This keeps runtime and TypeScript in sync.
 
 ## Gotchas
 
-- The Husky pre-push hook runs: type-check (`vue-tsc`) → lint (oxlint) → format check (oxfmt) → `test:coverage`. If any step fails, the push is rejected.
+- The Husky pre-commit hook runs: type-check (`vue-tsc`) → lint (`oxlint --fix`) → format (`oxfmt`). The pre-push hook runs `test:coverage`. If any step fails, the commit or push is rejected.
 - `tsconfig.tsbuildinfo` is committed — don't delete it, TypeScript incremental builds depend on it.
 - `vite` is declared as an explicit devDependency to prevent pnpm from resolving multiple Vite instances (which causes TypeScript type errors in `nuxt.config.ts`).
 
