@@ -233,9 +233,7 @@
       "indexes": {
         "articles_slug_unique": {
           "name": "articles_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         }
       },
@@ -352,12 +350,8 @@
           "name": "liturgy_acts_liturgy_id_liturgies_id_fk",
           "tableFrom": "liturgy_acts",
           "tableTo": "liturgies",
-          "columnsFrom": [
-            "liturgy_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["liturgy_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -469,12 +463,8 @@
           "name": "liturgy_moments_act_id_liturgy_acts_id_fk",
           "tableFrom": "liturgy_moments",
           "tableTo": "liturgy_acts",
-          "columnsFrom": [
-            "act_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["act_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -482,12 +472,8 @@
           "name": "liturgy_moments_song_id_songs_id_fk",
           "tableFrom": "liturgy_moments",
           "tableTo": "songs",
-          "columnsFrom": [
-            "song_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["song_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -797,9 +783,7 @@
       "indexes": {
         "songs_slug_unique": {
           "name": "songs_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         }
       },

@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, getQuery } from 'h3';
+import { createError, defineEventHandler, getQuery, type H3Event } from 'h3';
 import { z } from 'zod';
 import { useDb } from '../../db/client';
 import { listAnnouncements } from '../../modules/announcements/announcements';
@@ -9,7 +9,7 @@ const QuerySchema = z.object({
   status: z.enum(['active', 'expired', 'all']).default('active'),
 });
 
-export default defineEventHandler((event) => {
+export default defineEventHandler((event: H3Event) => {
   const parsed = QuerySchema.safeParse(getQuery(event));
   if (!parsed.success) {
     throw createError({ statusCode: 400, message: parsed.error.issues[0]?.message ?? 'Parâmetros inválidos' });

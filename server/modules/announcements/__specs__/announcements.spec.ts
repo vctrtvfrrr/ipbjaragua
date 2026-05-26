@@ -129,8 +129,8 @@ describe('listAnnouncements', () => {
       .run();
 
     const result = listAnnouncements(testDb, 1, 10, 'active');
-    expect(Object.keys(result.data[0])).toEqual(['id', 'title', 'description', 'url', 'expires_at']);
-    expect(result.data[0]).toMatchObject({
+    expect(Object.keys(result.data[0]!)).toEqual(['id', 'title', 'description', 'url', 'expires_at']);
+    expect(result.data[0]!).toMatchObject({
       title: 'Foo',
       description: 'Descrição',
       url: 'https://example.com',

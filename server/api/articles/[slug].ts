@@ -1,11 +1,11 @@
-import { createError, defineEventHandler, getRouterParam } from 'h3';
+import { createError, defineEventHandler, getRouterParam, type H3Event } from 'h3';
 import { z } from 'zod';
 import { useDb } from '../../db/client';
 import { getArticle } from '../../modules/articles/articles';
 
 const SlugSchema = z.string().regex(/^[a-z0-9-]{1,100}$/, 'Slug inválido');
 
-export default defineEventHandler((event) => {
+export default defineEventHandler((event: H3Event) => {
   const slug = getRouterParam(event, 'slug');
   if (!slug) {
     throw createError({ statusCode: 400, message: 'Slug obrigatório' });

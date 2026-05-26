@@ -1,11 +1,11 @@
-import { createError, defineEventHandler, getRouterParam } from 'h3';
+import { createError, defineEventHandler, getRouterParam, type H3Event } from 'h3';
 import { z } from 'zod';
 import { useDb } from '../../db/client';
 import { getLiturgy } from '../../modules/liturgy/liturgy';
 
 const DateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato inválido. Use YYYY-MM-DD');
 
-export default defineEventHandler((event) => {
+export default defineEventHandler((event: H3Event) => {
   const date = getRouterParam(event, 'date');
   if (!date) {
     throw createError({ statusCode: 400, message: 'Data obrigatória' });
