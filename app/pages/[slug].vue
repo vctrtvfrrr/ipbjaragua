@@ -100,4 +100,11 @@ const {
     throw err;
   }),
 );
+
+const { data: liturgy } = await useAsyncData(`liturgy-${slug}`, () =>
+  $fetch<LiturgyDetail>(`/api/liturgies/${slug}`).catch((err: { statusCode?: number }) => {
+    if (err?.statusCode === 404) return null;
+    throw err;
+  }),
+);
 </script>
