@@ -1,16 +1,7 @@
 import { and, asc, between, desc, gte, lte, sql } from 'drizzle-orm';
 import type { DbInstance } from '../../db/client';
 import { marked } from 'marked';
-import {
-  agenda,
-  announcements,
-  articles,
-  liturgies,
-  liturgyActs,
-  liturgyMoments,
-  members,
-  songs,
-} from '../../db/schema';
+import { agenda, announcements, articles, members } from '../../db/schema';
 
 type Db = DbInstance;
 
@@ -19,7 +10,6 @@ export type BulletinSections = {
   weekly_agenda?: string;
   announcements?: string;
   birthdays?: string;
-  liturgy?: string;
 };
 
 export type BulletinDetail = {
@@ -37,16 +27,6 @@ const WEEKDAY_NAMES = [
   'Sexta-feira',
   'Sábado',
 ];
-
-const MOMENT_TYPE_LABELS: Record<string, string> = {
-  bible_reading: 'Leitura Bíblica',
-  song: 'Cântico',
-  prayer: 'Oração',
-  sermon: 'Mensagem',
-  sacrament: 'Sacramento',
-  pastoral_act: 'Ato Pastoral',
-  other: 'Momento',
-};
 
 function promoteHeadings(html: string): string {
   return html.replace(/<(\/?)h([3-6])(\s|>)/g, (_, slash: string, level: string, suffix: string) => {
@@ -101,9 +81,6 @@ export async function parseContent(db: Db, date: string): Promise<BulletinDetail
 
   const birthdaysSection = buildBirthdaysSection(db, date);
   if (birthdaysSection) sections.birthdays = birthdaysSection;
-
-  const liturgySection = buildLiturgySection(db, date);
-  if (liturgySection) sections.liturgy = liturgySection;
 
   return { title: article.title, date: article.date, sections };
 }
@@ -198,87 +175,6 @@ function buildBirthdaysSection(db: Db, sunday: string): string | null {
     const weekday = WEEKDAY_NAMES[isoWeekday(isoDate)];
     parts.push(`<h3>${formatDayMonth(isoDate)} — ${weekday}</h3><ul>`);
     for (const name of names) parts.push(`<li>${name}</li>`);
-    parts.push('</ul>');
-  }
-
-  return parts.join('');
-}
-
-function buildLiturgySection(db: Db, date: string): string | null {
-  const liturgy = db
-    .select()
-    .from(liturgies)
-    .where(sql`${liturgies.date} = ${date}`)
-    .limit(1)
-    .get();
-  if (!liturgy) return null;
-
-  const acts = db
-    .select()
-    .from(liturgyActs)
-    .where(sql`${liturgyActs.liturgy_id} = ${liturgy.id}`)
-    .orderBy(asc(liturgyActs.position))
-    .all();
-
-  if (acts.length === 0) return null;
-
-  const parts: string[] = [];
-  for (const act of acts) {
-    parts.push(`<h2>${act.name}</h2><ul>`);
-
-    const moments = db
-      .select({
-        moment: liturgyMoments,
-        songTitle: songs.title,
-        songAlbum: songs.album,
-        songTrack: songs.track,
-        songLyrics: songs.lyrics,
-      })
-      .from(liturgyMoments)
-      .where(sql`${liturgyMoments.act_id} = ${act.id}`)
-      .leftJoin(songs, sql`${songs.id} = ${liturgyMoments.song_id}`)
-      .orderBy(asc(liturgyMoments.position))
-      .all();
-
-    for (const { moment, songTitle, songAlbum, songTrack, songLyrics } of moments) {
-      const label = MOMENT_TYPE_LABELS[moment.type] ?? moment.type;
-      let detail = '';
-
-      if (moment.type === 'song' && songTitle) {
-        const ref = songAlbum && songTrack ? ` — ${songTrack}. ${songAlbum}` : '';
-        const lyricsHtml = songLyrics ? `<p>${songLyrics.replace(/\n/g, '<br>')}</p>` : '';
-        detail = `${songTitle}${ref}${lyricsHtml}`;
-      } else if (moment.type === 'bible_reading' && moment.scripture_passages) {
-        try {
-          const passages = JSON.parse(moment.scripture_passages) as Array<{
-            reference: string;
-            text?: string;
-            version?: string;
-          }>;
-          detail = passages
-            .map((p) => {
-              const header = p.version ? `${p.reference} (${p.version})` : p.reference;
-              const body = p.text ? `<p><em>${p.text.replace(/\n/g, '<br>')}</em></p>` : '';
-              return `${header}${body}`;
-            })
-            .join('');
-        } catch {
-          detail = moment.scripture_passages;
-        }
-      } else if (moment.type === 'sermon') {
-        const speaker = moment.sermon_speaker ?? '';
-        const theme = moment.sermon_theme ? `<em>${moment.sermon_theme}</em>` : '';
-        const ref = moment.sermon_reference ? ` (${moment.sermon_reference})` : '';
-        const themeRef = `${theme}${ref}`;
-        detail = [speaker, themeRef].filter(Boolean).join(' — ');
-      } else if (moment.description) {
-        detail = moment.description;
-      }
-
-      const content = detail ? `<strong>${label}:</strong> ${detail}` : `<strong>${label}</strong>`;
-      parts.push(`<li>${content}</li>`);
-    }
-
     parts.push('</ul>');
   }
 

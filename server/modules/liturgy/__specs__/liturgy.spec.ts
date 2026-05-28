@@ -30,7 +30,7 @@ describe('listLiturgies', () => {
       .values([
         { date: '2026-04-19', theme: 'Tema A' },
         { date: '2026-05-17', theme: 'Tema B' },
-        { date: '2026-05-03', theme: null },
+        { date: '2026-05-03', theme: 'Tema C' },
       ])
       .run();
 
@@ -42,7 +42,12 @@ describe('listLiturgies', () => {
   test('paginates correctly', () => {
     testDb
       .insert(schema.liturgies)
-      .values([{ date: '2026-05-17' }, { date: '2026-05-10' }, { date: '2026-05-03' }, { date: '2026-04-26' }])
+      .values([
+        { date: '2026-05-17', theme: 'A' },
+        { date: '2026-05-10', theme: 'B' },
+        { date: '2026-05-03', theme: 'C' },
+        { date: '2026-04-26', theme: 'D' },
+      ])
       .run();
 
     const page1 = listLiturgies(testDb, 1, 2);
@@ -76,7 +81,9 @@ describe('getLiturgy', () => {
   });
 
   test('orders acts by position, not by insertion order', () => {
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     // Insert in reverse position order so id order diverges from position order
     const act2 = firstOrFail(
       testDb
@@ -101,7 +108,9 @@ describe('getLiturgy', () => {
   });
 
   test('orders moments by position, not by insertion order', () => {
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -131,7 +140,9 @@ describe('getLiturgy', () => {
         .returning()
         .all(),
     );
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -154,7 +165,9 @@ describe('getLiturgy', () => {
         .returning()
         .all(),
     );
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -177,7 +190,9 @@ describe('getLiturgy', () => {
         .returning()
         .all(),
     );
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -196,7 +211,9 @@ describe('getLiturgy', () => {
     const song = firstOrFail(
       testDb.insert(schema.songs).values({ slug: 'sem-info', title: 'Sem Informação' }).returning().all(),
     );
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -226,7 +243,9 @@ describe('getLiturgy', () => {
         .returning()
         .all(),
     );
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -239,11 +258,13 @@ describe('getLiturgy', () => {
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0]?.moments[0];
     if (moment?.type !== 'song') return;
     expect(moment.song).toEqual({ title: 'Ainda Que a Figueira', reference: '3. Álbum', lyrics: stanzas });
-    expect(Object.keys(moment)).toEqual(['position', 'type', 'song']);
+    expect(Object.keys(moment)).toEqual(['position', 'description', 'type', 'song']);
   });
 
   test('song moment: song is null when no song_id', () => {
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -266,7 +287,9 @@ describe('getLiturgy', () => {
         .returning()
         .all(),
     );
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -283,7 +306,9 @@ describe('getLiturgy', () => {
 
   test('bible_reading moment: includes parsed scripture_passages, excludes unrelated fields', () => {
     const passages = [{ reference: 'João 3:16', text: 'Porque Deus amou...', version: 'ARA' }];
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -299,11 +324,13 @@ describe('getLiturgy', () => {
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0]?.moments[0];
     if (moment?.type !== 'bible_reading') return;
     expect(moment.scripture_passages).toEqual(passages);
-    expect(Object.keys(moment)).toEqual(['position', 'type', 'scripture_passages']);
+    expect(Object.keys(moment)).toEqual(['position', 'description', 'type', 'scripture_passages']);
   });
 
   test('bible_reading moment: scripture_passages null when JSON is invalid', () => {
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -321,8 +348,11 @@ describe('getLiturgy', () => {
     expect(moment.scripture_passages).toBeNull();
   });
 
-  test('sermon moment: includes sermon fields, excludes unrelated fields', () => {
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+  test('sermon moment: includes sermon fields and scripture_passages, excludes unrelated fields', () => {
+    const passages = [{ reference: 'Rm 8:28', text: 'Sabemos que todas as coisas...', version: 'ARA' }];
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -337,21 +367,30 @@ describe('getLiturgy', () => {
         position: 1,
         type: 'sermon',
         sermon_speaker: 'Pr. João',
-        sermon_reference: 'Rm 8:28',
         sermon_theme: 'Providência',
+        scripture_passages: JSON.stringify(passages),
       })
       .run();
 
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0]?.moments[0];
     if (moment?.type !== 'sermon') return;
     expect(moment.sermon_speaker).toBe('Pr. João');
-    expect(moment.sermon_reference).toBe('Rm 8:28');
     expect(moment.sermon_theme).toBe('Providência');
-    expect(Object.keys(moment)).toEqual(['position', 'type', 'sermon_speaker', 'sermon_reference', 'sermon_theme']);
+    expect(moment.scripture_passages).toEqual(passages);
+    expect(Object.keys(moment)).toEqual([
+      'position',
+      'description',
+      'type',
+      'sermon_speaker',
+      'sermon_theme',
+      'scripture_passages',
+    ]);
   });
 
   test('sacrament moment: includes sacrament_type, excludes unrelated fields', () => {
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -367,11 +406,13 @@ describe('getLiturgy', () => {
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0]?.moments[0];
     if (moment?.type !== 'sacrament') return;
     expect(moment.sacrament_type).toBe('eucharist');
-    expect(Object.keys(moment)).toEqual(['position', 'type', 'sacrament_type']);
+    expect(Object.keys(moment)).toEqual(['position', 'description', 'type', 'sacrament_type']);
   });
 
   test('prayer moment: includes description, excludes unrelated fields', () => {
-    const liturgy = firstOrFail(testDb.insert(schema.liturgies).values({ date: '2026-05-17' }).returning().all());
+    const liturgy = firstOrFail(
+      testDb.insert(schema.liturgies).values({ date: '2026-05-17', theme: 'Tema' }).returning().all(),
+    );
     const act = firstOrFail(
       testDb
         .insert(schema.liturgyActs)
@@ -387,6 +428,6 @@ describe('getLiturgy', () => {
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0]?.moments[0];
     if (moment?.type !== 'prayer') return;
     expect(moment.description).toBe('Oração de intercessão');
-    expect(Object.keys(moment)).toEqual(['position', 'type', 'description']);
+    expect(Object.keys(moment)).toEqual(['position', 'description', 'type']);
   });
 });

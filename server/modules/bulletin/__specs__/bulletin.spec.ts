@@ -106,7 +106,6 @@ describe('parseContent', () => {
     expect(bulletin.sections.weekly_agenda).toBeUndefined();
     expect(bulletin.sections.announcements).toBeUndefined();
     expect(bulletin.sections.birthdays).toBeUndefined();
-    expect(bulletin.sections.liturgy).toBeUndefined();
   });
 
   test('includes weekly_agenda section when agenda rows exist', async () => {

@@ -117,7 +117,10 @@ Commit messages uses Conventional Commit format:
 
 Use Zod for all data contracts.
 
-- Define schemas next the module that owns the data
+- Define schemas next to the module that owns the data
+- Exception: when a type crosses the client/server boundary (e.g., the shape
+  of an API response consumed by Vue pages), place it under `shared/` so both
+  sides import from a single source of truth
 - Validate on API response
 - Validate on localStorage read
 - Validate on module data transfer
@@ -211,12 +214,22 @@ export const useFeatureStore = defineStore('feature', () => {
 
 ## Boundaries
 
-### Do not modify or index
-
-`.nuxt/`, `.output/`, `dist/`, `coverage/`, `node_modules/`, `localcerts/`
-
 ### Do not propose
 
 - Alternative frameworks, build tools, or package managers.
 - Removing or bypassing Husky hooks.
 - New dependencies unless there is a clear, justified need that existing tools (`@vueuse/core`, Pinia, etc.) cannot cover.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in Gitea (`codelab/ipbjaragua` on git.codelab.tec.br), accessed via the `tea` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical triage roles map 1:1 to existing Gitea labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.

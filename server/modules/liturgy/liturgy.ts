@@ -1,39 +1,26 @@
 import { asc, desc, eq, sql } from 'drizzle-orm';
+import type {
+  LiturgyAct,
+  LiturgyDetail,
+  LiturgyListResponse,
+  LiturgyMoment,
+  LyricsStanza,
+  ScripturePassage,
+  SongData,
+} from '../../../shared/liturgy';
 import type { DbInstance } from '../../db/client';
 import { liturgies, liturgyActs, liturgyMoments, songs } from '../../db/schema';
 
-export type ScripturePassage = { reference: string; text?: string; version?: string };
-
-export type LyricsStanza = { type: 'verse' | 'chorus'; number: number; content: string };
-
-type SongData = { title: string; reference: string | null; lyrics: LyricsStanza[] | null };
-
-type BaseMoment = { position: number };
-
-export type LiturgyMoment =
-  | (BaseMoment & { type: 'song'; song: SongData | null })
-  | (BaseMoment & { type: 'bible_reading'; scripture_passages: ScripturePassage[] | null })
-  | (BaseMoment & { type: 'prayer'; description: string | null })
-  | (BaseMoment & {
-      type: 'sermon';
-      sermon_speaker: string | null;
-      sermon_reference: string | null;
-      sermon_theme: string | null;
-    })
-  | (BaseMoment & { type: 'sacrament'; sacrament_type: 'baptism' | 'eucharist' | null })
-  | (BaseMoment & { type: 'pastoral_act'; description: string | null })
-  | (BaseMoment & { type: 'other'; description: string | null });
-
-export type LiturgyAct = { position: number; name: string; moments: LiturgyMoment[] };
-
-export type LiturgyDetail = { id: number; date: string; theme: string | null; acts: LiturgyAct[] };
-
-export type LiturgyListItem = { id: number; date: string; theme: string | null };
-
-export type LiturgyListResponse = {
-  data: LiturgyListItem[];
-  pagination: { page: number; limit: number; total: number };
-};
+export type {
+  LiturgyAct,
+  LiturgyDetail,
+  LiturgyListItem,
+  LiturgyListResponse,
+  LiturgyMoment,
+  LyricsStanza,
+  ScripturePassage,
+  SongData,
+} from '../../../shared/liturgy';
 
 export function listLiturgies(db: DbInstance, page: number, limit: number): LiturgyListResponse {
   const totalRow = db
@@ -75,6 +62,15 @@ function buildSongReference(
   return null;
 }
 
+function parseScripturePassages(raw: string | null): ScripturePassage[] | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ScripturePassage[];
+  } catch {
+    return null;
+  }
+}
+
 function buildMoment({
   moment,
   songTitle,
@@ -84,7 +80,7 @@ function buildMoment({
   songTrack,
   songLyrics,
 }: MomentRow): LiturgyMoment {
-  const base = { position: moment.position };
+  const base = { position: moment.position, description: moment.description };
 
   switch (moment.type) {
     case 'song': {
@@ -105,33 +101,28 @@ function buildMoment({
         : null;
       return { ...base, type: 'song', song };
     }
-    case 'bible_reading': {
-      let scripture_passages: ScripturePassage[] | null = null;
-      if (moment.scripture_passages) {
-        try {
-          scripture_passages = JSON.parse(moment.scripture_passages) as ScripturePassage[];
-        } catch {
-          scripture_passages = null;
-        }
-      }
-      return { ...base, type: 'bible_reading', scripture_passages };
-    }
+    case 'bible_reading':
+      return { ...base, type: 'bible_reading', scripture_passages: parseScripturePassages(moment.scripture_passages) };
     case 'prayer':
-      return { ...base, type: 'prayer', description: moment.description };
+      return { ...base, type: 'prayer' };
     case 'sermon':
       return {
         ...base,
         type: 'sermon',
         sermon_speaker: moment.sermon_speaker,
-        sermon_reference: moment.sermon_reference,
         sermon_theme: moment.sermon_theme,
+        scripture_passages: parseScripturePassages(moment.scripture_passages),
       };
-    case 'sacrament':
+    case 'sacrament': {
+      if (moment.sacrament_type === null) {
+        throw new Error(`Sacrament moment ${moment.id} is missing sacrament_type (violates DB CHECK constraint)`);
+      }
       return { ...base, type: 'sacrament', sacrament_type: moment.sacrament_type };
+    }
     case 'pastoral_act':
-      return { ...base, type: 'pastoral_act', description: moment.description };
+      return { ...base, type: 'pastoral_act' };
     case 'other':
-      return { ...base, type: 'other', description: moment.description };
+      return { ...base, type: 'other' };
   }
 }
 
