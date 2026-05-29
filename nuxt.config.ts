@@ -6,6 +6,7 @@ export default defineNuxtConfig({
   ssr: true,
   devtools: { enabled: true },
   imports: { autoImport: false },
+  ignore: ['**/__specs__/**'],
   app: {
     baseURL: process.env.BASE_URL,
     head: {
