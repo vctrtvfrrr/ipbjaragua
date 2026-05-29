@@ -6,7 +6,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 ENV NODE_ENV=production
 RUN pnpm build
-RUN pnpm prune --prod
+RUN pnpm prune --prod --ignore-scripts
 
 FROM node:24-slim
 WORKDIR /app
