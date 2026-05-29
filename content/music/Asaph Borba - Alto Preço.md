@@ -1,3 +1,0 @@
-1. Eu sei que foi pago um alto preço / para que contigo eu fosse um, meu irmão. / Quando Jesus derramou sua vida, / ele pensava em ti, / ele pensava em mim, / pensava em nós.
-2. E nos via redimidos por seu sangue; / Lutando o bom combate do Senhor. / Lado a lado trabalhando, / sua Igreja edificando / e rompendo as barreiras pelo amor.
-**E na força do Espírito Santo, / nós proclamamos aqui / que pagaremos o preço de sermos / um só coração no Senhor. / E por mais que as trevas militem / e nos tentem separar, / com os nossos olhos em Cristo, / unidos iremos andar.**

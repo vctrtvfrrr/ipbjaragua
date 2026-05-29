@@ -1,2 +1,0 @@
-1. É o teu povo / aqui presente. / Todos numa só voz / declarando que só tu és grande. / Exaltamos teu doce nome / pelo amor pela cruz, / por teu filho Jesus.
-2. Pois és santo, / sim, és digno / de louvor e de ser adorado. / És bondoso, pai querido. / Dentre todas as coisas / tu és verdadeiro, Senhor.

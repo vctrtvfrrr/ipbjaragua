@@ -1,3 +1,0 @@
-1. Que a estrada se abra à tua frente; Que o vento sopre em teu rosto; Que o Sol resplandeça em tua face e que a chuva caia suave em teus campos e, mesmo ao se levantar sozinho,
-**que Deus lhe envolva em seu amor e a paz encharque o coração. E até nos vermos outra vez, que Deus lhe guarde em sua mão.**
-2. Que as gotas da chuva em teu rosto, com a brisa, lhe tragam alívio. Que as tarefas comuns e diárias não sejam um peso ao teu coração e, mesmo ao se levantar sozinho,

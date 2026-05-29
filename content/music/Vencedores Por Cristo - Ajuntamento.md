@@ -1,3 +1,0 @@
-1. Vem e sopra sobre nós teu sopro / reunidos nesse ajuntamento. / Honra e santifica este momento / com a tua igreja, que é teu povo.
-2. Faz teu rio de paz correr no meio / destes que por fé vem bendizer-te / e a uma voz oferecer-te / seus louvores, súplicas e anseios.
-3. Tu és o Senhor de toda glória / hoje, sempre e como foste outrora / no correr da história, revelando seu amor, / Deus Bendito, Rei e Salvador!

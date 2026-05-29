@@ -1,3 +1,0 @@
-1. Graças dou por esta vida, pelo bem que revelou; graças dou pelo futuro e por tudo que passou. Pelas bênçãos derramadas, pelo amor, pela aflição; pelas graças reveladas, graças dou pelo perdão.
-2. Graças pelo azul celeste e por nuvens que há também; pelas rosas do caminho e os espinhos que elas têm. Pelas noites desta vida, pela estrela que brilhou; pela prece respondida e a esperança que falhou.
-3. Pela cruz e o sofrimento e, afinal, ressurreição; pelo amor, que é sem medida, pela paz no coração. Pela lágrima vertida e o consolo que é sem par; pelo dom da eterna vida, sempre graças hei de dar.

@@ -1,2 +1,0 @@
-1. Ele é exaltado, o Rei é exaltado nos céus: Eu o louvarei! Ele é exaltado, pra sempre exaltado: Seu nome louvarei!
-2. Ele é o Senhor, sua verdade vai sempre reinar. Terra e Céus glorificam seu Santo Nome. Ele é exaltado, o Rei é exaltado nos céus.

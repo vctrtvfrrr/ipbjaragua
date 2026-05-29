@@ -1,2 +1,0 @@
-1. Ao único que é digno de receber / a honra e a glória, / a força e o poder. / Ao rei eterno e imortal, / invisível mas real, / a ele ministramos o louvor.
-2. Adoramos a ti, ó Rei Jesus! / Adoramos a ti, ó Rei Jesus! / Exaltamos o teu nome; / nos rendemos aos teus pés; / consagramos todo o nosso ser a ti.

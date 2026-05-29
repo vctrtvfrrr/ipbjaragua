@@ -1,2 +1,0 @@
-1. Só de ouvir tua voz e sentir teu amor, só de pronunciar o teu nome, os meus medos se vão, minha dor, meu sofrer, pois de paz tu inundas meu ser.
-2. Jesus, que doce nome, que transforma em alegria o meu triste coração. Jesus, só o teu nome é capaz de dar ao homem salvação.

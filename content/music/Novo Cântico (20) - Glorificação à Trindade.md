@@ -1,8 +1,0 @@
-**Louvor**
-A ti, ó Deus, louvamos, e por nosso Senhor te confessamos! A ti, ó Pai da Eternidade, adora toda a terra; a ti, o coro angélico, a ti, todo o poder do céu; a ti, querubins e serafins proclamam sem cessar: "Santo! Santo! Santo! Senhor Deus dos Exércitos! Os céus e a terra estão cheios da majestade da sua glória!" A ti, o glorioso coro apostólico louva; a ti, a congregação dos profetas louva; a ti, o nobre exército dos mártires louva; a Santa Igreja reconhece por toda a terra a ti: Ao Deus Pai, Infinito Dominador! E ao teu venerável, vero e único Filho, e ao Santo Espírito, Consolador.
-
-**Declaração**
-Tu és Rei da glória, ó Jesus! Tu és o sempiterno Filho de Deus! Quando vieste resgatar os homens, não te escusaste a nascer do ventre da virgem! Quando venceste a morte e seu aguilhão, logo abriste a teus servos as portas do Reino dos Céus. Estás sentado à destra de Deus, no Trono Onipotente. Cremos que voltarás e aqui serás juiz. Portanto, nós, remidos com teu sangue, suplicamos teu auxílio! Nós, que já estamos alistados com teus santos na glória eterna.
-
-**Oração**
-Senhor, guarda o povo e abençoa-nos. Reina e guarda-nos para sempre. Noite e dia, te adoramos e glorificamos teu nome sem par. Senhor, concede que hoje nós vençamos o pecado! Eterno e bondoso Pai, compadece-te de nós! Concede-nos a tua misericórdia, pois confiamos e esperamos em ti. Senhor! Em ti, em ti eu espero; nunca eu seja, nunca eu seja confundido. Amém!
