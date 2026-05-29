@@ -1,7 +1,7 @@
 FROM node:24 AS build
 RUN corepack enable
 WORKDIR /app
-COPY package.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 ENV NODE_ENV=production
