@@ -221,6 +221,9 @@ describe('getBulletin', () => {
     testDb.delete(schema.announcements).run();
     testDb.delete(schema.bulletins).run();
     testDb.delete(schema.articles).run();
+    testDb.delete(schema.liturgyMoments).run();
+    testDb.delete(schema.liturgyActs).run();
+    testDb.delete(schema.liturgies).run();
   });
 
   test('returns null when no bulletin exists for the given date', () => {
@@ -279,6 +282,26 @@ describe('getBulletin', () => {
       insertBulletin({ article_id: articleResult.id });
 
       expect(getBulletin(testDb, '2026-05-17')?.article).toBeNull();
+    });
+  });
+
+  describe('liturgy section', () => {
+    test('returns null when liturgy_id is null', () => {
+      insertBulletin();
+      expect(getBulletin(testDb, '2026-05-17')?.liturgy).toBeNull();
+    });
+
+    test('embeds the full LiturgyDetail when liturgy_id is set', () => {
+      const liturgyResult = testDb
+        .insert(schema.liturgies)
+        .values({ date: '2026-05-17', theme: 'Cristo, Nossa Páscoa' })
+        .returning()
+        .get();
+      insertBulletin({ liturgy_id: liturgyResult.id });
+
+      const result = getBulletin(testDb, '2026-05-17');
+      expect(result?.liturgy?.theme).toBe('Cristo, Nossa Páscoa');
+      expect(result?.liturgy?.date).toBe('2026-05-17');
     });
   });
 

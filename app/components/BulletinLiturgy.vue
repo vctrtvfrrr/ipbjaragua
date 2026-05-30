@@ -74,10 +74,16 @@
         </li>
       </ul>
     </article>
+    <NuxtLink
+      :to="`/liturgies/${liturgy.date}`"
+      class="mt-4 inline-block text-sm text-blue-600 hover:underline"
+      >Ver liturgia completa &rarr;</NuxtLink
+    >
   </section>
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#components';
 import type { LiturgyDetail } from '~~/shared/liturgy';
 import { SACRAMENT_LABELS } from '~/utils/liturgy-labels';
 import BiblePassageBlock from './BiblePassageBlock.vue';

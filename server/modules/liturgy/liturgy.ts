@@ -126,10 +126,10 @@ function buildMoment({
   }
 }
 
-export function getLiturgy(db: DbInstance, date: string): LiturgyDetail | null {
-  const liturgy = db.select().from(liturgies).where(eq(liturgies.date, date)).limit(1).get();
-  if (!liturgy) return null;
-
+function buildLiturgyFromRow(
+  db: DbInstance,
+  liturgy: typeof liturgies.$inferSelect,
+): LiturgyDetail {
   const acts = db
     .select()
     .from(liturgyActs)
@@ -158,4 +158,16 @@ export function getLiturgy(db: DbInstance, date: string): LiturgyDetail | null {
   });
 
   return { id: liturgy.id, date: liturgy.date, theme: liturgy.theme, acts: builtActs };
+}
+
+export function getLiturgyById(db: DbInstance, id: number): LiturgyDetail | null {
+  const liturgy = db.select().from(liturgies).where(eq(liturgies.id, id)).limit(1).get();
+  if (!liturgy) return null;
+  return buildLiturgyFromRow(db, liturgy);
+}
+
+export function getLiturgy(db: DbInstance, date: string): LiturgyDetail | null {
+  const liturgy = db.select().from(liturgies).where(eq(liturgies.date, date)).limit(1).get();
+  if (!liturgy) return null;
+  return buildLiturgyFromRow(db, liturgy);
 }

@@ -28,6 +28,7 @@
       </header>
       <div class="bulletin-content">
         <BulletinArticle :article="bulletin.article" />
+        <BulletinLiturgy :liturgy="bulletin.liturgy" />
         <BulletinWeeklyAgenda :agenda="bulletin.agenda" />
         <BulletinAnnouncements :announcements="bulletin.announcements" />
         <BulletinBirthdays :birthdays="bulletin.birthdays" />
@@ -39,7 +40,13 @@
 <script setup lang="ts">
 import { useAsyncData, useRoute } from '#app';
 import { formatDate, useSeoMeta } from '#imports';
-import { BulletinAnnouncements, BulletinArticle, BulletinBirthdays, BulletinWeeklyAgenda } from '#components';
+import {
+  BulletinAnnouncements,
+  BulletinArticle,
+  BulletinBirthdays,
+  BulletinLiturgy,
+  BulletinWeeklyAgenda,
+} from '#components';
 import { defineOgImageComponent } from '~/utils/og';
 import { bulletinSeo } from '~/utils/seo';
 import type { BulletinDetail } from '~~/shared/bulletin';

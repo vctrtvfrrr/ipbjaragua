@@ -2,6 +2,7 @@ import { and, asc, between, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-
 import type { DbInstance } from '../../db/client';
 import { agenda, announcements, bulletins, members } from '../../db/schema';
 import { getArticleById } from '../articles/articles';
+import { getLiturgyById } from '../liturgy/liturgy';
 import type { AnnouncementItem } from '~~/shared/announcement';
 import type { AgendaGroup, BirthdayGroup, BulletinDetail } from '~~/shared/bulletin';
 
@@ -208,7 +209,7 @@ export function getBulletin(db: Db, date: string): BulletinDetail | null {
     title: row.title,
     date: row.date,
     article: row.article_id !== null ? getArticleById(db, row.article_id) : null,
-    liturgy: null,
+    liturgy: row.liturgy_id !== null ? getLiturgyById(db, row.liturgy_id) : null,
     announcements: row.show_announcements ? buildAnnouncementsSection(db, date) : null,
     agenda: row.show_agenda ? buildAgendaSection(db, row.agenda_from, row.agenda_to) : null,
     birthdays: row.show_birthdays ? buildBirthdaysSection(db, row.birthdays_from, row.birthdays_to) : null,

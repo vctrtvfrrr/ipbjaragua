@@ -47,12 +47,7 @@ export function getArticle(db: DbInstance, slug: string): ArticleDetail | null |
 }
 
 export function getArticleById(db: DbInstance, id: number): ArticleDetail | null {
-  const row = db
-    .select()
-    .from(articles)
-    .where(eq(articles.id, id))
-    .limit(1)
-    .get();
+  const row = db.select().from(articles).where(eq(articles.id, id)).limit(1).get();
   if (!row || row.deleted_at !== null) return null;
   return {
     id: row.id,
