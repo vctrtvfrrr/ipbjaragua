@@ -1,6 +1,7 @@
-import { and, desc, eq, isNull, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, lte } from 'drizzle-orm';
 import type { DbInstance } from '../../db/client';
-import { bulletins } from '../../db/schema';
+import { announcements, bulletins } from '../../db/schema';
+import type { AnnouncementItem } from '~~/shared/announcement';
 import type { BulletinDetail } from '~~/shared/bulletin';
 
 export type { BulletinDetail, AgendaGroup, BirthdayGroup } from '~~/shared/bulletin';
@@ -39,6 +40,21 @@ export function getCurrentDate(db: Db, today: string): string | null {
   return row?.date ?? null;
 }
 
+function buildAnnouncements(db: Db, date: string): AnnouncementItem[] {
+  return db
+    .select({
+      id: announcements.id,
+      title: announcements.title,
+      description: announcements.description,
+      url: announcements.url,
+      expires_at: announcements.expires_at,
+    })
+    .from(announcements)
+    .where(and(gte(announcements.expires_at, date), isNull(announcements.deleted_at)))
+    .orderBy(asc(announcements.created_at))
+    .all();
+}
+
 export function getBulletin(db: Db, date: string): BulletinDetail | null {
   const row = db
     .select()
@@ -53,7 +69,7 @@ export function getBulletin(db: Db, date: string): BulletinDetail | null {
     date: row.date,
     article: null,
     liturgy: null,
-    announcements: null,
+    announcements: row.show_announcements ? buildAnnouncements(db, date) : null,
     agenda: null,
     birthdays: null,
   };

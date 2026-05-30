@@ -26,6 +26,9 @@
           <small class="block text-xl font-normal text-mist-800 italic">{{ formatDate(bulletin.date) }}</small>
         </h1>
       </header>
+      <div class="bulletin-content">
+        <BulletinAnnouncements :announcements="bulletin.announcements" />
+      </div>
     </template>
   </div>
 </template>
@@ -33,6 +36,7 @@
 <script setup lang="ts">
 import { useAsyncData, useRoute } from '#app';
 import { formatDate, useSeoMeta } from '#imports';
+import { BulletinAnnouncements } from '#components';
 import { defineOgImageComponent } from '~/utils/og';
 import { bulletinSeo } from '~/utils/seo';
 import type { BulletinDetail } from '~~/shared/bulletin';

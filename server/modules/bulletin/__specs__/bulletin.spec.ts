@@ -60,6 +60,7 @@ describe('defaultWindows', () => {
 
 describe('getBulletin', () => {
   beforeEach(() => {
+    testDb.delete(schema.announcements).run();
     testDb.delete(schema.bulletins).run();
   });
 
@@ -80,12 +81,11 @@ describe('getBulletin', () => {
     expect(result?.title).toBeNull();
   });
 
-  test('all sections are null in skeleton', () => {
+  test('article, liturgy, agenda and birthdays are null (not yet implemented)', () => {
     insertBulletin();
     const result = getBulletin(testDb, '2026-05-17');
     expect(result?.article).toBeNull();
     expect(result?.liturgy).toBeNull();
-    expect(result?.announcements).toBeNull();
     expect(result?.agenda).toBeNull();
     expect(result?.birthdays).toBeNull();
   });
@@ -98,6 +98,61 @@ describe('getBulletin', () => {
   test('returns null for a different date', () => {
     insertBulletin({ date: '2026-05-10' });
     expect(getBulletin(testDb, '2026-05-17')).toBeNull();
+  });
+
+  describe('announcements section', () => {
+    test('returns null when show_announcements is false', () => {
+      insertBulletin({ show_announcements: false });
+      expect(getBulletin(testDb, '2026-05-17')?.announcements).toBeNull();
+    });
+
+    test('returns empty array when show_announcements is true but no active announcements', () => {
+      insertBulletin({ show_announcements: true });
+      expect(getBulletin(testDb, '2026-05-17')?.announcements).toEqual([]);
+    });
+
+    test('returns active announcements (expires_at >= bulletin date)', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.announcements)
+        .values({ title: 'Conferência da Fé', expires_at: '2026-05-17' })
+        .run();
+
+      const result = getBulletin(testDb, '2026-05-17');
+      expect(result?.announcements).toHaveLength(1);
+      expect(result?.announcements?.[0]?.title).toBe('Conferência da Fé');
+    });
+
+    test('excludes announcements that expired before the bulletin date', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.announcements)
+        .values({ title: 'Aviso expirado', expires_at: '2026-05-16' })
+        .run();
+
+      expect(getBulletin(testDb, '2026-05-17')?.announcements).toEqual([]);
+    });
+
+    test('excludes soft-deleted announcements', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.announcements)
+        .values({ title: 'Aviso removido', expires_at: '2026-05-24', deleted_at: '2026-05-15' })
+        .run();
+
+      expect(getBulletin(testDb, '2026-05-17')?.announcements).toEqual([]);
+    });
+
+    test('reflects the bulletin date, not today (historical bulletin shows past-expired announcements)', () => {
+      insertBulletin({ date: '2026-01-05' });
+      testDb
+        .insert(schema.announcements)
+        .values({ title: 'Aviso de janeiro', expires_at: '2026-01-10' })
+        .run();
+
+      const result = getBulletin(testDb, '2026-01-05');
+      expect(result?.announcements).toHaveLength(1);
+    });
   });
 });
 
