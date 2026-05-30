@@ -1,6 +1,9 @@
 import { desc, eq, isNull, sql } from 'drizzle-orm';
+import type { ArticleDetail } from '../../../shared/article';
 import type { DbInstance } from '../../db/client';
 import { articles } from '../../db/schema';
+
+export type { ArticleDetail };
 
 export type ArticleListItem = {
   id: number;
@@ -14,15 +17,6 @@ export type ArticleListItem = {
 export type ArticleListResponse = {
   data: ArticleListItem[];
   pagination: { page: number; limit: number; total: number };
-};
-
-export type ArticleDetail = {
-  id: number;
-  slug: string;
-  title: string;
-  author: string | null;
-  date: string;
-  content: string;
 };
 
 export function listArticles(db: DbInstance, page: number, limit: number): ArticleListResponse {
