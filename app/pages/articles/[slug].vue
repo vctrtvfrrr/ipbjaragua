@@ -49,8 +49,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAsyncData, useRoute } from '#app';
-import { formatDate, useSeoMeta } from '#imports';
-import { defineOgImageComponent } from '~/utils/og';
+import { defineOgImage, formatDate, useSeoMeta } from '#imports';
 import { ArticleContent } from '#components';
 import { articleSeo, homeSeo } from '~/utils/seo';
 import type { ArticleDetail } from '~~/shared/article';
@@ -68,5 +67,5 @@ const errorStatus = computed(() => (error.value as { statusCode?: number } | nul
 
 const seo = article.value ? articleSeo(article.value) : homeSeo();
 useSeoMeta(seo);
-defineOgImageComponent('Default', { title: seo.title, description: seo.description });
+defineOgImage('Default', { title: seo.title, description: seo.description });
 </script>

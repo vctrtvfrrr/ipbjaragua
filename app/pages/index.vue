@@ -61,15 +61,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAsyncData, useRoute } from '#app';
-import { formatDate, useSeoMeta } from '#imports';
-import { defineOgImageComponent } from '~/utils/og';
+import { defineOgImage, formatDate, useSeoMeta } from '#imports';
 import { HomeSidebar } from '#components';
 import { homeSeo } from '~/utils/seo';
 import type { ArticleListResponse } from '~~/shared/article';
 
 const seo = homeSeo();
 useSeoMeta(seo);
-defineOgImageComponent('Default', { title: seo.title, description: seo.description });
+defineOgImage('Default', { title: seo.title, description: seo.description });
 
 const route = useRoute();
 const currentPage = computed(() => Number(route.query.page) || 1);

@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAsyncData, useRoute } from '#app';
-import { formatDate, useSeoMeta } from '#imports';
+import { defineOgImage, formatDate, useSeoMeta } from '#imports';
 import {
   BulletinAnnouncements,
   BulletinArticle,
@@ -56,7 +56,6 @@ import {
   BulletinLiturgy,
   BulletinWeeklyAgenda,
 } from '#components';
-import { defineOgImageComponent } from '~/utils/og';
 import { bulletinSeo } from '~/utils/seo';
 import type { BulletinDetail } from '~~/shared/bulletin';
 
@@ -73,5 +72,5 @@ const errorStatus = computed(() => (error.value as { statusCode?: number } | nul
 
 const seo = bulletinSeo({ date });
 useSeoMeta(seo);
-defineOgImageComponent('Default', { title: seo.title, description: seo.description });
+defineOgImage('Default', { title: seo.title, description: seo.description });
 </script>
