@@ -1,10 +1,10 @@
-# 1. Articles and Bulletins overlap by date
+# 5. Articles and Bulletins overlap by date
 
 Date: 2026-05-29
 
 ## Status
 
-Accepted
+Superseded by ADR-0007
 
 ## Context
 

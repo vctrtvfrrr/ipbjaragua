@@ -7,13 +7,19 @@ canonical: use these names in code, routes, and conversation.
 
 ### Bulletin (Boletim)
 
-The weekly handout given out at the Sunday service. Contains the order of
-service (the Liturgy), Announcements, the weekly agenda, and birthdays. Indexed
-by date. In US English "bulletin" / "church bulletin" / "worship bulletin" is
-the idiomatic term for this physical/printed handout.
+The weekly handout given out at the worship service. Its core is the week's
+Announcements, the weekly agenda, and birthdays; it may also carry an Article
+and the order of service (the Liturgy). Indexed by date. In US English
+"bulletin" / "church bulletin" / "worship bulletin" is the idiomatic term for
+this physical/printed handout.
 
-A Bulletin **contains** a Liturgy but is a distinct entity: the Liturgy has its
-own URL and detail page (`/liturgies/[date]`), independent of the Bulletin that
+The Announcements, agenda, and birthdays are why a Bulletin exists; the Article
+and the Liturgy are **optional** — a Bulletin may have neither. Usually dated on
+a Sunday, but exceptional Bulletins may be issued on other weekdays.
+
+A Bulletin **embeds** the full content of its Article and Liturgy, but they are
+distinct entities: each has its own URL and permanent detail page
+(`/articles/[slug]`, `/liturgies/[date]`), independent of the Bulletin that
 embeds it.
 
 A Bulletin is **ephemeral**: it is time-bound and not archived in navigation.

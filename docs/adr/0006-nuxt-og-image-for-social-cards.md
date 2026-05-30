@@ -1,4 +1,4 @@
-# 2. Add nuxt-og-image for dynamic social cards
+# 6. Add nuxt-og-image for dynamic social cards
 
 Date: 2026-05-29
 
