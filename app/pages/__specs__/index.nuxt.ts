@@ -80,6 +80,10 @@ describe('pages/index (home)', () => {
       data: [{ id: 1, title: 'Aviso', description: null, url: null, expires_at: '2026-06-01' }],
       pagination: { page: 1, limit: 10, total: 1 },
     }));
+    registerEndpoint('/api/liturgies', () => ({
+      data: [{ id: 1, date: '2026-05-17', theme: 'Tema' }],
+      pagination: { page: 1, limit: 5, total: 1 },
+    }));
 
     const wrapper = await mountSuspended(IndexPage, { route: '/' });
 

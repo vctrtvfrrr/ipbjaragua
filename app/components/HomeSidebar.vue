@@ -2,10 +2,10 @@
   <aside class="home-sidebar space-y-8">
     <SidebarBulletin />
     <SidebarAnnouncements />
-    <section data-sidebar-block="liturgies" />
+    <SidebarLiturgies />
   </aside>
 </template>
 
 <script setup lang="ts">
-import { SidebarBulletin, SidebarAnnouncements } from '#components';
+import { SidebarBulletin, SidebarAnnouncements, SidebarLiturgies } from '#components';
 </script>

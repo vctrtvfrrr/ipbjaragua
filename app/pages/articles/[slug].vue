@@ -49,8 +49,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAsyncData, useRoute } from '#app';
-import { formatDate } from '#imports';
+import { formatDate, useSeoMeta } from '#imports';
+import { defineOgImageComponent } from '~/utils/og';
 import { ArticleContent } from '#components';
+import { articleSeo, homeSeo } from '~/utils/seo';
 import type { ArticleDetail } from '~~/shared/article';
 
 const route = useRoute();
@@ -63,4 +65,8 @@ const {
 } = await useAsyncData(`article-${slug}`, () => $fetch<ArticleDetail>(`/api/articles/${slug}`));
 
 const errorStatus = computed(() => (error.value as { statusCode?: number } | null)?.statusCode ?? null);
+
+const seo = article.value ? articleSeo(article.value) : homeSeo();
+useSeoMeta(seo);
+defineOgImageComponent('Default', { title: seo.title, description: seo.description });
 </script>

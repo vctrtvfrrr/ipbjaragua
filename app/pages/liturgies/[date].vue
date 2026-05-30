@@ -43,8 +43,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAsyncData, useRoute } from '#app';
-import { formatDate } from '#imports';
+import { formatDate, useSeoMeta } from '#imports';
+import { defineOgImageComponent } from '~/utils/og';
 import { BulletinLiturgy } from '#components';
+import { homeSeo, liturgySeo } from '~/utils/seo';
 import type { LiturgyDetail } from '~~/shared/liturgy';
 
 const route = useRoute();
@@ -61,4 +63,8 @@ const errorStatus = computed(() => (error.value as { statusCode?: number } | nul
 const liturgyForDisplay = computed<LiturgyDetail | null>(() =>
   liturgy.value ? { ...liturgy.value, theme: liturgy.value.theme?.trim() || 'Liturgia do Culto' } : null,
 );
+
+const seo = liturgy.value ? liturgySeo(liturgy.value) : homeSeo();
+useSeoMeta(seo);
+defineOgImageComponent('Default', { title: seo.title, description: seo.description });
 </script>

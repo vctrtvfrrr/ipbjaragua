@@ -14,7 +14,11 @@ export default defineNuxtConfig({
       link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
-  modules: ['@pinia/nuxt', '@nuxt/devtools', '@nuxt/fonts'],
+  modules: ['@pinia/nuxt', '@nuxt/devtools', '@nuxt/fonts', 'nuxt-og-image'],
+  site: {
+    url: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://ipbjaragua.org.br',
+    name: 'IPB de Jaguará do Sul',
+  },
   css: ['@/assets/style/tailwind.css'],
   vite: {
     plugins: [svgLoader(), tailwindcss()],

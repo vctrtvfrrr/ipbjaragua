@@ -58,7 +58,8 @@
 
 <script setup lang="ts">
 import { useAsyncData, useRoute } from '#app';
-import { formatDate } from '#imports';
+import { formatDate, useSeoMeta } from '#imports';
+import { defineOgImageComponent } from '~/utils/og';
 import {
   BulletinArticle,
   BulletinAnnouncements,
@@ -66,6 +67,7 @@ import {
   BulletinLiturgy,
   BulletinWeeklyAgenda,
 } from '#components';
+import { bulletinSeo } from '~/utils/seo';
 import type { LiturgyDetail } from '~~/shared/liturgy';
 
 type BulletinSections = {
@@ -100,4 +102,8 @@ const {
     throw err;
   }),
 );
+
+const seo = bulletinSeo({ date });
+useSeoMeta(seo);
+defineOgImageComponent('Default', { title: seo.title, description: seo.description });
 </script>
