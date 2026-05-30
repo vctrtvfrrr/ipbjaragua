@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, test } from 'vitest';
 import * as schema from '../../../db/schema';
-import { listDates, parseContent } from '../bulletin';
+import { getCurrentDate, listDates, parseContent } from '../bulletin';
 
 const testDb = drizzle(new Database(':memory:'), { schema });
 migrate(testDb, { migrationsFolder: './server/db/migrations' });
@@ -141,5 +141,46 @@ describe('parseContent', () => {
     const bulletin = await parseContent(testDb, '2026-05-17');
     expect(bulletin.sections.announcements).toContain('Conferência da Fé');
     expect(bulletin.sections.announcements).toContain('29 e 30 de maio');
+  });
+});
+
+describe('getCurrentDate', () => {
+  beforeEach(() => {
+    testDb.delete(schema.articles).run();
+  });
+
+  test('returns the most recent bulletin date on or before today', () => {
+    testDb
+      .insert(schema.articles)
+      .values([
+        { slug: 'b1', title: 'B1', date: '2026-05-03', content: 'A' },
+        { slug: 'b2', title: 'B2', date: '2026-05-17', content: 'B' },
+        { slug: 'b3', title: 'B3', date: '2026-04-19', content: 'C' },
+      ])
+      .run();
+
+    expect(getCurrentDate(testDb, '2026-05-20')).toBe('2026-05-17');
+  });
+
+  test('ignores future-dated bulletins (only the current one is surfaced)', () => {
+    testDb
+      .insert(schema.articles)
+      .values([
+        { slug: 'b1', title: 'B1', date: '2026-05-17', content: 'A' },
+        { slug: 'b2', title: 'B2', date: '2026-05-24', content: 'B' }, // future
+      ])
+      .run();
+
+    expect(getCurrentDate(testDb, '2026-05-20')).toBe('2026-05-17');
+  });
+
+  test('returns null when every bulletin is in the future', () => {
+    testDb.insert(schema.articles).values({ slug: 'b1', title: 'B1', date: '2026-06-01', content: 'A' }).run();
+
+    expect(getCurrentDate(testDb, '2026-05-20')).toBeNull();
+  });
+
+  test('returns null when there are no bulletins', () => {
+    expect(getCurrentDate(testDb, '2026-05-20')).toBeNull();
   });
 });

@@ -73,8 +73,13 @@ describe('pages/index (home)', () => {
     expect(wrapper.find('a[href^="/articles/"]').exists()).toBe(false);
   });
 
-  it('renders the sidebar skeleton with blocks in order Boletim → Avisos → Liturgias', async () => {
+  it('renders the sidebar blocks in order Boletim → Avisos → Liturgias', async () => {
     registerArticles(1);
+    registerEndpoint('/api/bulletins/current', () => ({ date: '2026-05-17' }));
+    registerEndpoint('/api/announcements', () => ({
+      data: [{ id: 1, title: 'Aviso', description: null, url: null, expires_at: '2026-06-01' }],
+      pagination: { page: 1, limit: 10, total: 1 },
+    }));
 
     const wrapper = await mountSuspended(IndexPage, { route: '/' });
 

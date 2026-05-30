@@ -58,6 +58,23 @@ export function listDates(db: Db): string[] {
     .map((r) => r.date);
 }
 
+/**
+ * The current bulletin's date: the most recent bulletin (article) date on or
+ * before `today`. Future-dated bulletins are not yet surfaced in navigation.
+ * Returns null when there is no current bulletin. Computed per request.
+ */
+export function getCurrentDate(db: Db, today: string): string | null {
+  const row = db
+    .select({ date: articles.date })
+    .from(articles)
+    .where(lte(articles.date, today))
+    .orderBy(desc(articles.date))
+    .limit(1)
+    .get();
+
+  return row?.date ?? null;
+}
+
 export async function parseContent(db: Db, date: string): Promise<BulletinDetail> {
   const article = db
     .select()

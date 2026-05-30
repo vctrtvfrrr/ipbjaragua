@@ -1,21 +1,9 @@
 import { and, asc, desc, eq, gte, isNull, lt, sql } from 'drizzle-orm';
+import type { AnnouncementItem, AnnouncementListResponse, AnnouncementStatus } from '../../../shared/announcement';
 import type { DbInstance } from '../../db/client';
 import { announcements } from '../../db/schema';
 
-export type AnnouncementStatus = 'active' | 'expired' | 'all';
-
-export type AnnouncementItem = {
-  id: number;
-  title: string;
-  description: string | null;
-  url: string | null;
-  expires_at: string;
-};
-
-export type AnnouncementListResponse = {
-  data: AnnouncementItem[];
-  pagination: { page: number; limit: number; total: number };
-};
+export type { AnnouncementItem, AnnouncementListResponse, AnnouncementStatus };
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
