@@ -1,6 +1,7 @@
 import { and, asc, between, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import type { DbInstance } from '../../db/client';
 import { agenda, announcements, bulletins, members } from '../../db/schema';
+import { getArticleById } from '../articles/articles';
 import type { AnnouncementItem } from '~~/shared/announcement';
 import type { AgendaGroup, BirthdayGroup, BulletinDetail } from '~~/shared/bulletin';
 
@@ -58,13 +59,11 @@ export function buildAgenda(rows: AgendaRow[], window: AgendaWindow): AgendaGrou
 
   for (const row of rows) {
     const isInWindow =
-      row.is_recurring ||
-      (row.event_date !== null && row.event_date >= window.from && row.event_date <= window.to);
+      row.is_recurring || (row.event_date !== null && row.event_date >= window.from && row.event_date <= window.to);
 
     if (!isInWindow) continue;
 
-    const day =
-      row.is_recurring && row.weekday !== null ? row.weekday : isoWeekday(row.event_date ?? '');
+    const day = row.is_recurring && row.weekday !== null ? row.weekday : isoWeekday(row.event_date ?? '');
 
     const existing = byDay.get(day) ?? [];
     existing.push({ time: row.time ?? null, title: row.title, description: row.description ?? null });
@@ -208,12 +207,10 @@ export function getBulletin(db: Db, date: string): BulletinDetail | null {
   return {
     title: row.title,
     date: row.date,
-    article: null,
+    article: row.article_id !== null ? getArticleById(db, row.article_id) : null,
     liturgy: null,
     announcements: row.show_announcements ? buildAnnouncementsSection(db, date) : null,
     agenda: row.show_agenda ? buildAgendaSection(db, row.agenda_from, row.agenda_to) : null,
-    birthdays: row.show_birthdays
-      ? buildBirthdaysSection(db, row.birthdays_from, row.birthdays_to)
-      : null,
+    birthdays: row.show_birthdays ? buildBirthdaysSection(db, row.birthdays_from, row.birthdays_to) : null,
   };
 }

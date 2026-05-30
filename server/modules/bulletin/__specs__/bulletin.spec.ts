@@ -201,10 +201,7 @@ describe('buildBirthdays', () => {
 
   test('handles year crossover (window spans Dec→Jan)', () => {
     const crossWindow = { from: '2026-12-28', to: '2027-01-03' };
-    const result = buildBirthdays(
-      [birthdayRow('12-30', 'Dez'), birthdayRow('01-02', 'Jan')],
-      crossWindow,
-    );
+    const result = buildBirthdays([birthdayRow('12-30', 'Dez'), birthdayRow('01-02', 'Jan')], crossWindow);
     expect(result).toHaveLength(2);
     expect(result.find((g) => g.names.includes('Dez'))?.date).toBe('2026-12-30');
     expect(result.find((g) => g.names.includes('Jan'))?.date).toBe('2027-01-02');
@@ -223,6 +220,7 @@ describe('getBulletin', () => {
     testDb.delete(schema.agenda).run();
     testDb.delete(schema.announcements).run();
     testDb.delete(schema.bulletins).run();
+    testDb.delete(schema.articles).run();
   });
 
   test('returns null when no bulletin exists for the given date', () => {
@@ -242,11 +240,46 @@ describe('getBulletin', () => {
     expect(result?.title).toBeNull();
   });
 
-  test('article and liturgy are null (not yet implemented)', () => {
+  test('liturgy is null (not yet implemented)', () => {
     insertBulletin();
-    const result = getBulletin(testDb, '2026-05-17');
-    expect(result?.article).toBeNull();
-    expect(result?.liturgy).toBeNull();
+    expect(getBulletin(testDb, '2026-05-17')?.liturgy).toBeNull();
+  });
+
+  describe('article section', () => {
+    test('returns null when article_id is null', () => {
+      insertBulletin();
+      expect(getBulletin(testDb, '2026-05-17')?.article).toBeNull();
+    });
+
+    test('embeds the full ArticleDetail when article_id is set', () => {
+      const articleResult = testDb
+        .insert(schema.articles)
+        .values({ slug: 'reflexao', title: 'Reflexão', date: '2026-05-17', content: 'Conteúdo.' })
+        .returning()
+        .get();
+      insertBulletin({ article_id: articleResult.id });
+
+      const result = getBulletin(testDb, '2026-05-17');
+      expect(result?.article?.slug).toBe('reflexao');
+      expect(result?.article?.content).toBe('Conteúdo.');
+    });
+
+    test('returns null for article_id pointing to a deleted article', () => {
+      const articleResult = testDb
+        .insert(schema.articles)
+        .values({
+          slug: 'removido',
+          title: 'Removido',
+          date: '2026-05-17',
+          content: 'x',
+          deleted_at: '2026-05-18',
+        })
+        .returning()
+        .get();
+      insertBulletin({ article_id: articleResult.id });
+
+      expect(getBulletin(testDb, '2026-05-17')?.article).toBeNull();
+    });
   });
 
   test('returns null for soft-deleted bulletin', () => {

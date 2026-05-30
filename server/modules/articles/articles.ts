@@ -45,3 +45,21 @@ export function getArticle(db: DbInstance, slug: string): ArticleDetail | null |
     content: row.content,
   };
 }
+
+export function getArticleById(db: DbInstance, id: number): ArticleDetail | null {
+  const row = db
+    .select()
+    .from(articles)
+    .where(eq(articles.id, id))
+    .limit(1)
+    .get();
+  if (!row || row.deleted_at !== null) return null;
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    author: row.author,
+    date: row.date,
+    content: row.content,
+  };
+}
