@@ -82,20 +82,20 @@ type BulletinDetail = {
 };
 
 const route = useRoute();
-const slug = route.params.slug as string;
+const date = route.params.date as string;
 
 const {
   data: bulletin,
   status: bulletinStatus,
   refresh: refreshBulletin,
-} = await useAsyncData(`bulletin-${slug}`, () => $fetch<BulletinDetail>(`/api/bulletins/${slug}`));
+} = await useAsyncData(`bulletin-${date}`, () => $fetch<BulletinDetail>(`/api/bulletins/${date}`));
 
 const {
   data: liturgy,
   status: liturgyStatus,
   refresh: refreshLiturgy,
-} = await useAsyncData(`liturgy-${slug}`, () =>
-  $fetch<LiturgyDetail>(`/api/liturgies/${slug}`).catch((err: { statusCode?: number }) => {
+} = await useAsyncData(`liturgy-${date}`, () =>
+  $fetch<LiturgyDetail>(`/api/liturgies/${date}`).catch((err: { statusCode?: number }) => {
     if (err?.statusCode === 404) return null;
     throw err;
   }),

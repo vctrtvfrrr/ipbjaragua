@@ -5,7 +5,7 @@
       :key="bulletin"
     >
       <NuxtLink
-        :to="`/${bulletin}`"
+        :to="`/bulletins/${bulletin}`"
         class="text-blue-600 hover:underline"
       >
         {{ formatDate(bulletin) }}

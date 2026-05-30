@@ -2,7 +2,7 @@ import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime';
 import { setResponseStatus, type H3Event } from 'h3';
 import { describe, expect, it } from 'vitest';
 import type { LiturgyDetail } from '~~/shared/liturgy';
-import SlugPage from '../[slug].vue';
+import BulletinDetailPage from '../[date].vue';
 
 type BulletinResponse = {
   title: string;
@@ -33,7 +33,7 @@ function buildLiturgy(date: string): LiturgyDetail {
 }
 
 /**
- * Each test uses a unique slug so its registered endpoints don't leak into others
+ * Each test uses a unique date so its registered endpoints don't leak into others
  * (registerEndpoint registrations persist across tests).
  */
 function fail(event: H3Event, status: number) {
@@ -41,13 +41,13 @@ function fail(event: H3Event, status: number) {
   return { message: 'erro' };
 }
 
-describe('pages/[slug]', () => {
+describe('pages/bulletins/[date]', () => {
   it('renders the bulletin content and liturgy section on success', async () => {
-    const slug = '2026-05-17';
-    registerEndpoint(`/api/bulletins/${slug}`, () => buildBulletin(slug));
-    registerEndpoint(`/api/liturgies/${slug}`, () => buildLiturgy(slug));
+    const date = '2026-05-17';
+    registerEndpoint(`/api/bulletins/${date}`, () => buildBulletin(date));
+    registerEndpoint(`/api/liturgies/${date}`, () => buildLiturgy(date));
 
-    const wrapper = await mountSuspended(SlugPage, { route: `/${slug}` });
+    const wrapper = await mountSuspended(BulletinDetailPage, { route: `/bulletins/${date}` });
 
     expect(wrapper.find('header h1').exists()).toBe(true);
     expect(wrapper.find('.bulletin-content').exists()).toBe(true);
@@ -56,11 +56,11 @@ describe('pages/[slug]', () => {
   });
 
   it('shows an error block with a retry button when the bulletin request fails', async () => {
-    const slug = 'boletim-erro';
-    registerEndpoint(`/api/bulletins/${slug}`, (event) => fail(event, 500));
-    registerEndpoint(`/api/liturgies/${slug}`, () => buildLiturgy(slug));
+    const date = 'boletim-erro';
+    registerEndpoint(`/api/bulletins/${date}`, (event) => fail(event, 500));
+    registerEndpoint(`/api/liturgies/${date}`, () => buildLiturgy(date));
 
-    const wrapper = await mountSuspended(SlugPage, { route: `/${slug}` });
+    const wrapper = await mountSuspended(BulletinDetailPage, { route: `/bulletins/${date}` });
 
     const alert = wrapper.find('[role="alert"]');
     expect(alert.exists()).toBe(true);
@@ -70,11 +70,11 @@ describe('pages/[slug]', () => {
   });
 
   it('hides the liturgy section without an error when the liturgy is missing (404)', async () => {
-    const slug = 'sem-liturgia';
-    registerEndpoint(`/api/bulletins/${slug}`, () => buildBulletin(slug));
-    registerEndpoint(`/api/liturgies/${slug}`, (event) => fail(event, 404));
+    const date = 'sem-liturgia';
+    registerEndpoint(`/api/bulletins/${date}`, () => buildBulletin(date));
+    registerEndpoint(`/api/liturgies/${date}`, (event) => fail(event, 404));
 
-    const wrapper = await mountSuspended(SlugPage, { route: `/${slug}` });
+    const wrapper = await mountSuspended(BulletinDetailPage, { route: `/bulletins/${date}` });
 
     expect(wrapper.find('.bulletin-content').exists()).toBe(true);
     expect(wrapper.find('section.bulletin-liturgy').exists()).toBe(false);
@@ -82,11 +82,11 @@ describe('pages/[slug]', () => {
   });
 
   it('shows an inline liturgy error with retry when the liturgy request fails (500)', async () => {
-    const slug = 'liturgia-erro';
-    registerEndpoint(`/api/bulletins/${slug}`, () => buildBulletin(slug));
-    registerEndpoint(`/api/liturgies/${slug}`, (event) => fail(event, 500));
+    const date = 'liturgia-erro';
+    registerEndpoint(`/api/bulletins/${date}`, () => buildBulletin(date));
+    registerEndpoint(`/api/liturgies/${date}`, (event) => fail(event, 500));
 
-    const wrapper = await mountSuspended(SlugPage, { route: `/${slug}` });
+    const wrapper = await mountSuspended(BulletinDetailPage, { route: `/bulletins/${date}` });
 
     expect(wrapper.find('.bulletin-content').exists()).toBe(true);
     expect(wrapper.find('section.bulletin-liturgy').exists()).toBe(false);
