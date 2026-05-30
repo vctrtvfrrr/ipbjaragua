@@ -3,184 +3,139 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, test } from 'vitest';
 import * as schema from '../../../db/schema';
-import { getCurrentDate, listDates, parseContent } from '../bulletin';
+import { defaultWindows, getBulletin, getCurrentDate } from '../bulletin';
 
 const testDb = drizzle(new Database(':memory:'), { schema });
 migrate(testDb, { migrationsFolder: './server/db/migrations' });
 
-describe('listDates', () => {
-  beforeEach(() => {
-    testDb.delete(schema.articles).run();
+const BASE_WINDOWS = {
+  agenda_from: '2026-05-18',
+  agenda_to: '2026-05-24',
+  birthdays_from: '2026-05-17',
+  birthdays_to: '2026-05-23',
+};
+
+function insertBulletin(overrides: Partial<typeof schema.bulletins.$inferInsert> = {}) {
+  return testDb
+    .insert(schema.bulletins)
+    .values({
+      date: '2026-05-17',
+      agenda_from: BASE_WINDOWS.agenda_from,
+      agenda_to: BASE_WINDOWS.agenda_to,
+      birthdays_from: BASE_WINDOWS.birthdays_from,
+      birthdays_to: BASE_WINDOWS.birthdays_to,
+      ...overrides,
+    })
+    .run();
+}
+
+describe('defaultWindows', () => {
+  test('computes agenda window as date+1 to date+7', () => {
+    const w = defaultWindows('2026-05-17');
+    expect(w.agenda_from).toBe('2026-05-18');
+    expect(w.agenda_to).toBe('2026-05-24');
   });
 
-  test('returns empty array when no articles exist', () => {
-    expect(listDates(testDb)).toEqual([]);
+  test('computes birthdays window as date to date+6', () => {
+    const w = defaultWindows('2026-05-17');
+    expect(w.birthdays_from).toBe('2026-05-17');
+    expect(w.birthdays_to).toBe('2026-05-23');
   });
 
-  test('returns dates ordered most recent first', () => {
-    testDb
-      .insert(schema.articles)
-      .values([
-        { slug: 'b1', title: 'B1', date: '2026-04-19', content: 'A' },
-        { slug: 'b2', title: 'B2', date: '2026-05-17', content: 'B' },
-        { slug: 'b3', title: 'B3', date: '2026-05-03', content: 'C' },
-      ])
-      .run();
-    expect(listDates(testDb)).toEqual(['2026-05-17', '2026-05-03', '2026-04-19']);
+  test('works for non-sunday dates', () => {
+    const w = defaultWindows('2026-05-20');
+    expect(w.agenda_from).toBe('2026-05-21');
+    expect(w.agenda_to).toBe('2026-05-27');
+    expect(w.birthdays_from).toBe('2026-05-20');
+    expect(w.birthdays_to).toBe('2026-05-26');
+  });
+
+  test('handles month boundaries correctly', () => {
+    const w = defaultWindows('2026-01-28');
+    expect(w.agenda_from).toBe('2026-01-29');
+    expect(w.agenda_to).toBe('2026-02-04');
+    expect(w.birthdays_to).toBe('2026-02-03');
   });
 });
 
-describe('parseContent', () => {
+describe('getBulletin', () => {
   beforeEach(() => {
-    testDb.delete(schema.agenda).run();
-    testDb.delete(schema.announcements).run();
-    testDb.delete(schema.members).run();
-    testDb.delete(schema.articles).run();
+    testDb.delete(schema.bulletins).run();
   });
 
-  test('throws when no article exists for the given date', async () => {
-    await expect(parseContent(testDb, '2026-05-17')).rejects.toThrow();
+  test('returns null when no bulletin exists for the given date', () => {
+    expect(getBulletin(testDb, '2026-05-17')).toBeNull();
   });
 
-  test('returns bulletin for exact date match', async () => {
-    testDb
-      .insert(schema.articles)
-      .values({
-        slug: 'boletim-dominical',
-        title: 'Boletim Dominical',
-        date: '2026-05-17',
-        content: 'Texto do estudo.',
-      })
-      .run();
-
-    const bulletin = await parseContent(testDb, '2026-05-17');
-    expect(bulletin.title).toBe('Boletim Dominical');
-    expect(bulletin.date).toBe('2026-05-17');
-    expect(bulletin.sections.article).toContain('Texto do estudo.');
+  test('returns BulletinDetail with title and date', () => {
+    insertBulletin({ title: 'Culto de Testemunho' });
+    const result = getBulletin(testDb, '2026-05-17');
+    expect(result?.title).toBe('Culto de Testemunho');
+    expect(result?.date).toBe('2026-05-17');
   });
 
-  test('returns most recent article when no exact date match', async () => {
-    testDb
-      .insert(schema.articles)
-      .values({ slug: 'antigo', title: 'Antigo', date: '2026-04-19', content: 'Conteúdo antigo.' })
-      .run();
-
-    const bulletin = await parseContent(testDb, '2026-05-17');
-    expect(bulletin.date).toBe('2026-04-19');
+  test('returns null title when title is not set', () => {
+    insertBulletin();
+    const result = getBulletin(testDb, '2026-05-17');
+    expect(result?.title).toBeNull();
   });
 
-  test('renders article markdown as HTML', async () => {
-    testDb
-      .insert(schema.articles)
-      .values({ slug: 'test-md', title: 'Test', date: '2026-05-17', content: '**Texto em negrito**' })
-      .run();
-
-    const bulletin = await parseContent(testDb, '2026-05-17');
-    expect(bulletin.sections.article).toContain('<strong>Texto em negrito</strong>');
+  test('all sections are null in skeleton', () => {
+    insertBulletin();
+    const result = getBulletin(testDb, '2026-05-17');
+    expect(result?.article).toBeNull();
+    expect(result?.liturgy).toBeNull();
+    expect(result?.announcements).toBeNull();
+    expect(result?.agenda).toBeNull();
+    expect(result?.birthdays).toBeNull();
   });
 
-  test('promotes headings by one level in article section', async () => {
-    testDb
-      .insert(schema.articles)
-      .values({
-        slug: 'test-headings',
-        title: 'Test',
-        date: '2026-05-17',
-        content: '### Subtítulo\n\n#### Sub-subtítulo',
-      })
-      .run();
-
-    const bulletin = await parseContent(testDb, '2026-05-17');
-    expect(bulletin.sections.article).toContain('<h2>');
-    expect(bulletin.sections.article).toContain('<h3>');
-    expect(bulletin.sections.article).not.toContain('<h3>Subtítulo</h3>');
+  test('returns null for soft-deleted bulletin', () => {
+    insertBulletin({ deleted_at: '2026-05-18T10:00:00' });
+    expect(getBulletin(testDb, '2026-05-17')).toBeNull();
   });
 
-  test('returns undefined sections when related tables are empty', async () => {
-    testDb
-      .insert(schema.articles)
-      .values({ slug: 'test-empty', title: 'Test', date: '2026-05-17', content: 'Conteúdo.' })
-      .run();
-
-    const bulletin = await parseContent(testDb, '2026-05-17');
-    expect(bulletin.sections.weekly_agenda).toBeUndefined();
-    expect(bulletin.sections.announcements).toBeUndefined();
-    expect(bulletin.sections.birthdays).toBeUndefined();
-  });
-
-  test('includes weekly_agenda section when agenda rows exist', async () => {
-    testDb
-      .insert(schema.articles)
-      .values({ slug: 'test-agenda', title: 'Test', date: '2026-05-18', content: 'x' })
-      .run();
-    testDb
-      .insert(schema.agenda)
-      .values({ title: 'Momento de Oração', weekday: 3, time: '19:30', is_recurring: true })
-      .run();
-
-    const bulletin = await parseContent(testDb, '2026-05-18');
-    expect(bulletin.sections.weekly_agenda).toContain('Momento de Oração');
-    expect(bulletin.sections.weekly_agenda).toContain('19:30');
-  });
-
-  test('includes announcements when active announcements exist', async () => {
-    testDb
-      .insert(schema.articles)
-      .values({ slug: 'test-announcements', title: 'Test', date: '2026-05-17', content: 'x' })
-      .run();
-    testDb
-      .insert(schema.announcements)
-      .values({
-        title: 'Conferência da Fé',
-        description: '29 e 30 de maio',
-        created_at: '2026-05-01',
-        expires_at: '2026-06-01',
-      })
-      .run();
-
-    const bulletin = await parseContent(testDb, '2026-05-17');
-    expect(bulletin.sections.announcements).toContain('Conferência da Fé');
-    expect(bulletin.sections.announcements).toContain('29 e 30 de maio');
+  test('returns null for a different date', () => {
+    insertBulletin({ date: '2026-05-10' });
+    expect(getBulletin(testDb, '2026-05-17')).toBeNull();
   });
 });
 
 describe('getCurrentDate', () => {
   beforeEach(() => {
-    testDb.delete(schema.articles).run();
+    testDb.delete(schema.bulletins).run();
+  });
+
+  test('returns null when no bulletins exist', () => {
+    expect(getCurrentDate(testDb, '2026-05-20')).toBeNull();
   });
 
   test('returns the most recent bulletin date on or before today', () => {
-    testDb
-      .insert(schema.articles)
-      .values([
-        { slug: 'b1', title: 'B1', date: '2026-05-03', content: 'A' },
-        { slug: 'b2', title: 'B2', date: '2026-05-17', content: 'B' },
-        { slug: 'b3', title: 'B3', date: '2026-04-19', content: 'C' },
-      ])
-      .run();
-
+    insertBulletin({ date: '2026-05-03' });
+    insertBulletin({ date: '2026-05-17' });
+    insertBulletin({ date: '2026-04-19' });
     expect(getCurrentDate(testDb, '2026-05-20')).toBe('2026-05-17');
   });
 
-  test('ignores future-dated bulletins (only the current one is surfaced)', () => {
-    testDb
-      .insert(schema.articles)
-      .values([
-        { slug: 'b1', title: 'B1', date: '2026-05-17', content: 'A' },
-        { slug: 'b2', title: 'B2', date: '2026-05-24', content: 'B' }, // future
-      ])
-      .run();
-
+  test('ignores future-dated bulletins', () => {
+    insertBulletin({ date: '2026-05-17' });
+    insertBulletin({ date: '2026-05-24' });
     expect(getCurrentDate(testDb, '2026-05-20')).toBe('2026-05-17');
   });
 
   test('returns null when every bulletin is in the future', () => {
-    testDb.insert(schema.articles).values({ slug: 'b1', title: 'B1', date: '2026-06-01', content: 'A' }).run();
-
+    insertBulletin({ date: '2026-06-01' });
     expect(getCurrentDate(testDb, '2026-05-20')).toBeNull();
   });
 
-  test('returns null when there are no bulletins', () => {
+  test('excludes soft-deleted bulletins', () => {
+    insertBulletin({ date: '2026-05-17', deleted_at: '2026-05-18T10:00:00' });
     expect(getCurrentDate(testDb, '2026-05-20')).toBeNull();
+  });
+
+  test('returns non-deleted when some are soft-deleted', () => {
+    insertBulletin({ date: '2026-05-17', deleted_at: '2026-05-18T10:00:00' });
+    insertBulletin({ date: '2026-05-10' });
+    expect(getCurrentDate(testDb, '2026-05-20')).toBe('2026-05-10');
   });
 });

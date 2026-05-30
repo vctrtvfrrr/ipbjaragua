@@ -3,10 +3,10 @@
     <NuxtLink
       to="/"
       class="mb-6 inline-block text-sm text-blue-600 hover:underline"
-      >&larr; Todos os boletins</NuxtLink
+      >&larr; Início</NuxtLink
     >
     <div
-      v-if="bulletinStatus === 'error'"
+      v-if="status === 'error'"
       role="alert"
       class="rounded border border-red-200 bg-red-50 p-4 text-red-800"
     >
@@ -14,7 +14,7 @@
       <button
         type="button"
         class="mt-2 text-sm text-blue-600 hover:underline"
-        @click="refreshBulletin()"
+        @click="refresh()"
       >
         Tentar novamente
       </button>
@@ -22,36 +22,10 @@
     <template v-else-if="bulletin">
       <header class="mb-8 text-center">
         <h1 class="text-5xl font-bold text-green-900">
-          Boletim Dominical
+          {{ bulletin.title ?? 'Boletim Semanal' }}
           <small class="block text-xl font-normal text-mist-800 italic">{{ formatDate(bulletin.date) }}</small>
         </h1>
       </header>
-      <div class="bulletin-content">
-        <BulletinArticle :html="bulletin.sections.article" />
-        <hr />
-        <BulletinWeeklyAgenda :html="bulletin.sections.weekly_agenda" />
-        <BulletinAnnouncements :html="bulletin.sections.announcements" />
-        <BulletinBirthdays :html="bulletin.sections.birthdays" />
-        <hr />
-        <div
-          v-if="liturgyStatus === 'error'"
-          role="alert"
-          class="rounded border border-red-200 bg-red-50 p-4 text-red-800"
-        >
-          <p>Não foi possível carregar a liturgia.</p>
-          <button
-            type="button"
-            class="mt-2 text-sm text-blue-600 hover:underline"
-            @click="refreshLiturgy()"
-          >
-            Tentar novamente
-          </button>
-        </div>
-        <BulletinLiturgy
-          v-else
-          :liturgy="liturgy ?? null"
-        />
-      </div>
     </template>
   </div>
 </template>
@@ -60,48 +34,17 @@
 import { useAsyncData, useRoute } from '#app';
 import { formatDate, useSeoMeta } from '#imports';
 import { defineOgImageComponent } from '~/utils/og';
-import {
-  BulletinArticle,
-  BulletinAnnouncements,
-  BulletinBirthdays,
-  BulletinLiturgy,
-  BulletinWeeklyAgenda,
-} from '#components';
 import { bulletinSeo } from '~/utils/seo';
-import type { LiturgyDetail } from '~~/shared/liturgy';
-
-type BulletinSections = {
-  article?: string;
-  weekly_agenda?: string;
-  announcements?: string;
-  birthdays?: string;
-};
-
-type BulletinDetail = {
-  title: string;
-  date: string;
-  sections: BulletinSections;
-};
+import type { BulletinDetail } from '~~/shared/bulletin';
 
 const route = useRoute();
 const date = route.params.date as string;
 
 const {
   data: bulletin,
-  status: bulletinStatus,
-  refresh: refreshBulletin,
+  status,
+  refresh,
 } = await useAsyncData(`bulletin-${date}`, () => $fetch<BulletinDetail>(`/api/bulletins/${date}`));
-
-const {
-  data: liturgy,
-  status: liturgyStatus,
-  refresh: refreshLiturgy,
-} = await useAsyncData(`liturgy-${date}`, () =>
-  $fetch<LiturgyDetail>(`/api/liturgies/${date}`).catch((err: { statusCode?: number }) => {
-    if (err?.statusCode === 404) return null;
-    throw err;
-  }),
-);
 
 const seo = bulletinSeo({ date });
 useSeoMeta(seo);
