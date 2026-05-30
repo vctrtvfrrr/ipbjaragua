@@ -126,10 +126,7 @@ function buildMoment({
   }
 }
 
-function buildLiturgyFromRow(
-  db: DbInstance,
-  liturgy: typeof liturgies.$inferSelect,
-): LiturgyDetail {
+function buildLiturgyFromRow(db: DbInstance, liturgy: typeof liturgies.$inferSelect): LiturgyDetail {
   const acts = db
     .select()
     .from(liturgyActs)
