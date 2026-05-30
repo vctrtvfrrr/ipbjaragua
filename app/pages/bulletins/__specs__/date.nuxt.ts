@@ -48,6 +48,19 @@ describe('pages/bulletins/[date]', () => {
     expect(wrapper.find('header h1').text()).toContain('Boletim Semanal');
   });
 
+  it('shows a 404 message when the bulletin is not found', async () => {
+    const date = '2026-01-01';
+    registerEndpoint(`/api/bulletins/${date}`, (event) => fail(event, 404));
+
+    const wrapper = await mountSuspended(BulletinDetailPage, { route: `/bulletins/${date}` });
+
+    const alert = wrapper.find('[role="alert"]');
+    expect(alert.exists()).toBe(true);
+    expect(alert.text()).toContain('Boletim não encontrado.');
+    expect(alert.find('button').exists()).toBe(false);
+    expect(wrapper.find('header').exists()).toBe(false);
+  });
+
   it('shows an error block with a retry button when the bulletin request fails', async () => {
     const date = 'boletim-erro';
     registerEndpoint(`/api/bulletins/${date}`, (event) => fail(event, 500));

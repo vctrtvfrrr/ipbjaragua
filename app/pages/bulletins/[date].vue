@@ -1,12 +1,20 @@
 <template>
   <div class="min-h-screen p-8">
-    <NuxtLink
-      to="/"
-      class="mb-6 inline-block text-sm text-blue-600 hover:underline"
-      >&larr; Início</NuxtLink
-    >
     <div
-      v-if="status === 'error'"
+      v-if="errorStatus === 404"
+      role="alert"
+      class="rounded border border-amber-200 bg-amber-50 p-4 text-amber-800"
+    >
+      <h2 class="text-2xl font-bold">Erro 404</h2>
+      <p>Boletim não encontrado.</p>
+      <NuxtLink
+        to="/"
+        class="block text-sm text-blue-600 hover:underline"
+        >&larr; Ir para a home</NuxtLink
+      >
+    </div>
+    <div
+      v-else-if="errorStatus"
       role="alert"
       class="rounded border border-red-200 bg-red-50 p-4 text-red-800"
     >
@@ -38,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useAsyncData, useRoute } from '#app';
 import { formatDate, useSeoMeta } from '#imports';
 import {
@@ -56,9 +65,11 @@ const date = route.params.date as string;
 
 const {
   data: bulletin,
-  status,
+  error,
   refresh,
 } = await useAsyncData(`bulletin-${date}`, () => $fetch<BulletinDetail>(`/api/bulletins/${date}`));
+
+const errorStatus = computed(() => (error.value as { statusCode?: number } | null)?.statusCode ?? null);
 
 const seo = bulletinSeo({ date });
 useSeoMeta(seo);
