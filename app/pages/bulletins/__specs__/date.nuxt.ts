@@ -5,10 +5,7 @@ import type { AnnouncementItem } from '~~/shared/announcement';
 import type { BulletinDetail } from '~~/shared/bulletin';
 import BulletinDetailPage from '../[date].vue';
 
-function buildBulletin(
-  date: string,
-  overrides: Partial<BulletinDetail> = {},
-): BulletinDetail {
+function buildBulletin(date: string, overrides: Partial<BulletinDetail> = {}): BulletinDetail {
   return {
     title: 'Boletim Dominical',
     date,
@@ -66,9 +63,7 @@ describe('pages/bulletins/[date]', () => {
 
   it('renders the announcements section when present', async () => {
     const date = '2026-05-31';
-    registerEndpoint(`/api/bulletins/${date}`, () =>
-      buildBulletin(date, { announcements: [buildAnnouncement()] }),
-    );
+    registerEndpoint(`/api/bulletins/${date}`, () => buildBulletin(date, { announcements: [buildAnnouncement()] }));
 
     const wrapper = await mountSuspended(BulletinDetailPage, { route: `/bulletins/${date}` });
 

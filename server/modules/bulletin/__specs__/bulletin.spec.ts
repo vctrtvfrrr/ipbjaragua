@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, test } from 'vitest';
 import * as schema from '../../../db/schema';
-import { defaultWindows, getBulletin, getCurrentDate } from '../bulletin';
+import { buildAgenda, defaultWindows, getBulletin, getCurrentDate, type AgendaRow } from '../bulletin';
 
 const testDb = drizzle(new Database(':memory:'), { schema });
 migrate(testDb, { migrationsFolder: './server/db/migrations' });
@@ -58,8 +58,80 @@ describe('defaultWindows', () => {
   });
 });
 
+const BASE_WINDOW = { from: '2026-05-18', to: '2026-05-24' };
+
+function recurringRow(overrides: Partial<AgendaRow> = {}): AgendaRow {
+  return { title: 'Reunião de Oração', description: null, time: '19:30', weekday: 3, is_recurring: true, event_date: null, ...overrides };
+}
+
+function eventRow(overrides: Partial<AgendaRow> = {}): AgendaRow {
+  return { title: 'Conferência', description: null, time: '18:00', weekday: null, is_recurring: false, event_date: '2026-05-20', ...overrides };
+}
+
+describe('buildAgenda', () => {
+  test('returns empty array when no rows', () => {
+    expect(buildAgenda([], BASE_WINDOW)).toEqual([]);
+  });
+
+  test('includes recurring events regardless of window', () => {
+    const result = buildAgenda([recurringRow({ weekday: 3 })], BASE_WINDOW);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.weekday).toBe('Quarta-feira');
+  });
+
+  test('includes dated events within the window', () => {
+    const result = buildAgenda([eventRow({ event_date: '2026-05-20' })], BASE_WINDOW);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.events[0]?.title).toBe('Conferência');
+  });
+
+  test('excludes dated events outside the window', () => {
+    const result = buildAgenda([eventRow({ event_date: '2026-05-25' })], BASE_WINDOW);
+    expect(result).toEqual([]);
+  });
+
+  test('window is inclusive on both ends', () => {
+    const fromResult = buildAgenda([eventRow({ event_date: '2026-05-18' })], BASE_WINDOW);
+    const toResult = buildAgenda([eventRow({ event_date: '2026-05-24' })], BASE_WINDOW);
+    expect(fromResult).toHaveLength(1);
+    expect(toResult).toHaveLength(1);
+  });
+
+  test('groups multiple events by weekday', () => {
+    const rows = [
+      recurringRow({ title: 'Reunião', weekday: 3, time: '19:30' }),
+      eventRow({ title: 'Evento Quarta', event_date: '2026-05-20' }), // also Wednesday
+    ];
+    const result = buildAgenda(rows, BASE_WINDOW);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.events).toHaveLength(2);
+  });
+
+  test('groups are sorted by weekday', () => {
+    const rows = [
+      eventRow({ title: 'Sexta', event_date: '2026-05-22' }),
+      recurringRow({ title: 'Segunda', weekday: 1 }),
+    ];
+    const result = buildAgenda(rows, BASE_WINDOW);
+    expect(result[0]?.weekday).toBe('Segunda-feira');
+    expect(result[1]?.weekday).toBe('Sexta-feira');
+  });
+
+  test('maps event fields correctly', () => {
+    const result = buildAgenda([recurringRow({ title: 'Culto', time: '09:00', description: 'Manhã' })], BASE_WINDOW);
+    expect(result[0]?.events[0]).toEqual({ time: '09:00', title: 'Culto', description: 'Manhã' });
+  });
+
+  test('uses null for missing time and description', () => {
+    const result = buildAgenda([recurringRow({ time: null, description: null })], BASE_WINDOW);
+    expect(result[0]?.events[0]?.time).toBeNull();
+    expect(result[0]?.events[0]?.description).toBeNull();
+  });
+});
+
 describe('getBulletin', () => {
   beforeEach(() => {
+    testDb.delete(schema.agenda).run();
     testDb.delete(schema.announcements).run();
     testDb.delete(schema.bulletins).run();
   });
@@ -81,12 +153,11 @@ describe('getBulletin', () => {
     expect(result?.title).toBeNull();
   });
 
-  test('article, liturgy, agenda and birthdays are null (not yet implemented)', () => {
+  test('article, liturgy and birthdays are null (not yet implemented)', () => {
     insertBulletin();
     const result = getBulletin(testDb, '2026-05-17');
     expect(result?.article).toBeNull();
     expect(result?.liturgy).toBeNull();
-    expect(result?.agenda).toBeNull();
     expect(result?.birthdays).toBeNull();
   });
 
@@ -113,10 +184,7 @@ describe('getBulletin', () => {
 
     test('returns active announcements (expires_at >= bulletin date)', () => {
       insertBulletin();
-      testDb
-        .insert(schema.announcements)
-        .values({ title: 'Conferência da Fé', expires_at: '2026-05-17' })
-        .run();
+      testDb.insert(schema.announcements).values({ title: 'Conferência da Fé', expires_at: '2026-05-17' }).run();
 
       const result = getBulletin(testDb, '2026-05-17');
       expect(result?.announcements).toHaveLength(1);
@@ -125,10 +193,7 @@ describe('getBulletin', () => {
 
     test('excludes announcements that expired before the bulletin date', () => {
       insertBulletin();
-      testDb
-        .insert(schema.announcements)
-        .values({ title: 'Aviso expirado', expires_at: '2026-05-16' })
-        .run();
+      testDb.insert(schema.announcements).values({ title: 'Aviso expirado', expires_at: '2026-05-16' }).run();
 
       expect(getBulletin(testDb, '2026-05-17')?.announcements).toEqual([]);
     });
@@ -145,13 +210,55 @@ describe('getBulletin', () => {
 
     test('reflects the bulletin date, not today (historical bulletin shows past-expired announcements)', () => {
       insertBulletin({ date: '2026-01-05' });
-      testDb
-        .insert(schema.announcements)
-        .values({ title: 'Aviso de janeiro', expires_at: '2026-01-10' })
-        .run();
+      testDb.insert(schema.announcements).values({ title: 'Aviso de janeiro', expires_at: '2026-01-10' }).run();
 
       const result = getBulletin(testDb, '2026-01-05');
       expect(result?.announcements).toHaveLength(1);
+    });
+  });
+
+  describe('agenda section', () => {
+    test('returns null when show_agenda is false', () => {
+      insertBulletin({ show_agenda: false });
+      expect(getBulletin(testDb, '2026-05-17')?.agenda).toBeNull();
+    });
+
+    test('returns empty array when show_agenda is true but no events in window', () => {
+      insertBulletin({ show_agenda: true });
+      expect(getBulletin(testDb, '2026-05-17')?.agenda).toEqual([]);
+    });
+
+    test('returns recurring events', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.agenda)
+        .values({ title: 'Reunião de Oração', weekday: 3, time: '19:30', is_recurring: true })
+        .run();
+
+      const result = getBulletin(testDb, '2026-05-17');
+      expect(result?.agenda).toHaveLength(1);
+      expect(result?.agenda?.[0]?.weekday).toBe('Quarta-feira');
+    });
+
+    test('returns dated events within the agenda window', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.agenda)
+        .values({ title: 'Conferência', weekday: null, time: null, is_recurring: false, event_date: '2026-05-20' })
+        .run();
+
+      const result = getBulletin(testDb, '2026-05-17');
+      expect(result?.agenda).toHaveLength(1);
+    });
+
+    test('excludes dated events outside the window', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.agenda)
+        .values({ title: 'Evento futuro', weekday: null, time: null, is_recurring: false, event_date: '2026-05-25' })
+        .run();
+
+      expect(getBulletin(testDb, '2026-05-17')?.agenda).toEqual([]);
     });
   });
 });
