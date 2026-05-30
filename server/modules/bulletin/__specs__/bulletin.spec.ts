@@ -3,7 +3,15 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, test } from 'vitest';
 import * as schema from '../../../db/schema';
-import { buildAgenda, defaultWindows, getBulletin, getCurrentDate, type AgendaRow } from '../bulletin';
+import {
+  buildAgenda,
+  buildBirthdays,
+  defaultWindows,
+  getBulletin,
+  getCurrentDate,
+  type AgendaRow,
+  type BirthdayRow,
+} from '../bulletin';
 
 const testDb = drizzle(new Database(':memory:'), { schema });
 migrate(testDb, { migrationsFolder: './server/db/migrations' });
@@ -61,11 +69,27 @@ describe('defaultWindows', () => {
 const BASE_WINDOW = { from: '2026-05-18', to: '2026-05-24' };
 
 function recurringRow(overrides: Partial<AgendaRow> = {}): AgendaRow {
-  return { title: 'Reunião de Oração', description: null, time: '19:30', weekday: 3, is_recurring: true, event_date: null, ...overrides };
+  return {
+    title: 'Reunião de Oração',
+    description: null,
+    time: '19:30',
+    weekday: 3,
+    is_recurring: true,
+    event_date: null,
+    ...overrides,
+  };
 }
 
 function eventRow(overrides: Partial<AgendaRow> = {}): AgendaRow {
-  return { title: 'Conferência', description: null, time: '18:00', weekday: null, is_recurring: false, event_date: '2026-05-20', ...overrides };
+  return {
+    title: 'Conferência',
+    description: null,
+    time: '18:00',
+    weekday: null,
+    is_recurring: false,
+    event_date: '2026-05-20',
+    ...overrides,
+  };
 }
 
 describe('buildAgenda', () => {
@@ -129,8 +153,73 @@ describe('buildAgenda', () => {
   });
 });
 
+const BIRTHDAY_WINDOW = { from: '2026-05-17', to: '2026-05-23' };
+
+function birthdayRow(md: string, name: string = 'João Silva'): BirthdayRow {
+  return { full_name: name, birth_date: `1990-${md}` };
+}
+
+describe('buildBirthdays', () => {
+  test('returns empty array when no rows', () => {
+    expect(buildBirthdays([], BIRTHDAY_WINDOW)).toEqual([]);
+  });
+
+  test('includes member with birthday within window', () => {
+    const result = buildBirthdays([birthdayRow('05-20')], BIRTHDAY_WINDOW);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.names).toContain('João Silva');
+  });
+
+  test('excludes member with birthday outside window', () => {
+    const result = buildBirthdays([birthdayRow('05-24')], BIRTHDAY_WINDOW);
+    expect(result).toEqual([]);
+  });
+
+  test('window is inclusive on both ends', () => {
+    const fromResult = buildBirthdays([birthdayRow('05-17')], BIRTHDAY_WINDOW);
+    const toResult = buildBirthdays([birthdayRow('05-23')], BIRTHDAY_WINDOW);
+    expect(fromResult).toHaveLength(1);
+    expect(toResult).toHaveLength(1);
+  });
+
+  test('groups multiple people with the same birthday date', () => {
+    const result = buildBirthdays([birthdayRow('05-20', 'João'), birthdayRow('05-20', 'Maria')], BIRTHDAY_WINDOW);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.names).toHaveLength(2);
+  });
+
+  test('groups are sorted by date', () => {
+    const result = buildBirthdays([birthdayRow('05-22', 'B'), birthdayRow('05-19', 'A')], BIRTHDAY_WINDOW);
+    expect(result[0]?.date).toBe('2026-05-19');
+    expect(result[1]?.date).toBe('2026-05-22');
+  });
+
+  test('includes weekday name in group', () => {
+    const result = buildBirthdays([birthdayRow('05-17')], BIRTHDAY_WINDOW);
+    expect(result[0]?.weekday).toBe('Domingo');
+  });
+
+  test('handles year crossover (window spans Dec→Jan)', () => {
+    const crossWindow = { from: '2026-12-28', to: '2027-01-03' };
+    const result = buildBirthdays(
+      [birthdayRow('12-30', 'Dez'), birthdayRow('01-02', 'Jan')],
+      crossWindow,
+    );
+    expect(result).toHaveLength(2);
+    expect(result.find((g) => g.names.includes('Dez'))?.date).toBe('2026-12-30');
+    expect(result.find((g) => g.names.includes('Jan'))?.date).toBe('2027-01-02');
+  });
+
+  test('excludes birthdays outside cross-year window', () => {
+    const crossWindow = { from: '2026-12-28', to: '2027-01-03' };
+    const result = buildBirthdays([birthdayRow('12-27'), birthdayRow('01-04')], crossWindow);
+    expect(result).toEqual([]);
+  });
+});
+
 describe('getBulletin', () => {
   beforeEach(() => {
+    testDb.delete(schema.members).run();
     testDb.delete(schema.agenda).run();
     testDb.delete(schema.announcements).run();
     testDb.delete(schema.bulletins).run();
@@ -153,12 +242,11 @@ describe('getBulletin', () => {
     expect(result?.title).toBeNull();
   });
 
-  test('article, liturgy and birthdays are null (not yet implemented)', () => {
+  test('article and liturgy are null (not yet implemented)', () => {
     insertBulletin();
     const result = getBulletin(testDb, '2026-05-17');
     expect(result?.article).toBeNull();
     expect(result?.liturgy).toBeNull();
-    expect(result?.birthdays).toBeNull();
   });
 
   test('returns null for soft-deleted bulletin', () => {
@@ -259,6 +347,40 @@ describe('getBulletin', () => {
         .run();
 
       expect(getBulletin(testDb, '2026-05-17')?.agenda).toEqual([]);
+    });
+  });
+
+  describe('birthdays section', () => {
+    test('returns null when show_birthdays is false', () => {
+      insertBulletin({ show_birthdays: false });
+      expect(getBulletin(testDb, '2026-05-17')?.birthdays).toBeNull();
+    });
+
+    test('returns empty array when show_birthdays is true but no active members have birthdays in window', () => {
+      insertBulletin({ show_birthdays: true });
+      expect(getBulletin(testDb, '2026-05-17')?.birthdays).toEqual([]);
+    });
+
+    test('returns members with birthdays in window', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.members)
+        .values({ full_name: 'João Silva', birth_date: '1990-05-20', status: 'active' })
+        .run();
+
+      const result = getBulletin(testDb, '2026-05-17');
+      expect(result?.birthdays).toHaveLength(1);
+      expect(result?.birthdays?.[0]?.names).toContain('João Silva');
+    });
+
+    test('excludes inactive members', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.members)
+        .values({ full_name: 'Membro Inativo', birth_date: '1990-05-20', status: 'transferred' })
+        .run();
+
+      expect(getBulletin(testDb, '2026-05-17')?.birthdays).toEqual([]);
     });
   });
 });
