@@ -14,16 +14,12 @@
         class="bulletin-announcement"
       >
         <h3>{{ item.title }}</h3>
-        <p v-if="item.description">
-          {{ item.description }}
-          <a
-            v-if="item.url"
-            :href="item.url"
-            class="text-blue-600 hover:underline"
-            >Mais informações</a
-          >
-        </p>
-        <p v-else-if="item.url">
+        <div
+          v-if="item.description"
+          class="announcement-description"
+          v-html="renderMarkdown(item.description)"
+        />
+        <p v-if="item.url">
           <a
             :href="item.url"
             class="text-blue-600 hover:underline"
@@ -36,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+import { renderMarkdown } from '#imports';
 import type { AnnouncementItem } from '~~/shared/announcement';
 
 defineProps<{ announcements: AnnouncementItem[] | null }>();

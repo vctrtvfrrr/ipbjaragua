@@ -47,6 +47,16 @@ describe('BulletinWeeklyAgenda', () => {
     expect(wrapper.text()).toContain('Manhã e tarde');
   });
 
+  it('renders the event description as markdown', async () => {
+    const wrapper = await mountSuspended(BulletinWeeklyAgenda, {
+      props: {
+        agenda: [buildGroup('Domingo', [{ time: null, title: 'Culto', description: 'Veja **agora**' }])],
+      },
+    });
+    const description = wrapper.find('.agenda-event-description');
+    expect(description.find('strong').text()).toBe('agora');
+  });
+
   it('renders multiple groups', async () => {
     const wrapper = await mountSuspended(BulletinWeeklyAgenda, {
       props: {

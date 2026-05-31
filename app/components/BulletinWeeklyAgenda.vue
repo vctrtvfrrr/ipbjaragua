@@ -21,11 +21,11 @@
           >
             <strong v-if="event.time">{{ event.time }}</strong
             ><template v-if="event.time"> — </template>{{ event.title }}
-            <em
+            <div
               v-if="event.description"
-              class="block text-sm"
-              >{{ event.description }}</em
-            >
+              class="agenda-event-description text-sm"
+              v-html="renderMarkdown(event.description)"
+            />
           </li>
         </ul>
       </div>
@@ -34,6 +34,7 @@
 </template>
 
 <script setup lang="ts">
+import { renderMarkdown } from '#imports';
 import type { AgendaGroup } from '~~/shared/bulletin';
 
 defineProps<{ agenda: AgendaGroup[] | null }>();

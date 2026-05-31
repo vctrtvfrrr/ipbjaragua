@@ -38,6 +38,16 @@ describe('BulletinAnnouncements', () => {
     expect(wrapper.text()).toContain('29 e 30 de maio');
   });
 
+  it('renders the description as markdown', async () => {
+    const wrapper = await mountSuspended(BulletinAnnouncements, {
+      props: { announcements: [buildItem({ description: 'Inscreva-se [aqui](https://exemplo.com)' })] },
+    });
+    const description = wrapper.find('.announcement-description');
+    const link = description.find('a');
+    expect(link.attributes('href')).toBe('https://exemplo.com');
+    expect(link.text()).toBe('aqui');
+  });
+
   it('renders a link when url is present', async () => {
     const wrapper = await mountSuspended(BulletinAnnouncements, {
       props: { announcements: [buildItem({ url: 'https://exemplo.com' })] },

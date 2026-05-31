@@ -148,7 +148,7 @@ describe('buildAgenda', () => {
       recurringRow({ title: 'Sábado', weekday: 6 }),
     ];
     const result = buildAgenda(rows, BASE_WINDOW);
-    expect(result.map(g => g.weekday)).toEqual(['Segunda-feira', 'Sábado', 'Domingo']);
+    expect(result.map((g) => g.weekday)).toEqual(['Segunda-feira', 'Sábado', 'Domingo']);
   });
 
   test('maps event fields correctly', () => {
