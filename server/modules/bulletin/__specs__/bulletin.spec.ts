@@ -6,11 +6,15 @@ import * as schema from '../../../db/schema';
 import {
   buildAgenda,
   buildBirthdays,
+  buildWeddings,
   defaultWindows,
   getBulletin,
   getCurrentDate,
+  mergeWeddings,
   type AgendaRow,
+  type BirthdayGroup,
   type BirthdayRow,
+  type WeddingRow,
 } from '../bulletin';
 
 const testDb = drizzle(new Database(':memory:'), { schema });
@@ -221,6 +225,158 @@ describe('buildBirthdays', () => {
     const crossWindow = { from: '2026-12-28', to: '2027-01-03' };
     const result = buildBirthdays([birthdayRow('12-27'), birthdayRow('01-04')], crossWindow);
     expect(result).toEqual([]);
+  });
+});
+
+const WEDDING_WINDOW = { from: '2026-05-17', to: '2026-05-23' };
+
+function weddingRow(overrides: Partial<WeddingRow> = {}): WeddingRow {
+  return {
+    full_name: 'Danilo Souza',
+    spouse: 'Fernanda Souza',
+    wedding_date: '2010-05-20',
+    sex: 'Masculino',
+    ...overrides,
+  };
+}
+
+describe('buildWeddings', () => {
+  test('pairs two members who reference each other into one couple', () => {
+    const rows = [
+      weddingRow({ full_name: 'Danilo Souza', spouse: 'Fernanda Souza', sex: 'Masculino' }),
+      weddingRow({ full_name: 'Fernanda Souza', spouse: 'Danilo Souza', sex: 'Feminino' }),
+    ];
+    const result = buildWeddings(rows, WEDDING_WINDOW);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.label).toBe('Fernanda Souza ♥ Danilo Souza');
+    expect(result[0]?.date).toBe('2026-05-20');
+  });
+
+  test('pairs even when only one side references the partner (asymmetric spelling)', () => {
+    const rows = [
+      weddingRow({ full_name: 'Danilo Souza', spouse: 'Fernanda Souza', sex: 'Masculino' }),
+      weddingRow({ full_name: 'Fernanda Souza', spouse: null, sex: 'Feminino' }),
+    ];
+    const result = buildWeddings(rows, WEDDING_WINDOW);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.label).toBe('Fernanda Souza ♥ Danilo Souza');
+  });
+
+  test('deduplicates a couple to a single entry when both reference each other', () => {
+    const rows = [
+      weddingRow({ full_name: 'Danilo Souza', spouse: 'Fernanda Souza', sex: 'Masculino' }),
+      weddingRow({ full_name: 'Fernanda Souza', spouse: 'Danilo Souza', sex: 'Feminino' }),
+    ];
+    expect(buildWeddings(rows, WEDDING_WINDOW)).toHaveLength(1);
+  });
+
+  test('omits weddings whose spouse is not a member in the set', () => {
+    const rows = [weddingRow({ full_name: 'Danilo Souza', spouse: 'Alguém de Fora' })];
+    expect(buildWeddings(rows, WEDDING_WINDOW)).toEqual([]);
+  });
+
+  test('omits weddings when neither side spells the partner name correctly', () => {
+    const rows = [
+      weddingRow({ full_name: 'Danilo Souza', spouse: 'Fernanda S.' }),
+      weddingRow({ full_name: 'Fernanda Souza', spouse: 'Danilo S.', sex: 'Feminino' }),
+    ];
+    expect(buildWeddings(rows, WEDDING_WINDOW)).toEqual([]);
+  });
+
+  test('omits the couple when the matched partner has a different wedding_date', () => {
+    const rows = [
+      weddingRow({ full_name: 'Danilo Souza', spouse: 'Fernanda Souza', wedding_date: '2010-05-20' }),
+      weddingRow({ full_name: 'Fernanda Souza', spouse: 'Danilo Souza', wedding_date: '2011-05-20', sex: 'Feminino' }),
+    ];
+    expect(buildWeddings(rows, WEDDING_WINDOW)).toEqual([]);
+  });
+
+  test('orders woman-first via sex regardless of input order', () => {
+    const rows = [
+      weddingRow({ full_name: 'Zeca Lima', spouse: 'Ana Lima', sex: 'Masculino' }),
+      weddingRow({ full_name: 'Ana Lima', spouse: 'Zeca Lima', sex: 'Feminino' }),
+    ];
+    expect(buildWeddings(rows, WEDDING_WINDOW)[0]?.label).toBe('Ana Lima ♥ Zeca Lima');
+  });
+
+  test('falls back to alphabetical order when sex is missing or equal', () => {
+    const missing = buildWeddings(
+      [
+        weddingRow({ full_name: 'Bruno Reis', spouse: 'Sabrina Reis', sex: null }),
+        weddingRow({ full_name: 'Sabrina Reis', spouse: 'Bruno Reis', sex: null }),
+      ],
+      WEDDING_WINDOW,
+    );
+    expect(missing[0]?.label).toBe('Bruno Reis ♥ Sabrina Reis');
+  });
+
+  test('truncates each name to two tokens, stopping before a Portuguese preposition', () => {
+    const rows = [
+      weddingRow({ full_name: 'Júlio Cesar de Oliveira', spouse: 'Ana Lúcia Gomes', sex: 'Masculino' }),
+      weddingRow({ full_name: 'Ana Lúcia Gomes', spouse: 'Júlio Cesar de Oliveira', sex: 'Feminino' }),
+    ];
+    expect(buildWeddings(rows, WEDDING_WINDOW)[0]?.label).toBe('Ana Lúcia ♥ Júlio Cesar');
+
+    const prep = buildWeddings(
+      [
+        weddingRow({ full_name: 'Bruno de Souza', spouse: 'Sabrina da Costa', sex: 'Masculino' }),
+        weddingRow({ full_name: 'Sabrina da Costa', spouse: 'Bruno de Souza', sex: 'Feminino' }),
+      ],
+      WEDDING_WINDOW,
+    );
+    expect(prep[0]?.label).toBe('Sabrina ♥ Bruno');
+  });
+
+  function pairAt(weddingDate: string): WeddingRow[] {
+    return [
+      weddingRow({ full_name: 'A Silva', spouse: 'B Silva', wedding_date: weddingDate, sex: 'Feminino' }),
+      weddingRow({ full_name: 'B Silva', spouse: 'A Silva', wedding_date: weddingDate, sex: 'Masculino' }),
+    ];
+  }
+
+  test('filters by the wedding_date month-day within the window (inclusive on both ends)', () => {
+    expect(buildWeddings(pairAt('2010-05-17'), WEDDING_WINDOW)).toHaveLength(1);
+    expect(buildWeddings(pairAt('2010-05-23'), WEDDING_WINDOW)).toHaveLength(1);
+    expect(buildWeddings(pairAt('2010-05-24'), WEDDING_WINDOW)).toHaveLength(0);
+    expect(buildWeddings(pairAt('2010-05-16'), WEDDING_WINDOW)).toHaveLength(0);
+  });
+
+  test('places the wedding in the year-correct date across a Dec→Jan window', () => {
+    const crossWindow = { from: '2026-12-28', to: '2027-01-03' };
+    const rows = [
+      weddingRow({ full_name: 'A Silva', spouse: 'B Silva', wedding_date: '2000-01-02', sex: 'Feminino' }),
+      weddingRow({ full_name: 'B Silva', spouse: 'A Silva', wedding_date: '2000-01-02', sex: 'Masculino' }),
+    ];
+    expect(buildWeddings(rows, crossWindow)[0]?.date).toBe('2027-01-02');
+  });
+});
+
+describe('mergeWeddings', () => {
+  test("appends a wedding after the day's age birthdays in the same group", () => {
+    const groups: BirthdayGroup[] = [{ date: '2026-05-20', weekday: 'Quarta-feira', names: ['João Silva'] }];
+    const result = mergeWeddings(groups, [{ date: '2026-05-20', label: 'Ana ♥ Bruno' }]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.names).toEqual(['João Silva', 'Ana ♥ Bruno']);
+  });
+
+  test('orders multiple couples on the same day alphabetically, after the birthdays', () => {
+    const groups: BirthdayGroup[] = [{ date: '2026-05-20', weekday: 'Quarta-feira', names: ['João Silva'] }];
+    const result = mergeWeddings(groups, [
+      { date: '2026-05-20', label: 'Zora ♥ Yan' },
+      { date: '2026-05-20', label: 'Ana ♥ Bruno' },
+    ]);
+    expect(result[0]?.names).toEqual(['João Silva', 'Ana ♥ Bruno', 'Zora ♥ Yan']);
+  });
+
+  test('creates a new dated group (with weekday) when no birthday falls on that day', () => {
+    const result = mergeWeddings([], [{ date: '2026-05-20', label: 'Ana ♥ Bruno' }]);
+    expect(result).toEqual([{ date: '2026-05-20', weekday: 'Quarta-feira', names: ['Ana ♥ Bruno'] }]);
+  });
+
+  test('keeps the merged groups sorted by date', () => {
+    const groups: BirthdayGroup[] = [{ date: '2026-05-22', weekday: 'Sexta-feira', names: ['Carla'] }];
+    const result = mergeWeddings(groups, [{ date: '2026-05-19', label: 'Ana ♥ Bruno' }]);
+    expect(result.map((g) => g.date)).toEqual(['2026-05-19', '2026-05-22']);
   });
 });
 
@@ -447,6 +603,87 @@ describe('getBulletin', () => {
         .run();
 
       expect(getBulletin(testDb, '2026-05-17')?.birthdays).toEqual([]);
+    });
+
+    test('lists a wedding anniversary when both spouses are active members', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.members)
+        .values([
+          {
+            full_name: 'Danilo Souza',
+            spouse: 'Fernanda Souza',
+            wedding_date: '2010-05-20',
+            sex: 'Masculino',
+            status: 'active',
+          },
+          {
+            full_name: 'Fernanda Souza',
+            spouse: 'Danilo Souza',
+            wedding_date: '2010-05-20',
+            sex: 'Feminino',
+            status: 'active',
+          },
+        ])
+        .run();
+
+      const result = getBulletin(testDb, '2026-05-17');
+      expect(result?.birthdays).toHaveLength(1);
+      expect(result?.birthdays?.[0]?.names).toEqual(['Fernanda Souza ♥ Danilo Souza']);
+    });
+
+    test('omits a wedding when the spouse is not an active member', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.members)
+        .values([
+          {
+            full_name: 'Danilo Souza',
+            spouse: 'Fernanda Souza',
+            wedding_date: '2010-05-20',
+            sex: 'Masculino',
+            status: 'active',
+          },
+          {
+            full_name: 'Fernanda Souza',
+            spouse: 'Danilo Souza',
+            wedding_date: '2010-05-20',
+            sex: 'Feminino',
+            status: 'transferred',
+          },
+        ])
+        .run();
+
+      expect(getBulletin(testDb, '2026-05-17')?.birthdays).toEqual([]);
+    });
+
+    test('lists age birthdays before the wedding on the same day', () => {
+      insertBulletin();
+      testDb
+        .insert(schema.members)
+        .values([
+          { full_name: 'João Silva', birth_date: '1990-05-20', status: 'active' },
+          {
+            full_name: 'Danilo Souza',
+            spouse: 'Fernanda Souza',
+            birth_date: '1980-05-20',
+            wedding_date: '2010-05-20',
+            sex: 'Masculino',
+            status: 'active',
+          },
+          {
+            full_name: 'Fernanda Souza',
+            spouse: 'Danilo Souza',
+            wedding_date: '2010-05-20',
+            sex: 'Feminino',
+            status: 'active',
+          },
+        ])
+        .run();
+
+      const result = getBulletin(testDb, '2026-05-17');
+      const group = result?.birthdays?.find((g) => g.date === '2026-05-20');
+      expect(group?.names).toEqual(['João Silva', 'Danilo Souza', 'Fernanda Souza ♥ Danilo Souza']);
     });
   });
 });

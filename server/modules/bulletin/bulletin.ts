@@ -87,24 +87,29 @@ export type BirthdayRow = {
 
 export type BirthdayWindow = { from: string; to: string };
 
-export function buildBirthdays(rows: BirthdayRow[], window: BirthdayWindow): BirthdayGroup[] {
+// Maps a recurring date (birth/wedding) to its full date within the window by month-day, or null when outside.
+// Handles a window that crosses the year boundary (Dec→Jan), placing January days in the later year.
+function resolveWindowedDate(recurringDate: string, window: BirthdayWindow): string | null {
   const fromMD = window.from.slice(5);
   const toMD = window.to.slice(5);
   const fromYear = window.from.slice(0, 4);
   const toYear = window.to.slice(0, 4);
   const crossYear = fromYear !== toYear;
 
+  const md = recurringDate.slice(5);
+  const inWindow = crossYear ? md >= fromMD || md <= toMD : md >= fromMD && md <= toMD;
+  if (!inWindow) return null;
+
+  const year = crossYear && md < fromMD ? toYear : fromYear;
+  return `${year}-${md}`;
+}
+
+export function buildBirthdays(rows: BirthdayRow[], window: BirthdayWindow): BirthdayGroup[] {
   const byDate = new Map<string, string[]>();
 
   for (const row of rows) {
-    const md = row.birth_date.slice(5);
-
-    const inWindow = crossYear ? md >= fromMD || md <= toMD : md >= fromMD && md <= toMD;
-
-    if (!inWindow) continue;
-
-    const year = crossYear && md < fromMD ? toYear : fromYear;
-    const fullDate = `${year}-${md}`;
+    const fullDate = resolveWindowedDate(row.birth_date, window);
+    if (fullDate === null) continue;
 
     const existing = byDate.get(fullDate) ?? [];
     existing.push(row.full_name);
@@ -118,6 +123,97 @@ export function buildBirthdays(rows: BirthdayRow[], window: BirthdayWindow): Bir
       weekday: WEEKDAY_NAMES[isoWeekday(date)] ?? String(isoWeekday(date)),
       names,
     }));
+}
+
+export type WeddingRow = {
+  full_name: string;
+  spouse: string | null;
+  wedding_date: string | null;
+  sex: string | null;
+};
+
+type WeddingEntry = { date: string; label: string };
+
+const NAME_PREPOSITIONS = new Set(['de', 'da', 'do', 'dos', 'e']);
+
+// Up to the first two tokens of a name, stopping before a Portuguese preposition: `Ana Lúcia` but `Bruno`.
+function shortName(fullName: string): string {
+  const tokens = fullName.trim().split(/\s+/);
+  const out: string[] = [];
+  for (const token of tokens) {
+    if (out.length === 2) break;
+    if (out.length >= 1 && NAME_PREPOSITIONS.has(token.toLowerCase())) break;
+    out.push(token);
+  }
+  return out.join(' ');
+}
+
+// `Woman ♥ Man` (♥ = U+2665): woman-first via `sex`, alphabetical fallback when sex is missing or equal.
+function formatCouple(a: WeddingRow, b: WeddingRow): string {
+  const aWoman = a.sex === 'Feminino';
+  const bWoman = b.sex === 'Feminino';
+
+  let first = a;
+  let second = b;
+  if (aWoman !== bWoman) {
+    [first, second] = aWoman ? [a, b] : [b, a];
+  } else if (a.full_name.localeCompare(b.full_name) > 0) {
+    [first, second] = [b, a];
+  }
+
+  return `${shortName(first.full_name)} ♥ ${shortName(second.full_name)}`;
+}
+
+export function buildWeddings(rows: WeddingRow[], window: BirthdayWindow): WeddingEntry[] {
+  const byName = new Map<string, WeddingRow>();
+  for (const row of rows) {
+    byName.set(row.full_name, row);
+  }
+
+  const seen = new Set<string>();
+  const entries: WeddingEntry[] = [];
+
+  for (const row of rows) {
+    if (!row.wedding_date || !row.spouse) continue;
+
+    const partner = byName.get(row.spouse);
+    if (!partner || partner.wedding_date !== row.wedding_date) continue;
+
+    const coupleKey = [row.full_name, partner.full_name].sort().join('|');
+    if (seen.has(coupleKey)) continue;
+    seen.add(coupleKey);
+
+    const date = resolveWindowedDate(row.wedding_date, window);
+    if (date === null) continue;
+
+    entries.push({ date, label: formatCouple(row, partner) });
+  }
+
+  return entries;
+}
+
+// Append each wedding into its day's group (after the day's age birthdays), creating the group when absent.
+// Multiple couples on the same day are ordered alphabetically by label; groups stay sorted by date.
+export function mergeWeddings(groups: BirthdayGroup[], weddings: WeddingEntry[]): BirthdayGroup[] {
+  const byDate = new Map<string, BirthdayGroup>();
+  for (const group of groups) {
+    byDate.set(group.date, { ...group, names: [...group.names] });
+  }
+
+  for (const wedding of [...weddings].sort((a, b) => a.label.localeCompare(b.label))) {
+    const existing = byDate.get(wedding.date);
+    if (existing) {
+      existing.names.push(wedding.label);
+    } else {
+      byDate.set(wedding.date, {
+        date: wedding.date,
+        weekday: WEEKDAY_NAMES[isoWeekday(wedding.date)] ?? String(isoWeekday(wedding.date)),
+        names: [wedding.label],
+      });
+    }
+  }
+
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function getCurrentDate(db: Db, today: string): string | null {
@@ -197,7 +293,26 @@ function buildBirthdaysSection(db: Db, birthdaysFrom: string, birthdaysTo: strin
     .all()
     .filter((r): r is { full_name: string; birth_date: string } => r.birth_date !== null);
 
-  return buildBirthdays(rows, { from: birthdaysFrom, to: birthdaysTo });
+  const weddingRows = db
+    .select({
+      full_name: members.full_name,
+      spouse: members.spouse,
+      wedding_date: members.wedding_date,
+      sex: members.sex,
+    })
+    .from(members)
+    .where(
+      and(
+        sql`${members.status} = 'active'`,
+        isNull(members.deleted_at),
+        sql`${members.wedding_date} IS NOT NULL`,
+        sql`${members.wedding_date} != ''`,
+      ),
+    )
+    .all();
+
+  const window = { from: birthdaysFrom, to: birthdaysTo };
+  return mergeWeddings(buildBirthdays(rows, window), buildWeddings(weddingRows, window));
 }
 
 export function getBulletin(db: Db, date: string): BulletinDetail | null {

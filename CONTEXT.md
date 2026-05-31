@@ -37,6 +37,12 @@ Detail route: `/bulletins/[date]`.
 
 The list of church events for the **coming** week, grouped by weekday. Its window runs from the day after the Bulletin's date through the following seven days — so the Sunday it lists is the *next* Sunday, not the one the Bulletin itself is dated on. Because of this, Sunday is shown **last** in the agenda, after Saturday, rather than first.
 
+### Birthdays section (Aniversariantes)
+
+The Bulletin section that lists the active members celebrating in the Bulletin's week — both **birthdays** (date of birth) and **wedding anniversaries** (date of marriage), grouped by calendar day in a single list.
+
+A wedding anniversary is shown as the couple joined by a heart — `Fernanda ♥ Danilo`, woman first. It only surfaces when **both spouses are members** of the church: a couple is paired by matching one member's recorded spouse name to the other member's name on a shared wedding date. When the spouse is not a member (or cannot be matched), the wedding anniversary is **omitted** — the church deliberately does not list a couple where only one half is a member.
+
 ### Liturgy (Liturgia)
 
 The order of service — the structured sequence of the worship service (acts →
