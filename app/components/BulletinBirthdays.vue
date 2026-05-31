@@ -13,7 +13,7 @@
         :key="group.date"
         class="bulletin-birthday-group"
       >
-        <h3>{{ formatDate(group.date) }} — {{ group.weekday }}</h3>
+        <h3>{{ formatDayMonth(group.date) }} — {{ group.weekday }}</h3>
         <ul>
           <li
             v-for="name in group.names"
@@ -28,8 +28,13 @@
 </template>
 
 <script setup lang="ts">
-import { formatDate } from '#imports';
 import type { BirthdayGroup } from '~~/shared/bulletin';
 
 defineProps<{ birthdays: BirthdayGroup[] | null }>();
+
+// Birthday dates use a short day/month form (e.g. "23/04"); the year is irrelevant here. This format is
+// local to this component, unlike the long-form formatDate used elsewhere.
+function formatDayMonth(date: string): string {
+  return `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+}
 </script>

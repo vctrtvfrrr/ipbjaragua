@@ -23,11 +23,11 @@ describe('BulletinBirthdays', () => {
     expect(wrapper.text()).toContain('Nenhum aniversariante esta semana.');
   });
 
-  it('renders birthday group with weekday heading', async () => {
+  it('renders birthday group with day/month and weekday heading', async () => {
     const wrapper = await mountSuspended(BulletinBirthdays, {
       props: { birthdays: [buildGroup('2026-05-17', ['João Silva'])] },
     });
-    expect(wrapper.find('h3').exists()).toBe(true);
+    expect(wrapper.find('h3').text()).toBe('17/05 — Domingo');
     expect(wrapper.text()).toContain('João Silva');
   });
 
