@@ -33,6 +33,10 @@ homepage sidebar).
 
 Detail route: `/bulletins/[date]`.
 
+### Weekly agenda (Agenda semanal)
+
+The list of church events for the **coming** week, grouped by weekday. Its window runs from the day after the Bulletin's date through the following seven days — so the Sunday it lists is the *next* Sunday, not the one the Bulletin itself is dated on. Because of this, Sunday is shown **last** in the agenda, after Saturday, rather than first.
+
 ### Liturgy (Liturgia)
 
 The order of service — the structured sequence of the worship service (acts →

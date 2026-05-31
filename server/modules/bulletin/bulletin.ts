@@ -71,8 +71,12 @@ export function buildAgenda(rows: AgendaRow[], window: AgendaWindow): AgendaGrou
     byDay.set(day, existing);
   }
 
+  // The agenda window is the coming week (the day after the bulletin until +7 days), so the listed
+  // Sunday is the *next* Sunday and belongs at the end. Sort Sunday (0) as if it were day 7.
+  const orderKey = (day: number) => (day === 0 ? 7 : day);
+
   return [...byDay.entries()]
-    .sort(([a], [b]) => a - b)
+    .sort(([a], [b]) => orderKey(a) - orderKey(b))
     .map(([day, events]) => ({ weekday: WEEKDAY_NAMES[day] ?? String(day), events }));
 }
 

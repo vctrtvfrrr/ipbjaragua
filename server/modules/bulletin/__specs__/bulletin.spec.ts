@@ -141,6 +141,16 @@ describe('buildAgenda', () => {
     expect(result[1]?.weekday).toBe('Sexta-feira');
   });
 
+  test('sorts Sunday last (it is the next Sunday in the window)', () => {
+    const rows = [
+      recurringRow({ title: 'Culto', weekday: 0 }),
+      recurringRow({ title: 'Segunda', weekday: 1 }),
+      recurringRow({ title: 'Sábado', weekday: 6 }),
+    ];
+    const result = buildAgenda(rows, BASE_WINDOW);
+    expect(result.map(g => g.weekday)).toEqual(['Segunda-feira', 'Sábado', 'Domingo']);
+  });
+
   test('maps event fields correctly', () => {
     const result = buildAgenda([recurringRow({ title: 'Culto', time: '09:00', description: 'Manhã' })], BASE_WINDOW);
     expect(result[0]?.events[0]).toEqual({ time: '09:00', title: 'Culto', description: 'Manhã' });
