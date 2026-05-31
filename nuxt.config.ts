@@ -15,6 +15,12 @@ export default defineNuxtConfig({
     },
   },
   modules: ['@pinia/nuxt', '@nuxt/devtools', '@nuxt/fonts', 'nuxt-og-image'],
+  ogImage: {
+    // Disable in test environment: when SSR is off (forced by @nuxt/test-utils),
+    // the module skips registering auto-imports entirely, breaking the transform.
+    // Disabling it makes the module register no-op mock imports instead.
+    enabled: process.env.NODE_ENV !== 'test',
+  },
   site: {
     url: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://ipbjaragua.org.br',
     name: 'IPB de Jaguará do Sul',
