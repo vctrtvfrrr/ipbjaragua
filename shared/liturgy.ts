@@ -13,7 +13,7 @@ export type LiturgyMoment =
   | (BaseMoment & {
       type: 'sermon';
       sermon_speaker: string | null;
-      sermon_theme: string | null;
+      description: string | null;
       scripture_passages: ScripturePassage[] | null;
     })
   | (BaseMoment & { type: 'sacrament'; sacrament_type: 'baptism' | 'eucharist' })

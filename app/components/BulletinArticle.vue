@@ -4,23 +4,18 @@
     class="bulletin-article"
   >
     <h2>{{ article.title }}</h2>
+    <ArticleContent :markdown="article.content" />
     <p
       v-if="article.author"
       class="text-sm text-mist-600 italic"
     >
-      {{ article.author }}
+      &mdash; {{ article.author }}
     </p>
-    <ArticleContent :markdown="article.content" />
-    <NuxtLink
-      :to="`/articles/${article.slug}`"
-      class="mt-4 inline-block text-sm text-blue-600 hover:underline"
-      >Ver artigo completo &rarr;</NuxtLink
-    >
   </div>
 </template>
 
 <script setup lang="ts">
-import { ArticleContent, NuxtLink } from '#components';
+import { ArticleContent } from '#components';
 import type { ArticleDetail } from '~~/shared/article';
 
 defineProps<{ article: ArticleDetail | null }>();

@@ -564,13 +564,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "sermon_theme": {
-          "name": "sermon_theme",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "sacrament_type": {
           "name": "sacrament_type",
           "type": "text",

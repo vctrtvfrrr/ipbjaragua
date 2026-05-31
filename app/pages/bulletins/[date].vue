@@ -36,10 +36,10 @@
       </header>
       <div class="bulletin-content">
         <BulletinArticle :article="bulletin.article" />
-        <BulletinLiturgy :liturgy="bulletin.liturgy" />
         <BulletinWeeklyAgenda :agenda="bulletin.agenda" />
         <BulletinAnnouncements :announcements="bulletin.announcements" />
         <BulletinBirthdays :birthdays="bulletin.birthdays" />
+        <BulletinLiturgy :liturgy="bulletin.liturgy" />
       </div>
     </template>
   </div>

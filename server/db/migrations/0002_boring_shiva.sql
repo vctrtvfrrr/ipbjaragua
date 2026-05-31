@@ -21,7 +21,6 @@ CREATE TABLE `__new_liturgy_moments` (
 	`scripture_passages` text,
 	`description` text,
 	`sermon_speaker` text,
-	`sermon_theme` text,
 	`sacrament_type` text,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -30,6 +29,6 @@ CREATE TABLE `__new_liturgy_moments` (
 	CONSTRAINT "sacrament_type_required" CHECK("__new_liturgy_moments"."type" <> 'sacrament' OR "__new_liturgy_moments"."sacrament_type" IS NOT NULL)
 );
 --> statement-breakpoint
-INSERT INTO `__new_liturgy_moments`("id", "act_id", "position", "type", "song_id", "scripture_passages", "description", "sermon_speaker", "sermon_theme", "sacrament_type", "created_at", "updated_at") SELECT "id", "act_id", "position", "type", "song_id", "scripture_passages", "description", "sermon_speaker", "sermon_theme", "sacrament_type", "created_at", "updated_at" FROM `liturgy_moments`;--> statement-breakpoint
+INSERT INTO `__new_liturgy_moments`("id", "act_id", "position", "type", "song_id", "scripture_passages", "description", "sermon_speaker", "sacrament_type", "created_at", "updated_at") SELECT "id", "act_id", "position", "type", "song_id", "scripture_passages", "description", "sermon_speaker", "sacrament_type", "created_at", "updated_at" FROM `liturgy_moments`;--> statement-breakpoint
 DROP TABLE `liturgy_moments`;--> statement-breakpoint
 ALTER TABLE `__new_liturgy_moments` RENAME TO `liturgy_moments`;

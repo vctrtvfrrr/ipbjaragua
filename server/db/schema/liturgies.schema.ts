@@ -36,7 +36,6 @@ export const liturgyMoments = sqliteTable(
     scripture_passages: text('scripture_passages'),
     description: text('description'),
     sermon_speaker: text('sermon_speaker'),
-    sermon_theme: text('sermon_theme'),
     sacrament_type: text('sacrament_type', { enum: ['baptism', 'eucharist'] }),
     ...timestamps(),
   },

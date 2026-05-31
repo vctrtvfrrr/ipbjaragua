@@ -147,8 +147,7 @@ describe('BulletinLiturgy', () => {
       {
         position: 1,
         type: 'sermon',
-        description: null,
-        sermon_theme: 'A Graça que Salva',
+        description: 'A Graça que Salva',
         sermon_speaker: 'Pr. João',
         scripture_passages: [{ reference: 'Rm 8:28' }],
       },

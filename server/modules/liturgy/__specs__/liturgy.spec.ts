@@ -367,7 +367,7 @@ describe('getLiturgy', () => {
         position: 1,
         type: 'sermon',
         sermon_speaker: 'Pr. João',
-        sermon_theme: 'Providência',
+        description: 'Providência',
         scripture_passages: JSON.stringify(passages),
       })
       .run();
@@ -375,16 +375,9 @@ describe('getLiturgy', () => {
     const moment = getLiturgy(testDb, '2026-05-17')?.acts[0]?.moments[0];
     if (moment?.type !== 'sermon') return;
     expect(moment.sermon_speaker).toBe('Pr. João');
-    expect(moment.sermon_theme).toBe('Providência');
+    expect(moment.description).toBe('Providência');
     expect(moment.scripture_passages).toEqual(passages);
-    expect(Object.keys(moment)).toEqual([
-      'position',
-      'description',
-      'type',
-      'sermon_speaker',
-      'sermon_theme',
-      'scripture_passages',
-    ]);
+    expect(Object.keys(moment)).toEqual(['position', 'description', 'type', 'sermon_speaker', 'scripture_passages']);
   });
 
   test('sacrament moment: includes sacrament_type, excludes unrelated fields', () => {

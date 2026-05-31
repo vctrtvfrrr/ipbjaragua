@@ -57,14 +57,13 @@
           </template>
 
           <template v-else-if="moment.type === 'sermon'">
-            <strong v-if="moment.sermon_theme">{{ moment.sermon_theme }}</strong>
+            <strong v-if="moment.description">{{ moment.description }}</strong>
             <p v-if="moment.sermon_speaker">{{ moment.sermon_speaker }}</p>
             <BiblePassageBlock
               v-for="(p, i) in moment.scripture_passages ?? []"
               :key="i"
               :passage="p"
             />
-            <p v-if="moment.description">{{ moment.description }}</p>
           </template>
 
           <template v-else-if="moment.type === 'sacrament'">
@@ -74,16 +73,10 @@
         </li>
       </ul>
     </article>
-    <NuxtLink
-      :to="`/liturgies/${liturgy.date}`"
-      class="mt-4 inline-block text-sm text-blue-600 hover:underline"
-      >Ver liturgia completa &rarr;</NuxtLink
-    >
   </section>
 </template>
 
 <script setup lang="ts">
-import { NuxtLink } from '#components';
 import type { LiturgyDetail } from '~~/shared/liturgy';
 import { SACRAMENT_LABELS } from '~/utils/liturgy-labels';
 import BiblePassageBlock from './BiblePassageBlock.vue';

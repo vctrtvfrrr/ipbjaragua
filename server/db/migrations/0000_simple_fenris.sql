@@ -62,7 +62,6 @@ CREATE TABLE `liturgy_moments` (
 	`description` text,
 	`sermon_speaker` text,
 	`sermon_reference` text,
-	`sermon_theme` text,
 	`sacrament_type` text,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,

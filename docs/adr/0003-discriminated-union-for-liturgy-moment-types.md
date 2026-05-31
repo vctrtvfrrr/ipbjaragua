@@ -21,7 +21,7 @@ type LiturgyMoment =
   | { type: 'song';         position: number; song: SongData | null }
   | { type: 'bible_reading'; position: number; scripture_passages: ScripturePassage[] | null }
   | { type: 'prayer';       position: number; description: string | null }
-  | { type: 'sermon';       position: number; sermon_speaker: ...; sermon_reference: ...; sermon_theme: ... }
+  | { type: 'sermon';       position: number; sermon_speaker: string | null; sermon_reference: ScripturePassage[] | null; description: string | null }
   | { type: 'sacrament';    position: number; sacrament_type: 'baptism' | 'eucharist' | null }
   | { type: 'pastoral_act'; position: number; description: string | null }
   | { type: 'other';        position: number; description: string | null }

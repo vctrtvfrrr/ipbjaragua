@@ -110,7 +110,7 @@ function buildMoment({
         ...base,
         type: 'sermon',
         sermon_speaker: moment.sermon_speaker,
-        sermon_theme: moment.sermon_theme,
+        description: moment.description,
         scripture_passages: parseScripturePassages(moment.scripture_passages),
       };
     case 'sacrament': {
