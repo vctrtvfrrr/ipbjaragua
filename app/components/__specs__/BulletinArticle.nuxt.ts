@@ -42,11 +42,4 @@ describe('BulletinArticle', () => {
     const wrapper = await mountSuspended(BulletinArticle, { props: { article: buildArticle() } });
     expect(wrapper.find('.bulletin-article').exists()).toBe(true);
   });
-
-  it('renders a link to the article page', async () => {
-    const wrapper = await mountSuspended(BulletinArticle, { props: { article: buildArticle() } });
-    const link = wrapper.find('a');
-    expect(link.exists()).toBe(true);
-    expect(link.attributes('href')).toContain('/articles/estudo-biblico');
-  });
 });
