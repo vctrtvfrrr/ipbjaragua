@@ -27,8 +27,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare Nuxt
+        run: pnpm nuxt prepare
+
       - name: Lint
         run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
 
       - name: Test
         run: pnpm test:coverage
