@@ -13,7 +13,6 @@ WORKDIR /app
 COPY --from=build /app/.output ./.output
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/server/db/migrations ./server/db/migrations
-COPY --from=build /app/content ./content
 ENV NODE_ENV=production \
     NITRO_PORT=3000 \
     NITRO_HOST=0.0.0.0
