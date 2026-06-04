@@ -1,235 +1,56 @@
 # CLAUDE.md
 
-Repository: https://git.codelab.tec.br/codelab/ipbjaragua.git
+Stack, scripts, directory layout, and tooling config are discoverable from `package.json`, `nuxt.config.ts`, `vitest.config.ts`, `drizzle.config.ts`, `.oxlintrc.jsonc`, `.oxfmtrc.jsonc`, and the file tree. This file records only what you can't infer by reading the repo.
 
-## Tech Stack
+## Rules
 
-MUST FOLLOW THESE RULES, NO EXCEPTIONS
+- **pnpm only.** Never npm/yarn/Bun.
+- **Oxfmt is the only formatter** — never add Prettier or Biome. Lint config goes in `.oxlintrc.jsonc`, format config in `.oxfmtrc.jsonc`. Never create `.eslintrc`/`.prettierrc`.
+- **No `@apply` in SCSS** (Tailwind v4 + Sass break on it). Use SCSS only for what Tailwind can't do — animations/keyframes, complex `calc`, third-party overrides. Otherwise use utilities in templates, or extract a Vue component for reuse.
+- **Auto imports are off.** Import every component, composable, and Vue/Nuxt API manually.
+- **Vue:** `<script setup lang="ts">` only (no Options API). Typed `defineProps`/`defineEmits`, `defineModel()` for `v-model`. kebab-case props/emits in templates, PascalCase component names.
+- **TypeScript strict.** No `any` without an inline comment justifying it.
+- **State:** Pinia only, Composition-API setup stores in `app/stores/` (none exist yet).
+- **Zod at every boundary** (API responses, localStorage reads, module data transfer); export types via `z.infer`. Schemas live next to their owner module; types crossing the client/server boundary go in `shared/` as the single source of truth.
+- **Tests** are co-located in `__specs__/` dirs. Vitest selects the project by suffix: `.spec.ts` → unit (node), `.e2e.ts` → e2e (node), `.nuxt.ts` → Vue component (nuxt env). Run `pnpm test` before finishing a task.
 
-- **Runtime:** Node.js v24 (LTS)
-- **Package Manager:** pnpm (version pinned in `packageManager` field of `package.json`, enforced via corepack)
-- **Framework:** Nuxt 4 (Vue 3, `app/` directory structure)
-- **Language:** TypeScript (strict mode)
-- **Build:** Vite (native Nuxt integration)
-- **State:** Pinia (`@pinia/nuxt`)
-- **Schema and Validation:**: Zod for every external boundary (API, localStorage)
-- **Styling:** Tailwind CSS v4 (`@tailwindcss/vite`) + SCSS (Sass)
-- **Linting:** Oxlint (`oxlint`) — configured in `.oxlintrc.jsonc` with `typescript` and `vue` plugins
-- **Formatting:** Oxfmt (`oxfmt`) — configured in `.oxfmtrc.jsonc`
-- **Testing:** Vitest + `@vitest/coverage-v8` + `@vitest/ui`
-- **Git Hooks:** Husky (pre-commit: type-check + lint + format; pre-push: tests)
+## Commits
 
-## Directory Layout
+Conventional Commits, English, imperative, lowercase subject, no trailing period, ≤72 chars. Types: `feat`, `fix`, `docs`, `style`, `refact` (note: not `refactor`), `chore`.
 
-Keep this section up to date.
+## Database
 
-```
-├── app/                  # Nuxt 4 app directory (components, pages, composables, assets, stores, tests)
-│   ├── components/
-│   ├── pages/
-│   ├── composables/
-│   ├── assets/
-│   │   └── scss/         # SCSS files (animations, non-Tailwind styles)
-│   ├── stores/           # Pinia stores
-│   └── tests/            # Vitest unit tests
-├── server/               # Nitro server routes & API
-│   └── api/
-├── public/               # Static assets
-├── .npmrc                # pnpm config (shamefully-hoist, dedupe-peer-dependents)
-├── .oxlintrc.jsonc       # Oxlint config — DO NOT create .eslintrc files
-├── .oxfmtrc.jsonc        # Oxfmt formatter config
-├── vitest.config.ts      # Vitest configuration
-├── nuxt.config.ts        # Nuxt configuration
-└── tsconfig.json         # TypeScript config
-```
+Drizzle + SQLite. No pnpm aliases — invoke Drizzle Kit directly: `npx drizzle-kit generate | migrate | studio`. Access the DB only through `server/db/client.ts`; never instantiate `better-sqlite3` ad hoc.
 
-## Commands
+## Server architecture
 
-```bash
-pnpm install                  # Install dependencies
-pnpm dev                  # Start dev server
-pnpm build                # Production build
-pnpm generate             # Static site generation
-pnpm preview              # Preview production build
-pnpm start                # Start production server
-pnpm type-check           # Run vue-tsc type checking
-pnpm lint                 # Run oxlint
-pnpm lint:fix             # Run oxlint with auto-fix
-pnpm format               # Format with oxfmt
-pnpm format:check         # Check formatting (used in CI/pre-commit)
-pnpm test                 # Run Vitest (watch mode)
-pnpm test:ui              # Run Vitest with browser UI
-pnpm test:coverage        # Run Vitest with v8 coverage (used in pre-push)
-pnpm analyze              # Bundle analysis via nuxi analyze
-```
-
-Husky runs `pnpm type-check`, `pnpm lint:fix`, and `pnpm format` on pre-commit, and `pnpm test:coverage` on pre-push.
-
-## Critical Rules
-
-- **Oxlint** All lint config goes in `.oxlintrc.jsonc`. All formatter config goes in `.oxfmtrc.jsonc`.
-- **No `@apply` in SCSS.** Tailwind v4 + Sass have compatibility issues with `@apply`. Use SCSS only for things Tailwind can't do (complex animations, keyframes, third-party overrides). Use utility classes directly in templates for everything else.
-- **`app/` directory structure.** Components, pages, composables, stores, and tests live under `app/`. Do not place them in the project root.
-- **TypeScript strict.** All new code must be typed. No `any` unless explicitly justified with a comment.
-- **Vue 3 Composition API + `<script setup lang="ts">`.** Do not use Options API.
-- **Auto imports are disabled project wide.** Always import everything.
-- **Pinia for state.** No other state management. Stores go in `app/stores/`.
-- **Tests next to code or in `app/tests/`.** Use Vitest, not Jest. Test files use `.test.ts` or `.spec.ts` suffix.
-- **pnpm only.** Do not use npm, yarn or Bun. Lock file is `pnpm-lock.yaml`.
-
-## Commit Rules
-
-Commit messages uses Conventional Commit format:
-
-- Format: `<type>: <short imperative summary>`
-- Lowercase subject, imperative mood, no trailing period, max 72 chars.
-- Types:
-  - `feat`: A new feature
-  - `fix`: A bug fix
-  - `docs`: Documentation only changes
-  - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-  - `refact`: A code change that neither fixes a bug nor adds a feature
-  - `chore`: Everything else
-
-## Styling Guidelines
-
-- Default to Tailwind utility classes in `<template>`.
-- SCSS is for: animations/keyframes, complex calc logic, and third-party component overrides.
-- Tailwind v4 config is CSS-based (not `tailwind.config.js`). Check existing CSS for theme customizations.
-- Never mix `@apply` with SCSS. If you need a reusable utility, create a Vue component instead.
-
-## Formatting Conventions
-
-- Oxfmt is the sole formatter — never use Prettier or Biome alongside it.
-- Config is in `.oxfmtrc.jsonc`: `printWidth: 120`, single quotes, semicolons, 2-space indent.
-- Run `pnpm format` to format in place, `pnpm format:check` to verify without writing (used in pre-commit).
-- VS Code auto-formats on save via the `oxc.oxfmt` extension (`editor.defaultFormatter`).
-
-## Vue Component Conventions
-
-- `<script setup lang="ts">` only
-- Typed `defineProps` and `defineEmits`
-- Use `defineModel()` for `v-model` cases
-- Use kebab case in templates for props and emits
-- Use PascalCase for component names
-
-## Schema and Validation
-
-Use Zod for all data contracts.
-
-- Define schemas next to the module that owns the data
-- Exception: when a type crosses the client/server boundary (e.g., the shape
-  of an API response consumed by Vue pages), place it under `shared/` so both
-  sides import from a single source of truth
-- Validate on API response
-- Validate on localStorage read
-- Validate on module data transfer
-- Export types from the schema with `z.infer`
-
-This keeps runtime and TypeScript in sync.
-
-## Testing Conventions
-
-- Vitest config is in `vitest.config.ts` — check there for aliases and setup.
-- Coverage provider is `v8` (`@vitest/coverage-v8`).
-- Tests live co-located with source inside `__specs__/` directories.
-- Follow the naming convention `<subject>.spec.js` for unit tests, `<subject>.e2e.ts` for E2E tests, and `<subject>.nuxt.ts` for Vue component tests.
-- Run `pnpm test` to verify nothing is broken before finishing any task.
+Domain logic lives in `server/modules/<feature>/` (public API via `index.ts`). `server/api/` route handlers stay thin and delegate to a module.
 
 ## Gotchas
 
-- The Husky pre-commit hook runs: type-check (`vue-tsc`) → lint (`oxlint --fix`) → format (`oxfmt`). The pre-push hook runs `test:coverage`. If any step fails, the commit or push is rejected.
-- `tsconfig.tsbuildinfo` is committed — don't delete it, TypeScript incremental builds depend on it.
-- `vite` is declared as an explicit devDependency to prevent pnpm from resolving multiple Vite instances (which causes TypeScript type errors in `nuxt.config.ts`).
+- `tsconfig.tsbuildinfo` is committed — don't delete it; incremental builds depend on it.
+- `vite` is an explicit devDependency to stop pnpm resolving multiple Vite instances (which breaks types in `nuxt.config.ts`).
 
-## Imports and Auto Imports
-
-This project disables auto imports in `nuxt.config.ts`.
-
-```ts
-export default defineNuxtConfig({
-  imports: { autoImport: false },
-})
-```
-
-So you must:
-
-- Import every Vue/Nuxt composable manually
-- Import every component manually
-
-## Store Pattern
-
-All Pinia stores use the **Composition API** pattern with setup functions.
-
-```ts
-// stores/{feature}/use{Feature}Store.ts
-import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-
-export const useFeatureStore = defineStore('feature', () => {
-  // State (ref/reactive)
-  const items = ref<Item[]>([])
-
-  // Getters (computed)
-  const itemCount = computed(() => items.value.length)
-  const isEmpty = computed(() => items.value.length === 0)
-
-  // Actions (functions)
-  function addItem(item: Item) {
-    items.value.push(item)
-  }
-
-  function removeItem(id: string) {
-    items.value = items.value.filter(i => i.id !== id)
-  }
-
-  // Effects (watchers, initialization)
-  watch(items, (newItems) => {
-    saveToStorage(newItems)
-  }, { deep: true })
-
-  // Public API
-  return {
-    // State
-    items,
-    // Getters
-    itemCount,
-    isEmpty,
-    // Actions
-    addItem,
-    removeItem,
-  }
-})
-```
-
-**Rules:**
-
-- **State**: Use `ref()` or `reactive()` for reactive state
-- **Getters**: Use `computed()` for derived state
-- **Actions**: Use plain functions for state mutations and async operations
-- **Side effects**: Use `watch()` for persistence, initialize data on store creation
-- **Direct mutations**: State can be mutated directly in actions (no dispatch/messages)
-- **Return all**: Return all state, getters, and actions for external access
-- **Type safety**: TypeScript infers types from function signatures
-
-## Boundaries
-
-### Do not propose
+## Do not propose
 
 - Alternative frameworks, build tools, or package managers.
-- Removing or bypassing Husky hooks.
-- New dependencies unless there is a clear, justified need that existing tools (`@vueuse/core`, Pinia, etc.) cannot cover.
+- Removing or bypassing Husky hooks (pre-commit: type-check → lint → format; pre-push: test:coverage).
+- New dependencies unless existing tools (Pinia, `@vueuse/core`, …) genuinely can't cover the need.
 
-## Agent skills
+## Platform contract
 
-### Issue tracker
+- Deploy: the workflow builds/pushes the image, then calls the shared `deploy-stack` action (configured as a full Gitea URL). The action renders the host `.env`, rsyncs `compose.yml` to `/opt/compose/ipbjaragua/`, and runs `docker compose up -d`.
+- `traefik-public` is external and platform-owned — never invent a network; a stack-local one can't reach Traefik.
+- This stack owns the `ipbjaragua.org.br` zone, serves the apex, and redirects `www.` inline in `compose.yml` (not the platform wildcard-subdomain pattern).
+- `.env.example` is the full env schema: every var the app reads, secret or not, each with a local-dev default. Non-secret config stays there, never hoisted into `compose.yml`. Production `DATABASE_URL` is a CI override in `deploy.yml`, not committed.
+- `/opt/data/ipbjaragua` holds the SQLite DB (mounted at `/app/data`) — persistent host state, never touched by a deploy.
+- Secrets live only in the Vault collection `IPB Jaraguá` (the name differs from the service, so `deploy.yml` sets `collection: "IPB Jaraguá"`). `NUXT_OG_IMAGE_SECRET` has an empty default in `.env.example` and is rendered into the host `.env` at deploy.
+- The repo carries the Gitea topic `codelab-stack` for the stack inventory.
 
-Issues live in Gitea (`codelab/ipbjaragua` on git.codelab.tec.br), accessed via the `tea` CLI. See `docs/agents/issue-tracker.md`.
+Canonical infra contract: [codelab-infra](https://git.codelab.tec.br/codelab/infra) (`CONTEXT.md`, `docs/adr/`, `templates/stack/`) and [deploy-stack](https://git.codelab.tec.br/codelab/deploy-stack).
 
-### Triage labels
+## Docs & agents
 
-Five canonical triage roles map 1:1 to existing Gitea labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+- Domain: `CONTEXT.md` + `docs/adr/` (see `docs/agents/domain.md`).
+- Issues: Gitea `codelab/ipbjaragua` via the `tea` CLI (`docs/agents/issue-tracker.md`).
+- Triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` (`docs/agents/triage-labels.md`).

@@ -1,0 +1,31 @@
+services:
+  ipbjaragua:
+    image: registry.codelab.tec.br/codelab/ipbjaragua:latest
+    container_name: ipbjaragua
+    restart: unless-stopped
+    pull_policy: always
+    env_file:
+      - .env
+    volumes:
+      - /opt/data/ipbjaragua:/app/data
+    networks:
+      - traefik-public
+    mem_limit: 512m
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik-public'
+      - 'traefik.http.routers.ipbjaragua.rule=Host(`ipbjaragua.org.br`) || Host(`www.ipbjaragua.org.br`)'
+      - 'traefik.http.routers.ipbjaragua.entrypoints=websecure'
+      - 'traefik.http.routers.ipbjaragua.tls=true'
+      - 'traefik.http.routers.ipbjaragua.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.ipbjaragua.tls.domains[0].main=ipbjaragua.org.br'
+      - 'traefik.http.routers.ipbjaragua.tls.domains[0].sans=*.ipbjaragua.org.br'
+      - 'traefik.http.routers.ipbjaragua.middlewares=ipbjaragua-www-redirect@docker,security-headers@file'
+      - 'traefik.http.services.ipbjaragua.loadbalancer.server.port=3000'
+      - "traefik.http.middlewares.ipbjaragua-www-redirect.redirectregex.regex=^https?://www\\.ipbjaragua\\.org\\.br/(.*)"
+      - 'traefik.http.middlewares.ipbjaragua-www-redirect.redirectregex.replacement=https://ipbjaragua.org.br/$${1}'
+      - 'traefik.http.middlewares.ipbjaragua-www-redirect.redirectregex.permanent=true'
+
+networks:
+  traefik-public:
+    external: true

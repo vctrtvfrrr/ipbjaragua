@@ -65,7 +65,13 @@ jobs:
           docker push "${IMAGE}:${{ github.sha }}"
           docker push "${IMAGE}:latest"
 
-      - name: Deploy
-        run: |
-          docker compose -f /opt/compose/ipbjaragua/compose.yml pull
-          docker compose -f /opt/compose/ipbjaragua/compose.yml up -d --force-recreate
+      - name: Deploy stack
+        uses: https://git.codelab.tec.br/codelab/deploy-stack@master
+        with:
+          service: ipbjaragua
+          bw-server: ${{ secrets.BW_SERVER }}
+          bw-clientid: ${{ secrets.BW_CLIENTID }}
+          bw-clientsecret: ${{ secrets.BW_CLIENTSECRET }}
+          bw-password: ${{ secrets.BW_PASSWORD }}
+          env-overrides: |
+            DATABASE_URL=/app/data/db.sqlite
