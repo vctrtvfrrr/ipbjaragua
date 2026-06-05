@@ -23,7 +23,7 @@ export default defineNuxtConfig({
     url: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://ipbjaragua.org.br',
     name: 'IPB de Jaguará do Sul',
   },
-  css: ['@/assets/style/tailwind.css'],
+  css: ['@/assets/css/main.css'],
   vite: {
     plugins: [svgLoader()],
   },
