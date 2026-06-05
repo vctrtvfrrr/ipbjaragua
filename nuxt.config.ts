@@ -1,5 +1,4 @@
 import svgLoader from 'vite-svg-loader';
-import tailwindcss from '@tailwindcss/vite';
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-12-05',
@@ -13,7 +12,7 @@ export default defineNuxtConfig({
       link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
-  modules: ['@pinia/nuxt', '@nuxt/devtools', '@nuxt/fonts', 'nuxt-og-image'],
+  modules: ['@pinia/nuxt', '@nuxt/devtools', '@nuxt/ui', 'nuxt-og-image'],
   ogImage: {
     // Disable in test environment: when SSR is off (forced by @nuxt/test-utils),
     // the module skips registering auto-imports entirely, breaking the transform.
@@ -26,7 +25,7 @@ export default defineNuxtConfig({
   },
   css: ['@/assets/style/tailwind.css'],
   vite: {
-    plugins: [svgLoader(), tailwindcss()],
+    plugins: [svgLoader()],
   },
   nitro: {
     preset: 'node-server',

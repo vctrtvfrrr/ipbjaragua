@@ -1,4 +1,11 @@
+# Nuxt UI auto-registers @nuxt/fonts, @nuxt/icon and @nuxtjs/color-mode, which
+# Nuxt resolves from the project root — hoist them so pnpm's isolated layout
+# doesn't hide them. (pnpm v11 reads hoist config here, not from .npmrc.)
+shamefullyHoist: true
+dedupePeerDependents: true
+
 allowBuilds:
   '@parcel/watcher': true
   better-sqlite3: true
   esbuild: true
+  vue-demi: false

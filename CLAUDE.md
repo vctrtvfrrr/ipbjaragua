@@ -7,6 +7,7 @@ Stack, scripts, directory layout, and tooling config are discoverable from `pack
 - **pnpm only.** Never npm/yarn/Bun.
 - **Oxfmt is the only formatter** — never add Prettier or Biome. Lint config goes in `.oxlintrc.jsonc`, format config in `.oxfmtrc.jsonc`. Never create `.eslintrc`/`.prettierrc`.
 - **No `@apply` in SCSS** (Tailwind v4 + Sass break on it). Use SCSS only for what Tailwind can't do — animations/keyframes, complex `calc`, third-party overrides. Otherwise use utilities in templates, or extract a Vue component for reuse.
+- **UI:** Nuxt UI v4 is the sanctioned component system (a deliberate exception to "no new dependencies" — see ADR-0010). Its `U*` components are globally registered — use them directly, never import. Reach for a `U*` primitive before hand-rolling markup. Style with Nuxt UI semantic tokens (`text-muted`, `text-highlighted`, `bg-elevated`, …) and theme via `app.config.ts` + Tailwind `@theme`; avoid ad-hoc palette utilities (`green-900`, `slate-*`). Nuxt UI owns Tailwind — the CSS entry is `@import "tailwindcss"; @import "@nuxt/ui";` with no standalone `@tailwindcss/vite` plugin. The Satori OG-image component (`OgImage/*.satori.vue`) stays plain — Satori doesn't understand Nuxt UI.
 - **Vue:** `<script setup lang="ts">` only (no Options API). Typed `defineProps`/`defineEmits`, `defineModel()` for `v-model`. kebab-case props/emits in templates, PascalCase component names.
 - **TypeScript strict.** No `any` without an inline comment justifying it.
 - **State:** Pinia only, Composition-API setup stores in `app/stores/` (none exist yet).
@@ -29,6 +30,7 @@ Domain logic lives in `server/modules/<feature>/` (public API via `index.ts`). `
 
 - `tsconfig.tsbuildinfo` is committed — don't delete it; incremental builds depend on it.
 - `vite` is an explicit devDependency to stop pnpm resolving multiple Vite instances (which breaks types in `nuxt.config.ts`).
+- `pnpm-workspace.yaml` sets `shamefullyHoist: true` — required so the Nuxt modules Nuxt UI auto-registers (`@nuxt/fonts`, `@nuxt/icon`, `@nuxtjs/color-mode`) resolve from the project root. pnpm v11 reads hoist config here, not from `.npmrc` (which is why none exists).
 
 ## Do not propose
 
