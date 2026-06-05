@@ -3,7 +3,7 @@
     <h2>Aniversariantes</h2>
     <p
       v-if="birthdays.length === 0"
-      class="text-mist-600 italic"
+      class="text-muted italic"
     >
       Nenhum aniversariante esta semana.
     </p>

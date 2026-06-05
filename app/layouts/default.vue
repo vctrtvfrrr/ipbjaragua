@@ -1,13 +1,13 @@
 <template>
-  <div class="min-h-screen">
+  <div>
     <NuxtLoadingIndicator />
-    <header class="border-b border-gray-200">
-      <div class="mx-auto flex max-w-5xl items-center px-4 py-4 sm:px-6 sm:py-5">
+    <UHeader :toggle="false">
+      <template #left>
         <SiteHeader />
-      </div>
-    </header>
-    <main>
+      </template>
+    </UHeader>
+    <UMain>
       <slot />
-    </main>
+    </UMain>
   </div>
 </template>

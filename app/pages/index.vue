@@ -1,11 +1,11 @@
 <template>
   <div class="mx-auto max-w-6xl gap-8 p-8 lg:grid lg:grid-cols-[1fr_20rem]">
     <main>
-      <h1 class="mb-8 text-3xl font-bold text-green-900">Artigos</h1>
+      <h1 class="mb-8 text-3xl font-bold text-highlighted">Artigos</h1>
 
       <p
         v-if="articles.length === 0"
-        class="text-mist-800"
+        class="text-muted"
       >
         Nenhum artigo publicado ainda.
       </p>
@@ -22,15 +22,15 @@
             :to="`/articles/${article.slug}`"
             class="block hover:underline"
           >
-            <h2 class="text-xl font-semibold text-green-900">{{ article.title }}</h2>
-            <p class="mt-1 text-sm text-mist-800">
+            <h2 class="text-xl font-semibold text-highlighted">{{ article.title }}</h2>
+            <p class="mt-1 text-sm text-muted">
               <time :datetime="article.date">{{ formatDate(article.date) }}</time>
               <template v-if="article.author"> &middot; {{ article.author }}</template>
             </p>
           </NuxtLink>
           <p
             v-if="article.excerpt"
-            class="mt-2 text-mist-900"
+            class="mt-2 text-muted"
           >
             {{ article.excerpt }}
           </p>
@@ -47,7 +47,7 @@
           :key="n"
           :to="{ query: { page: n } }"
           :aria-current="n === currentPage ? 'page' : undefined"
-          class="rounded border border-gray-200 px-3 py-1 text-sm hover:bg-gray-50 aria-[current=page]:bg-green-900 aria-[current=page]:text-white"
+          class="rounded border border-default px-3 py-1 text-sm hover:bg-elevated aria-[current=page]:bg-primary aria-[current=page]:text-inverted"
         >
           {{ n }}
         </NuxtLink>

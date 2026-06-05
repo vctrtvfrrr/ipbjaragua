@@ -3,7 +3,7 @@
     <h2>Agenda Semanal</h2>
     <p
       v-if="agenda.length === 0"
-      class="text-mist-600 italic"
+      class="text-muted italic"
     >
       Nenhum evento nesta semana.
     </p>

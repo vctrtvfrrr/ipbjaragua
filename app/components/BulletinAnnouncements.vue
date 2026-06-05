@@ -3,7 +3,7 @@
     <h2>Avisos</h2>
     <p
       v-if="announcements.length === 0"
-      class="text-mist-600 italic"
+      class="text-muted italic"
     >
       Nenhum aviso para esta semana.
     </p>
@@ -22,7 +22,7 @@
         <p v-if="item.url">
           <a
             :href="item.url"
-            class="text-blue-600 hover:underline"
+            class="text-primary hover:underline"
             >Mais informações</a
           >
         </p>

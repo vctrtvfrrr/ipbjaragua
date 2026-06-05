@@ -1,16 +1,19 @@
 <template>
-  <section
+  <UCard
     v-if="date"
     data-sidebar-block="bulletin"
   >
-    <h2 class="mb-2 text-sm font-semibold tracking-wide text-mist-800 uppercase">Boletim</h2>
-    <NuxtLink
+    <template #header>
+      <h2 class="text-sm font-semibold tracking-wide text-muted uppercase">Boletim</h2>
+    </template>
+    <UButton
       :to="`/bulletins/${date}`"
-      class="text-blue-600 hover:underline"
+      variant="link"
+      class="p-0"
     >
       <time :datetime="date">{{ formatDate(date) }}</time>
-    </NuxtLink>
-  </section>
+    </UButton>
+  </UCard>
 </template>
 
 <script setup lang="ts">

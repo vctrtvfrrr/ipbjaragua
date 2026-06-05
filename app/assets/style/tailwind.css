@@ -7,7 +7,7 @@
   }
 
   .bulletin-content h2 {
-    @apply mt-8 mb-3 text-center text-3xl font-bold text-green-900;
+    @apply mt-8 mb-3 text-center text-3xl font-bold text-highlighted;
   }
 
   .bulletin-content h3 {
@@ -19,7 +19,7 @@
   }
 
   .bulletin-content blockquote {
-    @apply my-4 border-l-4 border-slate-300 pl-4 text-slate-600 italic;
+    @apply my-4 border-l-4 border-accented pl-4 text-muted italic;
   }
 
   .bulletin-content ul {
@@ -45,7 +45,7 @@
   .bulletin-liturgy h3 {
     @apply text-2xl font-bold;
     &::before {
-      @apply font-normal text-red-500;
+      @apply font-normal text-primary;
       font-family: 'Segoe UI Symbol';
       content: '⁜ ';
     }

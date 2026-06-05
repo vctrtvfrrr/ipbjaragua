@@ -3,35 +3,36 @@
     <div
       v-if="errorStatus === 404"
       role="alert"
-      class="rounded border border-amber-200 bg-amber-50 p-4 text-amber-800"
+      class="rounded border border-warning/25 bg-warning/10 p-4 text-warning"
     >
       <h2 class="text-2xl font-bold">Erro 404</h2>
       <p>Boletim não encontrado.</p>
-      <NuxtLink
+      <UButton
         to="/"
-        class="block text-sm text-blue-600 hover:underline"
-        >&larr; Ir para a home</NuxtLink
+        variant="link"
+        class="p-0 text-sm"
+        >&larr; Ir para a home</UButton
       >
     </div>
     <div
       v-else-if="errorStatus"
       role="alert"
-      class="rounded border border-red-200 bg-red-50 p-4 text-red-800"
+      class="rounded border border-error/25 bg-error/10 p-4 text-error"
     >
       <p>Não foi possível carregar o boletim.</p>
-      <button
-        type="button"
-        class="mt-2 text-sm text-blue-600 hover:underline"
+      <UButton
+        variant="link"
+        class="mt-2 p-0 text-sm"
         @click="refresh()"
       >
         Tentar novamente
-      </button>
+      </UButton>
     </div>
     <template v-else-if="bulletin">
       <header class="mb-8 text-center">
-        <h1 class="text-5xl font-bold text-green-900">
+        <h1 class="text-5xl font-bold text-highlighted">
           {{ bulletin.title ?? 'Boletim Semanal' }}
-          <small class="block text-xl font-normal text-mist-800 italic">{{ formatDate(bulletin.date) }}</small>
+          <small class="block text-xl font-normal text-muted italic">{{ formatDate(bulletin.date) }}</small>
         </h1>
       </header>
       <div class="bulletin-content">

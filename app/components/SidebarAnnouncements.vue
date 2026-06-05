@@ -1,31 +1,34 @@
 <template>
-  <section
+  <UCard
     v-if="items.length > 0"
     data-sidebar-block="announcements"
   >
-    <h2 class="mb-2 text-sm font-semibold tracking-wide text-mist-800 uppercase">Avisos</h2>
+    <template #header>
+      <h2 class="text-sm font-semibold tracking-wide text-muted uppercase">Avisos</h2>
+    </template>
     <ul class="space-y-4">
       <li
         v-for="announcement in items"
         :key="announcement.id"
       >
-        <h3 class="font-semibold text-green-900">{{ announcement.title }}</h3>
+        <h3 class="font-semibold text-highlighted">{{ announcement.title }}</h3>
         <p
           v-if="announcement.description"
-          class="text-sm text-mist-900"
+          class="text-sm text-muted"
         >
           {{ announcement.description }}
         </p>
-        <a
+        <UButton
           v-if="announcement.url"
-          :href="announcement.url"
-          class="text-sm text-blue-600 hover:underline"
+          :to="announcement.url"
+          variant="link"
+          class="p-0 text-sm"
         >
           Acesse
-        </a>
+        </UButton>
       </li>
     </ul>
-  </section>
+  </UCard>
 </template>
 
 <script setup lang="ts">

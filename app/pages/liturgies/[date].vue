@@ -1,36 +1,37 @@
 <template>
   <article class="mx-auto min-h-screen max-w-3xl p-8">
-    <NuxtLink
+    <UButton
       to="/"
-      class="mb-6 inline-block text-sm text-blue-600 hover:underline"
-      >&larr; Voltar para a home</NuxtLink
+      variant="link"
+      class="mb-6 p-0 text-sm"
+      >&larr; Voltar para a home</UButton
     >
     <div
       v-if="errorStatus === 404"
       role="alert"
-      class="rounded border border-amber-200 bg-amber-50 p-4 text-amber-800"
+      class="rounded border border-warning/25 bg-warning/10 p-4 text-warning"
     >
       <p>Liturgia não encontrada.</p>
     </div>
     <div
       v-else-if="errorStatus"
       role="alert"
-      class="rounded border border-red-200 bg-red-50 p-4 text-red-800"
+      class="rounded border border-error/25 bg-error/10 p-4 text-error"
     >
       <p>Não foi possível carregar a liturgia.</p>
-      <button
-        type="button"
-        class="mt-2 text-sm text-blue-600 hover:underline"
+      <UButton
+        variant="link"
+        class="mt-2 p-0 text-sm"
         @click="refresh()"
       >
         Tentar novamente
-      </button>
+      </UButton>
     </div>
     <template v-else-if="liturgyForDisplay">
       <header class="mb-8 text-center">
-        <h1 class="text-4xl font-bold text-green-900">
+        <h1 class="text-4xl font-bold text-highlighted">
           Liturgia do Culto
-          <small class="block text-xl font-normal text-mist-800 italic">
+          <small class="block text-xl font-normal text-muted italic">
             <time :datetime="liturgyForDisplay.date">{{ formatDate(liturgyForDisplay.date) }}</time>
           </small>
         </h1>

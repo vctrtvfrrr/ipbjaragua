@@ -1,24 +1,29 @@
 <template>
-  <section
+  <UCard
     v-if="items.length > 0"
     data-sidebar-block="liturgies"
   >
-    <h2 class="mb-2 text-sm font-semibold tracking-wide text-mist-800 uppercase">Liturgias</h2>
+    <template #header>
+      <h2 class="text-sm font-semibold tracking-wide text-muted uppercase">Liturgias</h2>
+    </template>
     <ul class="space-y-2">
       <li
         v-for="liturgy in items"
         :key="liturgy.id"
       >
-        <NuxtLink
+        <UButton
           :to="`/liturgies/${liturgy.date}`"
-          class="text-blue-600 hover:underline"
+          variant="link"
+          class="p-0"
         >
-          <time :datetime="liturgy.date">{{ formatDate(liturgy.date) }}</time>
-          &mdash; {{ liturgy.theme?.trim() || 'Liturgia do Culto' }}
-        </NuxtLink>
+          <span>
+            <time :datetime="liturgy.date">{{ formatDate(liturgy.date) }}</time>
+            &mdash; {{ liturgy.theme?.trim() || 'Liturgia do Culto' }}
+          </span>
+        </UButton>
       </li>
     </ul>
-  </section>
+  </UCard>
 </template>
 
 <script setup lang="ts">

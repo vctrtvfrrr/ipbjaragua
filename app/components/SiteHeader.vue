@@ -1,8 +1,8 @@
 <template>
-  <NuxtLink
+  <ULink
     to="/"
-    class="text-lg font-bold tracking-tight text-gray-900 hover:text-gray-600 sm:text-xl"
+    class="text-lg font-bold tracking-tight text-highlighted hover:text-primary sm:text-xl"
   >
     IPB de Jaguará do Sul
-  </NuxtLink>
+  </ULink>
 </template>

@@ -7,7 +7,7 @@
     <ArticleContent :markdown="article.content" />
     <p
       v-if="article.author"
-      class="text-sm text-mist-600 italic"
+      class="text-sm text-muted italic"
     >
       &mdash; {{ article.author }}
     </p>
