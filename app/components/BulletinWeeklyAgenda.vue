@@ -34,7 +34,6 @@
 </template>
 
 <script setup lang="ts">
-import { renderMarkdown } from '#imports';
 import type { AgendaGroup } from '~~/shared/bulletin';
 
 defineProps<{ agenda: AgendaGroup[] | null }>();

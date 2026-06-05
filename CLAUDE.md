@@ -7,7 +7,6 @@ Stack, scripts, directory layout, and tooling config are discoverable from `pack
 - **pnpm only.** Never npm/yarn/Bun.
 - **Oxfmt is the only formatter** — never add Prettier or Biome. Lint config goes in `.oxlintrc.jsonc`, format config in `.oxfmtrc.jsonc`. Never create `.eslintrc`/`.prettierrc`.
 - **No `@apply` in SCSS** (Tailwind v4 + Sass break on it). Use SCSS only for what Tailwind can't do — animations/keyframes, complex `calc`, third-party overrides. Otherwise use utilities in templates, or extract a Vue component for reuse.
-- **Auto imports are off.** Import every component, composable, and Vue/Nuxt API manually.
 - **Vue:** `<script setup lang="ts">` only (no Options API). Typed `defineProps`/`defineEmits`, `defineModel()` for `v-model`. kebab-case props/emits in templates, PascalCase component names.
 - **TypeScript strict.** No `any` without an inline comment justifying it.
 - **State:** Pinia only, Composition-API setup stores in `app/stores/` (none exist yet).

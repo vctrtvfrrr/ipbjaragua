@@ -46,17 +46,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData, useRoute } from '#app';
-import { defineOgImage, formatDate, useSeoMeta } from '#imports';
-import {
-  BulletinAnnouncements,
-  BulletinArticle,
-  BulletinBirthdays,
-  BulletinLiturgy,
-  BulletinWeeklyAgenda,
-} from '#components';
-import { bulletinSeo } from '~/utils/seo';
 import type { BulletinDetail } from '~~/shared/bulletin';
 
 const route = useRoute();

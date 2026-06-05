@@ -7,7 +7,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { marked } from 'marked';
 
 const props = withDefaults(defineProps<{ markdown?: string }>(), { markdown: '' });

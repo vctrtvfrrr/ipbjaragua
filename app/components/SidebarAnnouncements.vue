@@ -29,8 +29,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData } from '#app';
 import type { AnnouncementListResponse } from '~~/shared/announcement';
 
 const { data } = await useAsyncData('active-announcements', () =>

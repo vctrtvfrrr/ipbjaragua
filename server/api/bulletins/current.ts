@@ -1,4 +1,3 @@
-import { defineEventHandler } from 'h3';
 import { useDb } from '../../db/client';
 import { Bulletin } from '../../modules/bulletin';
 

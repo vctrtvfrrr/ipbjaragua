@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, getRouterParam, type H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { useDb } from '../../db/client';
 import { Bulletin } from '../../modules/bulletin';
 

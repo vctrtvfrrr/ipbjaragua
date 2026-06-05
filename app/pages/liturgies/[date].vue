@@ -41,11 +41,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData, useRoute } from '#app';
-import { defineOgImage, formatDate, useSeoMeta } from '#imports';
-import { BulletinLiturgy } from '#components';
-import { homeSeo, liturgySeo } from '~/utils/seo';
 import type { LiturgyDetail } from '~~/shared/liturgy';
 
 const route = useRoute();

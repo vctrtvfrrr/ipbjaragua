@@ -55,13 +55,6 @@
 
 <script setup lang="ts">
 import type { LiturgyDetail } from '~~/shared/liturgy';
-import LiturgyMomentBibleReading from './LiturgyMomentBibleReading.vue';
-import LiturgyMomentOther from './LiturgyMomentOther.vue';
-import LiturgyMomentPastoralAct from './LiturgyMomentPastoralAct.vue';
-import LiturgyMomentPrayer from './LiturgyMomentPrayer.vue';
-import LiturgyMomentSacrament from './LiturgyMomentSacrament.vue';
-import LiturgyMomentSermon from './LiturgyMomentSermon.vue';
-import LiturgyMomentSong from './LiturgyMomentSong.vue';
 
 defineProps<{ liturgy: LiturgyDetail | null }>();
 </script>

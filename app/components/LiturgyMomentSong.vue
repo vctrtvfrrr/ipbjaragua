@@ -29,7 +29,6 @@
 
 <script setup lang="ts">
 import type { SongData } from '~~/shared/liturgy';
-import NewlineToBr from './NewlineToBr.vue';
 
 defineProps<{ song: SongData | null; description: string | null }>();
 </script>

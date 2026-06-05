@@ -6,7 +6,3 @@
     IPB de Jaguará do Sul
   </NuxtLink>
 </template>
-
-<script setup lang="ts">
-import { NuxtLink } from '#components';
-</script>

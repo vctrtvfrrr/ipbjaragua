@@ -11,7 +11,3 @@
     </main>
   </div>
 </template>
-
-<script setup lang="ts">
-import { SiteHeader } from '#components';
-</script>

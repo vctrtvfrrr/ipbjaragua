@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, getQuery, type H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { z } from 'zod';
 import { useDb } from '../../db/client';
 import { listAnnouncements } from '../../modules/announcements/announcements';

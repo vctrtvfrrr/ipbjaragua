@@ -32,7 +32,6 @@
 </template>
 
 <script setup lang="ts">
-import { renderMarkdown } from '#imports';
 import type { AnnouncementItem } from '~~/shared/announcement';
 
 defineProps<{ announcements: AnnouncementItem[] | null }>();

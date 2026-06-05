@@ -15,7 +15,6 @@
 </template>
 
 <script setup lang="ts">
-import { ArticleContent } from '#components';
 import type { ArticleDetail } from '~~/shared/article';
 
 defineProps<{ article: ArticleDetail | null }>();

@@ -22,10 +22,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData } from '#app';
-import { formatDate } from '#imports';
-import { NuxtLink } from '#components';
 import type { LiturgyListResponse } from '~~/shared/liturgy';
 
 const { data } = await useAsyncData('recent-liturgies', () =>

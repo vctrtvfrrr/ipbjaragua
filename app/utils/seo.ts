@@ -1,3 +1,4 @@
+// Explicit import (not auto-imported): this util is unit-tested in the node env, where Nuxt auto-imports don't exist.
 import formatDate from './format-date';
 
 export const SITE_NAME = 'IPB de Jaguará do Sul';

@@ -59,11 +59,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData, useRoute } from '#app';
-import { defineOgImage, formatDate, useSeoMeta } from '#imports';
-import { HomeSidebar } from '#components';
-import { homeSeo } from '~/utils/seo';
 import type { ArticleListResponse } from '~~/shared/article';
 
 const seo = homeSeo();

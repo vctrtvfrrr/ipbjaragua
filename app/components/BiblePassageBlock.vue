@@ -8,9 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import type { ScripturePassage } from '~~/shared/liturgy';
-import NewlineToBr from './NewlineToBr.vue';
 
 const props = defineProps<{ passage: ScripturePassage }>();
 const header = computed(() =>

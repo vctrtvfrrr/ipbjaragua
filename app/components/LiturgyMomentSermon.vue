@@ -10,7 +10,6 @@
 
 <script setup lang="ts">
 import type { ScripturePassage } from '~~/shared/liturgy';
-import BiblePassageBlock from './BiblePassageBlock.vue';
 
 defineProps<{
   description: string | null;

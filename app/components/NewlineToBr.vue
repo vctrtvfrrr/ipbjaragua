@@ -8,8 +8,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
 const props = defineProps<{ text: string }>();
 const lines = computed(() => props.text.split('\n'));
 </script>

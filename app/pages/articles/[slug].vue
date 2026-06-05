@@ -47,11 +47,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData, useRoute } from '#app';
-import { defineOgImage, formatDate, useSeoMeta } from '#imports';
-import { ArticleContent } from '#components';
-import { articleSeo, homeSeo } from '~/utils/seo';
 import type { ArticleDetail } from '~~/shared/article';
 
 const route = useRoute();

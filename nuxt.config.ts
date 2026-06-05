@@ -5,7 +5,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-12-05',
   ssr: true,
   devtools: { enabled: true },
-  imports: { autoImport: false },
   ignore: ['**/__specs__/**'],
   app: {
     baseURL: process.env.BASE_URL,

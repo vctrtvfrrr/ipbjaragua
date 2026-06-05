@@ -14,11 +14,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData } from '#app';
-import { formatDate } from '#imports';
-import { NuxtLink } from '#components';
-
 const { data } = await useAsyncData('current-bulletin', () =>
   $fetch<{ date: string | null }>('/api/bulletins/current'),
 );
