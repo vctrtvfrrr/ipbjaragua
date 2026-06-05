@@ -1,10 +1,10 @@
-# 6. Add nuxt-og-image for dynamic social cards
-
-Date: 2026-05-29
-
-## Status
-
-Accepted
+---
+number: 0006
+title: Add nuxt-og-image for dynamic social cards
+date: 2026-05-29
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 ## Context
 

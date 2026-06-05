@@ -1,10 +1,10 @@
-# 5. Articles and Bulletins overlap by date
-
-Date: 2026-05-29
-
-## Status
-
-Superseded by ADR-0007
+---
+number: 0005
+title: Articles and Bulletins overlap by date
+date: 2026-05-29
+author: Victor Otávio Ferreira
+status: superseded by ADR-0007
+---
 
 ## Context
 

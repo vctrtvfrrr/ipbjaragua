@@ -1,10 +1,10 @@
-# 9. Wedding anniversaries in the bulletin pair two members only
-
-Date: 2026-05-31
-
-## Status
-
-Accepted
+---
+number: 0009
+title: Wedding anniversaries in the bulletin pair two members only
+date: 2026-05-31
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 ## Context
 

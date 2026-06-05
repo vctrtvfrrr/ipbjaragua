@@ -1,10 +1,10 @@
-# 7. Bulletin becomes a first-class aggregator entity
-
-Date: 2026-05-30
-
-## Status
-
-Accepted
+---
+number: 0007
+title: Bulletin becomes a first-class aggregator entity
+date: 2026-05-30
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 (Supersedes ADR-0005.)
 

@@ -1,10 +1,10 @@
-# 2. SQLite driver: better-sqlite3 over native node:sqlite
-
-Date: 2026-05-23
-
-## Status
-
-Accepted
+---
+number: 0002
+title: "SQLite driver: better-sqlite3 over native node:sqlite"
+date: 2026-05-23
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 ## Context
 

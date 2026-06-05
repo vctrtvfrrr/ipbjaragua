@@ -1,10 +1,10 @@
-# 3. Discriminated union for liturgy moment types
-
-Date: 2026-05-24
-
-## Status
-
-Accepted
+---
+number: 0003
+title: Discriminated union for liturgy moment types
+date: 2026-05-24
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 ## Context
 

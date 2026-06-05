@@ -1,10 +1,10 @@
-# 1. Replace Bun with Node.js v24 LTS and pnpm
-
-Date: 2026-05-23
-
-## Status
-
-Accepted
+---
+number: 0001
+title: Replace Bun with Node.js v24 LTS and pnpm
+date: 2026-05-23
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 ## Context
 

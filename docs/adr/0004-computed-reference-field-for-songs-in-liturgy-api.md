@@ -1,10 +1,10 @@
-# 4. Computed `reference` field for songs in the liturgy API
-
-Date: 2026-05-24
-
-## Status
-
-Accepted
+---
+number: 0004
+title: Computed `reference` field for songs in the liturgy API
+date: 2026-05-24
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 ## Context
 

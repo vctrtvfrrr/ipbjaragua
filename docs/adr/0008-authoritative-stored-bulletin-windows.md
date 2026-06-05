@@ -1,10 +1,10 @@
-# 8. Agenda and birthday windows are stored, authoritative columns
-
-Date: 2026-05-30
-
-## Status
-
-Accepted
+---
+number: 0008
+title: Agenda and birthday windows are stored, authoritative columns
+date: 2026-05-30
+author: Victor Otávio Ferreira
+status: accepted
+---
 
 ## Context
 
