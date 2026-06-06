@@ -1,65 +1,274 @@
-import Image from "next/image";
+import Link from 'next/link'
+import ArticlesList from '@/components/ArticlesList'
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <div className="bg-gray-100">
+        <div className="container mx-auto px-4 py-10 xl:px-0">
+          <ul className="-mx-4 flex flex-wrap overflow-hidden">
+            <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
+              <Link href="/articles/details">
+                <div
+                  className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
+                  style={{
+                    height: '260px',
+                    backgroundImage: 'url(/images/featured-image.png)',
+                  }}
+                >
+                  <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                  <div className="relative z-20 p-5 text-center">
+                    <span className="inline-block text-xs tracking-wide text-white uppercase">Artigo</span>
+                    <h2 className="my-5 font-serif text-xl font-semibold text-white">Três Anos de Bênçãos</h2>
+                    <span className="inline-block font-sans text-xs text-white">Rev. Jean Carlos Almeida</span>
+                  </div>
+                </div>
+              </Link>
+            </li>
+            <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
+              <Link href="/liturgies/2026-06-07-culto-solene">
+                <div
+                  className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
+                  style={{
+                    height: '260px',
+                    backgroundImage: 'url(/images/featured-image.png)',
+                  }}
+                >
+                  <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                  <div className="relative z-20 p-5 text-center">
+                    <span className="inline-block text-xs tracking-wide text-white uppercase">Liturgia</span>
+                    <h2 className="my-5 font-serif text-xl font-semibold text-white">Culto Solene ao Bondoso Senhor</h2>
+                    <span className="inline-block font-sans text-xs text-white">Rev. Josiel de Matos</span>
+                  </div>
+                </div>
+              </Link>
+            </li>
+            <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
+              <Link href="/bulletins/2026-06-07">
+                <div
+                  className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
+                  style={{
+                    height: '260px',
+                    backgroundImage: 'url(/images/featured-image.png)',
+                  }}
+                >
+                  <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                  <div className="relative z-20 p-5 text-center">
+                    <span className="inline-block text-xs tracking-wide text-white uppercase">Boletim Semanal</span>
+                    <h2 className="my-5 font-serif text-xl font-semibold text-white">69° Edição — Ano II</h2>
+                    <span className="inline-block font-sans text-xs text-white">07 de junho de 2026</span>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          </ul>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+      </div>
+
+      <div className="container mx-auto flex flex-wrap gap-8 px-4 py-10 xl:px-0">
+        <main className="md:flex-1 lg:flex-2 xl:flex-3">
+          <h2 className="font-narrow mb-5 text-3xl text-green-900 uppercase">Artigos</h2>
+          <ArticlesList className="grid grid-cols-1 gap-x-6 gap-y-10 lg:grid-cols-2 xl:grid-cols-3" />
+        </main>
+
+        <aside className="mt-10 md:mt-0 md:flex-1">
+          <div className="w-full overflow-hidden">
+            <div className="mr-2 ml-2 space-y-12 md:ml-4">
+              <div className="hidden">
+                <div className="relative overflow-hidden rounded-sm border">
+                  <form className="flex">
+                    <input
+                      className="relative w-full border-0 p-5 font-light text-gray-900"
+                      type="text"
+                      name="s"
+                      title="Busque no site"
+                      placeholder="Pesquisar..."
+                    />
+                    <button type="submit" className="border-0 bg-transparent px-5 py-5">
+                      <span className="block w-5">
+                        <svg className="fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                          <path d="M495 466.2L377.2 348.4c29.2-35.6 46.8-81.2 46.8-130.9C424 103.5 331.5 11 217.5 11 103.4 11 11 103.5 11 217.5S103.4 424 217.5 424c49.7 0 95.2-17.5 130.8-46.7L466.1 495c8 8 20.9 8 28.9 0 8-7.9 8-20.9 0-28.8zm-277.5-83.3C126.2 382.9 52 308.7 52 217.5S126.2 52 217.5 52C308.7 52 383 126.3 383 217.5s-74.3 165.4-165.5 165.4z" />
+                        </svg>
+                      </span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <div className="hidden rounded bg-gray-100 p-4">
+                <div className="pb-6">
+                  <div className="mx-auto mt-6 w-10 text-gray-900">
+                    <svg className="fill-current" viewBox="-1 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M505.668 246.465c-.89-.906-54.297-54.309-55.668-55.68V55c0-30.328-24.672-55-55-55H115C84.672 0 60 24.672 60 55v135.785C.379 250.406 0 248.301 0 257v210c0 24.813 20.188 45 45 45h420c24.813 0 45-20.188 45-45V257c0-3.855-1.54-7.71-4.332-10.535zm-35.992 6.426L450 262.73v-29.516zM115 30h280c13.785 0 25 11.215 25 25v222.73l-120 60V197c0-8.285-6.715-15-15-15H135c-8.285 0-15 6.715-15 15v95.73l-30-15V55c0-13.785 11.215-25 25-25zm155 257.973l-66.68-44.453a15.004 15.004 0 00-15.027-.938L150 261.73V212h120zm-120 7.297l43.922-21.961L270 324.027v28.703l-15 7.5-105-52.5zm-90-32.54l-19.676-9.84L60 233.216zM465 482H45c-8.27 0-15-6.73-15-15V281.27l218.293 109.148a15.008 15.008 0 0013.414 0L480 281.27V467c0 8.27-6.73 15-15 15zm0 0" />
+                      <path d="M195 91h120c8.285 0 15-6.715 15-15s-6.715-15-15-15H195c-8.285 0-15 6.715-15 15s6.715 15 15 15zm0 0M135 151h240c8.285 0 15-6.715 15-15s-6.715-15-15-15H135c-8.285 0-15 6.715-15 15s6.715 15 15 15zm0 0M375 181h-30c-8.285 0-15 6.715-15 15s6.715 15 15 15h30c8.285 0 15-6.715 15-15s-6.715-15-15-15zm0 0M375 241h-30c-8.285 0-15 6.715-15 15s6.715 15 15 15h30c8.285 0 15-6.715 15-15s-6.715-15-15-15zm0 0" />
+                    </svg>
+                  </div>
+                  <h2 className="mb-2 pt-5 text-center text-xl font-light text-gray-900">
+                    Assine nosso Boletim Semanal
+                  </h2>
+                  <span className="block text-center text-xs leading-loose font-thin tracking-wider text-gray-900 italic">
+                    Receba-os diretamente em sua caixa de entrada!
+                  </span>
+                  <form>
+                    <div className="mt-5 overflow-hidden rounded-sm border border-gray-400 bg-white">
+                      <input
+                        className="w-full bg-transparent p-3"
+                        type="text"
+                        name="name"
+                        placeholder="Nome completo"
+                      />
+                    </div>
+                    <div className="mt-3 overflow-hidden rounded-sm border border-gray-400 bg-white">
+                      <input
+                        className="w-full bg-transparent p-3"
+                        type="email"
+                        name="email"
+                        placeholder="Endereço de e-mail"
+                      />
+                    </div>
+                    <div className="mt-3 text-xs leading-loose tracking-wider text-gray-900 italic">
+                      <span className="inline-block pr-1">
+                        <input type="checkbox" name="" id="privacy-check" />
+                      </span>
+                      <label htmlFor="privacy-check">
+                        Concordo com a{' '}
+                        <Link href="" className="text-green-500">
+                          Política de Privacidade
+                        </Link>
+                        .
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      className="mt-5 w-full rounded-sm bg-gray-900 py-3 text-sm font-medium tracking-widest text-white uppercase"
+                    >
+                      Assinar
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Agenda da Semana</h2>
+                <ol className="space-y-6">
+                  <li>
+                    <h3 className="font-narrow text-xl font-bold">
+                      <span className="text-red-500">‣</span> Segunda-feira
+                    </h3>
+                    <ul>
+                      <li>
+                        <time>19:00</time> – Ensaio do Coral
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <h3 className="font-narrow text-xl font-bold">
+                      <span className="text-red-500">‣</span> Terça-feira
+                    </h3>
+                    <ul>
+                      <li>
+                        <time>19:00</time> – Ensaio do Coral
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <h3 className="font-narrow text-xl font-bold">
+                      <span className="text-red-500">‣</span> Quarta-feira
+                    </h3>
+                    <ul>
+                      <li>
+                        <time>19:00</time> – Ensaio do Coral
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <h3 className="font-narrow text-xl font-bold">
+                      <span className="text-red-500">‣</span> Quinta-feira
+                    </h3>
+                    <ul>
+                      <li>
+                        <time>19:00</time> – Ensaio do Coral
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <h3 className="font-narrow text-xl font-bold">
+                      <span className="text-red-500">‣</span> Sexta-feira
+                    </h3>
+                    <ul>
+                      <li>
+                        <time>19:00</time> – Ensaio do Coral
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <h3 className="font-narrow text-xl font-bold">
+                      <span className="text-red-500">‣</span> Sábado
+                    </h3>
+                    <ul>
+                      <li>
+                        <time>19:00</time> – Ensaio do Coral
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <h3 className="font-narrow text-xl font-bold">
+                      <span className="text-red-500">‣</span> Domingo
+                    </h3>
+                    <ul>
+                      <li>
+                        <time>09:00</time> – Escola Bíblica
+                      </li>
+                    </ul>
+                    <ul>
+                      <li>
+                        <time>18:00</time> – Culto Solene
+                      </li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+
+              <div>
+                <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Avisos Gerais</h2>
+                <ul className="space-y-6">
+                  {Array.from({ length: 3 }, (_, index) => {
+                    const number = index + 1
+                    return (
+                      <li key={number}>
+                        <h3 className="font-narrow text-2xl font-bold">Título do {number}° aviso</h3>
+                        <p className="text-justify">
+                          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Ratione sint, possimus molestias
+                          quas voluptatum illo dolore eos, magnam, illum numquam vitae maiores officia? Autem culpa
+                          tenetur officia magni exercitationem sequi?
+                        </p>
+                        <Link href="">Acesse</Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+
+              <div className="rounded bg-gray-100 p-4">
+                <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Boletins Dominicais</h2>
+                <ul className="space-y-6">
+                  {Array.from({ length: 3 }, (_, index) => {
+                    const number = index + 50
+                    return (
+                      <li key={number}>
+                        <Link href="/bulletins/2026-06-07">
+                          <h3 className="font-narrow text-xl font-bold">07 de junho de 2026</h3>
+                          <p className="font-sans text-gray-500">{number}° Edição — Ano II</p>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </>
+  )
 }
