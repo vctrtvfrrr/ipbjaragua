@@ -28,6 +28,16 @@ export async function listArticles(
     .all()
 }
 
+export async function getLatestArticle(db: Database = defaultDb): Promise<Article | undefined> {
+  return db
+    .select()
+    .from(articles)
+    .where(isNull(articles.deleted_at))
+    .orderBy(desc(articles.date), desc(articles.id))
+    .limit(1)
+    .get()
+}
+
 export async function countArticles(db: Database = defaultDb): Promise<number> {
   const row = db.select({ value: count() }).from(articles).where(isNull(articles.deleted_at)).get()
   return row?.value ?? 0

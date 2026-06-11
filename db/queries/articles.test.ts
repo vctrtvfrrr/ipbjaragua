@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedArticles } from '@/test/seed'
-import { countArticles, getArticleBySlug, listArticles } from './articles'
+import { countArticles, getArticleBySlug, getLatestArticle, listArticles } from './articles'
 
 describe('getArticleBySlug', () => {
   let db: TestDb
@@ -99,5 +99,40 @@ describe('countArticles', () => {
     db.run(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'c'`)
 
     expect(await countArticles(db)).toBe(2)
+  })
+})
+
+describe('getLatestArticle', () => {
+  let db: TestDb
+
+  beforeEach(() => {
+    db = createTestDb()
+  })
+
+  it('returns the most recent article', async () => {
+    seedArticles(db, [
+      { slug: 'velho', title: 'Velho', date: '2026-01-01' },
+      { slug: 'recente', title: 'Recente', date: '2026-03-01' },
+    ])
+
+    const latest = await getLatestArticle(db)
+
+    expect(latest?.slug).toBe('recente')
+  })
+
+  it('returns undefined when there are no articles', async () => {
+    expect(await getLatestArticle(db)).toBeUndefined()
+  })
+
+  it('ignores soft-deleted articles', async () => {
+    seedArticles(db, [
+      { slug: 'ativo', title: 'Ativo', date: '2026-01-01' },
+      { slug: 'recente-removido', title: 'Recente Removido', date: '2026-03-01' },
+    ])
+    db.run(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'recente-removido'`)
+
+    const latest = await getLatestArticle(db)
+
+    expect(latest?.slug).toBe('ativo')
   })
 })
