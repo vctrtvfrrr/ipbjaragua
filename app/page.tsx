@@ -1,30 +1,24 @@
 import Link from 'next/link'
-import ArticlesList from '@/components/ArticlesList'
+import ArticleGrid from '@/components/ArticleGrid'
+import FeaturedArticleCard from '@/components/FeaturedArticleCard'
+import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
+import { resolvePage, totalPages } from '@/lib/pagination'
 
-export default function Home() {
+const PAGE_SIZE = 12
+
+export default async function Home({ searchParams }: PageProps<'/'>) {
+  const { page: rawPage } = await searchParams
+  const [latest, total] = await Promise.all([getLatestArticle(), countArticles()])
+  const pages = totalPages(total, PAGE_SIZE)
+  const page = resolvePage(rawPage, pages)
+  const articles = await listArticles({ page, pageSize: PAGE_SIZE })
+
   return (
     <>
       <div className="bg-gray-100">
         <div className="container mx-auto px-4 py-10 xl:px-0">
           <ul className="-mx-4 flex flex-wrap overflow-hidden">
-            <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
-              <Link href="/articles/details">
-                <div
-                  className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
-                  style={{
-                    height: '260px',
-                    backgroundImage: 'url(/images/featured-image.png)',
-                  }}
-                >
-                  <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
-                  <div className="relative z-20 p-5 text-center">
-                    <span className="inline-block text-xs tracking-wide text-white uppercase">Artigo</span>
-                    <h2 className="my-5 font-serif text-xl font-semibold text-white">Três Anos de Bênçãos</h2>
-                    <span className="inline-block font-sans text-xs text-white">Rev. Jean Carlos Almeida</span>
-                  </div>
-                </div>
-              </Link>
-            </li>
+            <FeaturedArticleCard article={latest} />
             <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
               <Link href="/liturgies/2026-06-07-culto-solene">
                 <div
@@ -68,7 +62,7 @@ export default function Home() {
       <div className="container mx-auto flex flex-wrap gap-8 px-4 py-10 xl:px-0">
         <main className="md:flex-1 lg:flex-2 xl:flex-3">
           <h2 className="font-narrow mb-5 text-3xl text-green-900 uppercase">Artigos</h2>
-          <ArticlesList className="grid grid-cols-1 gap-x-6 gap-y-10 lg:grid-cols-2 xl:grid-cols-3" />
+          <ArticleGrid articles={articles} page={page} totalPages={pages} basePath="/" />
         </main>
 
         <aside className="mt-10 md:mt-0 md:flex-1">
