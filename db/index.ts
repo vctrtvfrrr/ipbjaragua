@@ -2,7 +2,7 @@ import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as schema from './schema'
 
-const DB_PATH = './data/db.sqlite'
+const DB_PATH = process.env.DATABASE_PATH ?? './data/db.sqlite'
 
 // Reuse one connection across dev hot reloads, which re-evaluate this module.
 const globalForDb = globalThis as unknown as { sqlite?: Database.Database }
