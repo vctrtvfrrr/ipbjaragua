@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# database (lives on a persistent volume, never committed)
+/data/
+
 # next.js
 /.next/
 /out/
