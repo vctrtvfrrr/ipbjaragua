@@ -1,7 +1,8 @@
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
 import ArticleGrid from '@/components/ArticleGrid'
 import FeaturedArticleCard from '@/components/FeaturedArticleCard'
-import { listAgendaInWindow } from '@/db/queries/bulletin-sections'
+import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
 import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
 import { groupAgendaByWeekday } from '@/lib/bulletin'
 import { currentWeekWindow, todayISO } from '@/lib/date'
@@ -13,10 +14,11 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
   const { page: rawPage } = await searchParams
   const today = todayISO()
   const weekWindow = currentWeekWindow(today)
-  const [latest, total, agendaItems] = await Promise.all([
+  const [latest, total, agendaItems, announcements] = await Promise.all([
     getLatestArticle(),
     countArticles(),
     listAgendaInWindow(weekWindow.from, weekWindow.to),
+    listActiveAnnouncements(today),
   ])
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
@@ -192,25 +194,24 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                 </div>
               ) : null}
 
-              <div>
-                <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Avisos Gerais</h2>
-                <ul className="space-y-6">
-                  {Array.from({ length: 3 }, (_, index) => {
-                    const number = index + 1
-                    return (
-                      <li key={number}>
-                        <h3 className="font-narrow text-2xl font-bold">Título do {number}° aviso</h3>
-                        <p className="text-justify">
-                          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Ratione sint, possimus molestias
-                          quas voluptatum illo dolore eos, magnam, illum numquam vitae maiores officia? Autem culpa
-                          tenetur officia magni exercitationem sequi?
-                        </p>
-                        <Link href="">Acesse</Link>
+              {announcements.length > 0 ? (
+                <div>
+                  <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Avisos Gerais</h2>
+                  <ul className="space-y-6">
+                    {announcements.map((ann) => (
+                      <li key={ann.id}>
+                        <h3 className="font-narrow text-2xl font-bold">{ann.title}</h3>
+                        {ann.description ? (
+                          <div className="text-justify">
+                            <ReactMarkdown>{ann.description}</ReactMarkdown>
+                          </div>
+                        ) : null}
+                        {ann.url ? <Link href={ann.url}>Acesse</Link> : null}
                       </li>
-                    )
-                  })}
-                </ul>
-              </div>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               <div className="rounded bg-gray-100 p-4">
                 <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Boletins Dominicais</h2>
