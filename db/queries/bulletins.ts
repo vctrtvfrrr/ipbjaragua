@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull } from 'drizzle-orm'
+import { and, count, desc, eq, isNull, lte } from 'drizzle-orm'
 import { db as defaultDb } from '@/db'
 import { articles, bulletins, liturgies } from '@/db/schema'
 
@@ -7,21 +7,28 @@ export type Bulletin = typeof bulletins.$inferSelect
 type Database = typeof defaultDb
 
 export async function listBulletins(
-  { page, pageSize }: { page: number; pageSize: number },
+  { page, pageSize, today }: { page: number; pageSize: number; today: string },
   db: Database = defaultDb
 ): Promise<Bulletin[]> {
   return db
     .select()
     .from(bulletins)
-    .where(isNull(bulletins.deleted_at))
+    .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
     .orderBy(desc(bulletins.date))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
     .all()
 }
 
-export async function countBulletins(db: Database = defaultDb): Promise<number> {
-  const row = db.select({ value: count() }).from(bulletins).where(isNull(bulletins.deleted_at)).get()
+export async function countBulletins(
+  { today }: { today: string },
+  db: Database = defaultDb
+): Promise<number> {
+  const row = db
+    .select({ value: count() })
+    .from(bulletins)
+    .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
+    .get()
   return row?.value ?? 0
 }
 
@@ -31,7 +38,13 @@ export type BulletinWithRefs = {
   liturgy: typeof liturgies.$inferSelect | null
 }
 
-export async function getBulletinByDate(date: string, db: Database = defaultDb): Promise<BulletinWithRefs | undefined> {
+export async function getBulletinByDate(
+  date: string,
+  today: string,
+  db: Database = defaultDb
+): Promise<BulletinWithRefs | undefined> {
+  if (date > today) return undefined
+
   const rows = db
     .select({
       bulletin: bulletins,
