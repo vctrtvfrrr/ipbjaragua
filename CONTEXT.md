@@ -53,8 +53,12 @@ Um **Momento** do tipo sacramento, que deve especificar qual: batismo ou eucaris
 _Avoid_: Ordenança.
 
 **Música** (`songs`):
-Uma peça do repertório musical (hinos, cânticos), com letra estruturada, autor e intérprete. Referenciada por **Momentos** de cântico.
+Uma peça do repertório musical (hinos, cânticos), com letra estruturada e quatro campos de catálogo: `track` (índice no hinário), `album` (nome do hinário), `performer` e `songwriter`. Referenciada por **Momentos** de cântico.
 _Avoid_: Hino (hino é uma espécie de Música, não sinônimo), canção, faixa.
+
+**Referência** (campo calculado, não armazenado):
+A atribuição de uma **Música** para exibição, derivada dos campos de catálogo por ordem de prioridade: (1) `track` + `album` → `"<track>. <album>"` (ex: `"45. Novo Cântico"`); (2) `performer`; (3) `songwriter`; (4) `null` se nenhum estiver preenchido. Hinos têm `track`+`album`; músicas contemporâneas têm `performer`; composições sem intérprete têm apenas `songwriter`.
+_Avoid_: Autor, intérprete (são campos individuais; Referência é o campo calculado de exibição), crédito.
 
 ### Comunidade
 
