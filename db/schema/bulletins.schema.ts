@@ -7,6 +7,7 @@ export const bulletins = sqliteTable('bulletins', {
   id: id(),
   title: text('title'),
   date: text('date').notNull().unique(),
+  edition: int('edition').notNull(),
   article_id: int('article_id').references(() => articles.id),
   liturgy_id: int('liturgy_id').references(() => liturgies.id),
   show_announcements: int('show_announcements', { mode: 'boolean' }).notNull().default(true),
