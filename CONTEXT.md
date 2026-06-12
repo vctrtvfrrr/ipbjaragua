@@ -10,6 +10,14 @@ Site da Igreja Presbiteriana do Brasil em Jaraguá. Publica conteúdo da igreja 
 Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda** e os aniversariantes (**Membros**) de um intervalo de datas. Cada seção pode ser exibida ou ocultada. Tem uma **Edição** e cai num **Ano**.
 _Avoid_: Folheto, informativo.
 
+**Boletim Dominical / Boletim Excepcional**:
+Um **Boletim** cuja data cai num domingo é Dominical, o caso regular: traz sempre Agenda, Avisos e Aniversariantes. Um publicado em dia de semana, em caráter raro, é Excepcional: título variável e em geral sem essas seções. A distinção é derivada do dia da semana da data, não armazenada.
+_Avoid_: Boletim especial, edição extra.
+
+**Publicado / Rascunho**:
+Um **Boletim** com data até hoje (inclusive) está publicado e aparece no site. Com data futura é rascunho de uma edição ainda não publicada e não aparece em nenhum lugar do site (índice, busca ou URL direta). Não há coluna de status: a data é o único critério de publicação.
+_Avoid_: Agendado, oculto, despublicado.
+
 **Edição** (`bulletins.edition`):
 O número sequencial de um **Boletim** desde o primeiro, que é a Edição 1, publicada em 2025-02-09. Valor armazenado, não derivado da cadência semanal (que pode ter falhas).
 _Avoid_: Número, volume.
@@ -66,6 +74,7 @@ _Avoid_: Anúncio (termo anterior), notificação, comunicado.
 
 - **`liturgies.theme` guarda o Tipo de Culto, não um tema.** A coluna se chama `theme`, mas seu conteúdo ("Culto Solene") é a designação do culto, não o assunto do sermão. O termo de domínio é **Tipo de Culto**; o nome da coluna é um resíduo a ser corrigido num futuro rename, não um conceito novo.
 - **A tabela `announcements` guarda Avisos.** O termo de domínio é **Aviso**; `announcements` (tradução de "Anúncio") é resíduo do código, a ser reconciliado num futuro rename, não um conceito distinto.
+- **Dominical vs Excepcional não é coluna.** O tipo do **Boletim** é derivado do dia da semana da data (domingo = Dominical), não um campo armazenado. Se um dia surgir um boletim de domingo que não seja Dominical (ou vice-versa), será preciso modelar o tipo explicitamente.
 
 ## Diálogo de exemplo
 
