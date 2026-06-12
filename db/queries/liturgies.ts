@@ -95,6 +95,18 @@ export async function listLiturgies(
   return result
 }
 
+export async function listLiturgiesByDate(
+  date: string,
+  db: Database = defaultDb
+): Promise<Array<{ id: number; date: string; theme: string; time: string | null }>> {
+  return db
+    .select({ id: liturgies.id, date: liturgies.date, theme: liturgies.theme, time: liturgies.time })
+    .from(liturgies)
+    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date)))
+    .all()
+    .map((r) => ({ ...r, time: r.time ?? null }))
+}
+
 export async function getLiturgyBySlug(
   slug: string,
   today: string,

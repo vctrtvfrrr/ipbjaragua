@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedLiturgies } from '@/test/seed'
-import { countLiturgies, getLiturgyBySlug, listLiturgies } from './liturgies'
+import { countLiturgies, getLiturgyBySlug, listLiturgies, listLiturgiesByDate } from './liturgies'
 
 describe('countLiturgies', () => {
   let db: TestDb
@@ -185,5 +185,59 @@ describe('getLiturgyBySlug', () => {
     expect(result?.acts[0].name).toBe('Introdução')
     expect(result?.acts[1].name).toBe('Adoração')
     expect(result?.acts[0].moments).toHaveLength(1)
+  })
+})
+
+describe('listLiturgiesByDate', () => {
+  let db: TestDb
+
+  beforeEach(() => {
+    db = createTestDb()
+  })
+
+  it('returns empty array when no liturgies exist for the date', async () => {
+    const result = await listLiturgiesByDate('2026-06-07', db)
+
+    expect(result).toEqual([])
+  })
+
+  it('returns the liturgy for the exact date', async () => {
+    seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+
+    const result = await listLiturgiesByDate('2026-06-07', db)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].theme).toBe('Culto Solene')
+  })
+
+  it('returns all liturgies when multiple exist on the same date', async () => {
+    seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '09:00' },
+      { date: '2026-06-07', theme: 'Culto Solene', time: '18:00' },
+    ])
+
+    const result = await listLiturgiesByDate('2026-06-07', db)
+
+    expect(result).toHaveLength(2)
+  })
+
+  it('excludes liturgies from other dates', async () => {
+    seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene' },
+      { date: '2026-06-14', theme: 'Culto da Família' },
+    ])
+
+    const result = await listLiturgiesByDate('2026-06-07', db)
+
+    expect(result.map((r) => r.theme)).toEqual(['Culto Solene'])
+  })
+
+  it('excludes soft-deleted liturgies', async () => {
+    seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    db.run(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
+
+    const result = await listLiturgiesByDate('2026-06-07', db)
+
+    expect(result).toEqual([])
   })
 })

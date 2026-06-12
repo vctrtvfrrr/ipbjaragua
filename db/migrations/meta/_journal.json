@@ -43,6 +43,13 @@
       "when": 1781400000000,
       "tag": "0005_liturgy_time",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781400001000,
+      "tag": "0006_remove_bulletin_liturgy_id",
+      "breakpoints": true
     }
   ]
 }

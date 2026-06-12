@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, type TestDb } from '@/test/db'
-import { seedArticles, seedBulletins, seedLiturgies } from '@/test/seed'
+import { seedArticles, seedBulletins } from '@/test/seed'
 import {
   countBulletins,
   getBulletinByDate,
@@ -275,20 +275,4 @@ describe('getBulletinByDate', () => {
     expect(result?.article).toBeNull()
   })
 
-  it('includes the associated liturgy when present', async () => {
-    const [liturgyId] = seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
-    seedBulletins(db, [{ date: '2026-06-07', edition: 70, liturgy_id: liturgyId }])
-
-    const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
-
-    expect(result?.liturgy?.theme).toBe('Culto Solene')
-  })
-
-  it('returns null liturgy when bulletin has no liturgy', async () => {
-    seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
-
-    const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
-
-    expect(result?.liturgy).toBeNull()
-  })
 })

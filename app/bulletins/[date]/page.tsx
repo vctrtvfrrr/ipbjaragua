@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import BulletinArticle from '@/components/BulletinArticle'
 import { listActiveAnnouncements, listAgendaInWindow, listBirthdaysInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
+import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
 import { formatLongDatePtBR, formatShortDatePtBR, todayISO } from '@/lib/date'
 
@@ -21,14 +22,15 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
 
   if (!result) notFound()
 
-  const { bulletin, article, liturgy } = result
+  const { bulletin, article } = result
 
-  const [agendaItems, announcements, birthdays] = await Promise.all([
+  const [agendaItems, announcements, birthdays, liturgiesOfDay] = await Promise.all([
     bulletin.show_agenda ? listAgendaInWindow(bulletin.agenda_from, bulletin.agenda_to) : Promise.resolve([]),
     bulletin.show_announcements ? listActiveAnnouncements(bulletin.date) : Promise.resolve([]),
     bulletin.show_birthdays
       ? listBirthdaysInWindow(bulletin.birthdays_from, bulletin.birthdays_to)
       : Promise.resolve([]),
+    listLiturgiesByDate(bulletin.date),
   ])
 
   const agendaDays = groupAgendaByWeekday(agendaItems)
@@ -110,15 +112,35 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
             </ul>
           </section>
         ) : null}
-      </div>
 
-      {liturgy ? (
-        <section className="mt-10">
-          <Link href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme)}`} className="text-green-900 underline">
-            {liturgy.theme}
-          </Link>
-        </section>
-      ) : null}
+        {liturgiesOfDay.length > 0 ? (
+          <section className={sectionCard}>
+            <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Liturgia</h2>
+            {liturgiesOfDay.length === 1 ? (
+              <Link
+                href={`/liturgies/${liturgySlug(liturgiesOfDay[0].date, liturgiesOfDay[0].theme, liturgiesOfDay[0].time)}`}
+                className="text-green-900 underline"
+              >
+                {liturgiesOfDay[0].theme}
+              </Link>
+            ) : (
+              <ul className="space-y-1">
+                {liturgiesOfDay.map((l) => (
+                  <li key={l.id}>
+                    <Link
+                      href={`/liturgies/${liturgySlug(l.date, l.theme, l.time)}`}
+                      className="text-green-900 underline"
+                    >
+                      {l.theme}
+                      {l.time ? ` — ${l.time}` : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
+      </div>
     </main>
   )
 }

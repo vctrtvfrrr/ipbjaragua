@@ -32,7 +32,6 @@ export type SeedBulletin = {
   edition: number
   title?: string | null
   article_id?: number | null
-  liturgy_id?: number | null
   show_announcements?: boolean
   show_agenda?: boolean
   show_birthdays?: boolean
@@ -66,7 +65,6 @@ export function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
         edition: row.edition,
         title: row.title ?? null,
         article_id: row.article_id ?? null,
-        liturgy_id: row.liturgy_id ?? null,
         show_announcements: row.show_announcements ?? true,
         show_agenda: row.show_agenda ?? true,
         show_birthdays: row.show_birthdays ?? true,
