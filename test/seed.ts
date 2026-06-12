@@ -1,4 +1,4 @@
-import { articles, bulletins, liturgies } from '@/db/schema'
+import { agenda, announcements, articles, bulletins, liturgies, members } from '@/db/schema'
 import type { TestDb } from './db'
 
 export type SeedArticle = {
@@ -70,6 +70,68 @@ export function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
         agenda_to: row.agenda_to ?? row.date,
         birthdays_from: row.birthdays_from ?? row.date,
         birthdays_to: row.birthdays_to ?? row.date,
+      })
+      .run()
+  }
+}
+
+export type SeedAgendaItem = {
+  title: string
+  is_recurring: boolean
+  weekday?: number | null
+  time?: string | null
+  event_date?: string | null
+  description?: string | null
+}
+
+export function seedAgenda(db: TestDb, rows: SeedAgendaItem[]) {
+  for (const row of rows) {
+    db.insert(agenda)
+      .values({
+        title: row.title,
+        is_recurring: row.is_recurring,
+        weekday: row.weekday ?? null,
+        time: row.time ?? null,
+        event_date: row.event_date ?? null,
+        description: row.description ?? null,
+      })
+      .run()
+  }
+}
+
+export type SeedAnnouncement = {
+  title: string
+  expires_at: string
+  description?: string | null
+  url?: string | null
+}
+
+export function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
+  for (const row of rows) {
+    db.insert(announcements)
+      .values({
+        title: row.title,
+        expires_at: row.expires_at,
+        description: row.description ?? null,
+        url: row.url ?? null,
+      })
+      .run()
+  }
+}
+
+export type SeedMember = {
+  full_name: string
+  status: 'active' | 'transferred' | 'deceased' | 'removed'
+  birth_date?: string | null
+}
+
+export function seedMembers(db: TestDb, rows: SeedMember[]) {
+  for (const row of rows) {
+    db.insert(members)
+      .values({
+        full_name: row.full_name,
+        status: row.status,
+        birth_date: row.birth_date ?? null,
       })
       .run()
   }
