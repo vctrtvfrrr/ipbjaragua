@@ -4,6 +4,19 @@ export function todayISO(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 }
 
+// Returns the current time as HH:MM in the America/Sao_Paulo timezone.
+export function currentTimeHHMM(): string {
+  const parts = new Intl.DateTimeFormat('en', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'America/Sao_Paulo',
+  }).formatToParts(new Date())
+  const h = parts.find((p) => p.type === 'hour')!.value
+  const m = parts.find((p) => p.type === 'minute')!.value
+  return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`
+}
+
 const longDateFormatter = new Intl.DateTimeFormat('pt-BR', {
   day: '2-digit',
   month: 'long',

@@ -39,10 +39,7 @@ export type LiturgyDetail = {
   }>
 }
 
-export async function countLiturgies(
-  { today }: { today: string },
-  db: Database = defaultDb
-): Promise<number> {
+export async function countLiturgies({ today }: { today: string }, db: Database = defaultDb): Promise<number> {
   const row = db
     .select({ value: count() })
     .from(liturgies)
@@ -66,10 +63,7 @@ export async function listLiturgies(
     })
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
-    .leftJoin(
-      liturgyMoments,
-      and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon'))
-    )
+    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
     .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today)))
     .orderBy(desc(liturgies.date))
     .limit(pageSize)
@@ -185,4 +179,84 @@ export async function getLiturgyBySlug(
     time: liturgy.time ?? null,
     acts: Array.from(actsMap.values()),
   }
+}
+
+// Returns HH:MM + `minutes` as HH:MM, clamped to 23:59.
+function addMinutesToHHMM(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = Math.min(h * 60 + m + minutes, 23 * 60 + 59)
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
+function deduplicateByLiturgyId(
+  rows: Array<{
+    id: number
+    date: string
+    theme: string
+    time: string | null
+    sermonDescription: string | null
+    sermonSpeaker: string | null
+  }>
+): LiturgyListItem[] {
+  const seen = new Set<number>()
+  const result: LiturgyListItem[] = []
+  for (const row of rows) {
+    if (!seen.has(row.id)) {
+      seen.add(row.id)
+      result.push({
+        id: row.id,
+        date: row.date,
+        theme: row.theme,
+        time: row.time ?? null,
+        sermonDescription: row.sermonDescription ?? null,
+        sermonSpeaker: row.sermonSpeaker ?? null,
+      })
+    }
+  }
+  return result
+}
+
+const liturgyCardFields = {
+  id: liturgies.id,
+  date: liturgies.date,
+  theme: liturgies.theme,
+  time: liturgies.time,
+  sermonDescription: liturgyMoments.description,
+  sermonSpeaker: liturgyMoments.sermon_speaker,
+} as const
+
+export type NextLiturgyResult = { liturgy: LiturgyListItem; label: 'Próxima Liturgia' | 'Liturgia' }
+
+// Returns the next liturgy to display on the home card:
+// 1. The first liturgy today whose start time + 60 min tolerance hasn't passed yet → "Próxima Liturgia".
+// 2. Fallback: the latest published liturgy (date ≤ today) → "Liturgia".
+export async function getNextLiturgy(
+  { today, currentTime }: { today: string; currentTime: string },
+  db: Database = defaultDb
+): Promise<NextLiturgyResult | undefined> {
+  const todayRows = db
+    .select(liturgyCardFields)
+    .from(liturgies)
+    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
+    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
+    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, today)))
+    .orderBy(asc(liturgies.time))
+    .all()
+
+  const todayLiturgies = deduplicateByLiturgyId(todayRows)
+  const upcoming = todayLiturgies.find((l) => l.time !== null && currentTime <= addMinutesToHHMM(l.time, 60))
+  if (upcoming) return { liturgy: upcoming, label: 'Próxima Liturgia' }
+
+  const fallbackRows = db
+    .select(liturgyCardFields)
+    .from(liturgies)
+    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
+    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
+    .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today)))
+    .orderBy(desc(liturgies.date))
+    .limit(20)
+    .all()
+
+  const fallback = deduplicateByLiturgyId(fallbackRows)[0]
+  return fallback ? { liturgy: fallback, label: 'Liturgia' } : undefined
 }

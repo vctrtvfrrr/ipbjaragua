@@ -4,8 +4,9 @@ import ArticleGrid from '@/components/ArticleGrid'
 import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
 import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
-import { formatBulletinSubtitle, groupAgendaByWeekday } from '@/lib/bulletin'
-import { currentWeekWindow, formatLongDatePtBR, todayISO } from '@/lib/date'
+import { getNextLiturgy } from '@/db/queries/liturgies'
+import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
+import { currentTimeHHMM, currentWeekWindow, formatLongDatePtBR, todayISO } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 12
@@ -13,15 +14,18 @@ const PAGE_SIZE = 12
 export default async function Home({ searchParams }: PageProps<'/'>) {
   const { page: rawPage } = await searchParams
   const today = todayISO()
+  const currentTime = currentTimeHHMM()
   const weekWindow = currentWeekWindow(today)
-  const [latest, total, agendaItems, announcements, recentBulletins, dominicalBulletin] = await Promise.all([
-    getLatestArticle(),
-    countArticles(),
-    listAgendaInWindow(weekWindow.from, weekWindow.to),
-    listActiveAnnouncements(today),
-    listRecentBulletins({ today, limit: 5 }),
-    getLatestDominicalBulletin(today),
-  ])
+  const [latest, total, agendaItems, announcements, recentBulletins, dominicalBulletin, nextLiturgy] =
+    await Promise.all([
+      getLatestArticle(),
+      countArticles(),
+      listAgendaInWindow(weekWindow.from, weekWindow.to),
+      listActiveAnnouncements(today),
+      listRecentBulletins({ today, limit: 5 }),
+      getLatestDominicalBulletin(today),
+      getNextLiturgy({ today, currentTime }),
+    ])
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
   const articles = await listArticles({ page, pageSize: PAGE_SIZE })
@@ -54,24 +58,34 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                 </Link>
               </li>
             ) : null}
-            <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
-              <Link href="/liturgies/2026-06-07-culto-solene">
-                <div
-                  className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
-                  style={{
-                    height: '260px',
-                    backgroundImage: 'url(/images/featured-image.png)',
-                  }}
+            {nextLiturgy ? (
+              <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
+                <Link
+                  href={`/liturgies/${liturgySlug(nextLiturgy.liturgy.date, nextLiturgy.liturgy.theme, nextLiturgy.liturgy.time)}`}
                 >
-                  <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
-                  <div className="relative z-20 p-5 text-center">
-                    <span className="inline-block text-xs tracking-wide text-white uppercase">Liturgia</span>
-                    <h2 className="my-5 font-serif text-xl font-semibold text-white">Culto Solene ao Bondoso Senhor</h2>
-                    <span className="inline-block font-sans text-xs text-white">Rev. Josiel de Matos</span>
+                  <div
+                    className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
+                    style={{
+                      height: '260px',
+                      backgroundImage: 'url(/images/featured-image.png)',
+                    }}
+                  >
+                    <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                    <div className="relative z-20 p-5 text-center">
+                      <span className="inline-block text-xs tracking-wide text-white uppercase">
+                        {nextLiturgy.label}
+                      </span>
+                      <h2 className="my-5 font-serif text-xl font-semibold text-white">{nextLiturgy.liturgy.theme}</h2>
+                      {nextLiturgy.liturgy.sermonSpeaker ? (
+                        <span className="inline-block font-sans text-xs text-white">
+                          {nextLiturgy.liturgy.sermonSpeaker}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            </li>
+                </Link>
+              </li>
+            ) : null}
             {dominicalBulletin ? (
               <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
                 <Link href={`/bulletins/${dominicalBulletin.date}`}>
