@@ -7,8 +7,16 @@ Site da Igreja Presbiteriana do Brasil em Jaraguá. Publica conteúdo da igreja 
 ### Publicações
 
 **Boletim** (`bulletins`):
-Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda** e os aniversariantes (**Membros**) de um intervalo de datas. Cada seção pode ser exibida ou ocultada.
+Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda** e os aniversariantes (**Membros**) de um intervalo de datas. Cada seção pode ser exibida ou ocultada. Tem uma **Edição** e cai num **Ano**.
 _Avoid_: Folheto, informativo.
+
+**Edição** (`bulletins.edition`):
+O número sequencial de um **Boletim** desde o primeiro, que é a Edição 1, publicada em 2025-02-09. Valor armazenado, não derivado da cadência semanal (que pode ter falhas).
+_Avoid_: Número, volume.
+
+**Ano**:
+A "idade" de um **Boletim** em anos completos desde a data do primeiro boletim (2025-02-09), começando em I. Derivado da data, exibido em algarismo romano ("Ano II"). Não confundir com ano-calendário nem ano litúrgico.
+_Avoid_: Volume, temporada.
 
 **Artigo** (`articles`):
 Texto autoral publicado no site, com título, autor, data e conteúdo. Pode ser referenciado por um **Boletim**, mas existe de forma independente.
