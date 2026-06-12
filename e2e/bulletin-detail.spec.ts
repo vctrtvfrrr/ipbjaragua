@@ -21,9 +21,10 @@ test('shows article section with link to article detail', async ({ page }) => {
 test('shows liturgy link pointing to correct slug', async ({ page }) => {
   await page.goto(`/bulletins/${BULLETIN_DATE}`)
 
-  await expect(
-    page.getByRole('link', { name: E2E_LITURGY.theme }),
-  ).toHaveAttribute('href', `/liturgies/${BULLETIN_DATE}-culto-solene`)
+  await expect(page.getByRole('link', { name: E2E_LITURGY.theme })).toHaveAttribute(
+    'href',
+    `/liturgies/${BULLETIN_DATE}-culto-solene`
+  )
 })
 
 test('returns 404 for unknown date', async ({ page }) => {

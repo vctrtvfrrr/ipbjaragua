@@ -27,7 +27,14 @@ describe('ArticleGrid', () => {
   })
 
   it('shows the excerpt when present', () => {
-    render(<ArticleGrid articles={[makeArticle({ excerpt: 'Resumo do artigo.' })]} page={1} totalPages={1} basePath="/articles" />)
+    render(
+      <ArticleGrid
+        articles={[makeArticle({ excerpt: 'Resumo do artigo.' })]}
+        page={1}
+        totalPages={1}
+        basePath="/articles"
+      />
+    )
 
     expect(screen.getByText('Resumo do artigo.')).toBeInTheDocument()
   })

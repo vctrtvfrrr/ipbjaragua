@@ -7,7 +7,7 @@ type Database = typeof defaultDb
 // Returns agenda items that fall within [from, to], each resolved to a concrete date.
 // Recurring events resolve to the date of their weekday within the window (if it exists).
 // One-off events resolve to their event_date if it's within [from, to].
-export type AgendaEntry = (typeof agenda.$inferSelect) & { resolvedDate: string }
+export type AgendaEntry = typeof agenda.$inferSelect & { resolvedDate: string }
 
 export async function listAgendaInWindow(from: string, to: string, db: Database = defaultDb): Promise<AgendaEntry[]> {
   const rows = db.select().from(agenda).where(isNull(agenda.deleted_at)).all()
@@ -39,7 +39,7 @@ export async function listAgendaInWindow(from: string, to: string, db: Database 
 
 export async function listActiveAnnouncements(
   asOf: string,
-  db: Database = defaultDb,
+  db: Database = defaultDb
 ): Promise<(typeof announcements.$inferSelect)[]> {
   return db
     .select()
@@ -52,7 +52,7 @@ export async function listActiveAnnouncements(
 export async function listBirthdaysInWindow(
   from: string,
   to: string,
-  db: Database = defaultDb,
+  db: Database = defaultDb
 ): Promise<(typeof members.$inferSelect)[]> {
   const rows = db
     .select()

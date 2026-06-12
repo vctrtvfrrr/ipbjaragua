@@ -73,7 +73,7 @@ describe('listArticles', () => {
         slug: `a${i}`,
         title: `A${i}`,
         date: `2026-01-0${i + 1}`,
-      })),
+      }))
     )
 
     const page2 = await listArticles({ page: 2, pageSize: 2 }, db)

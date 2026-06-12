@@ -1,7 +1,7 @@
-import { sql } from 'drizzle-orm';
-import * as sqlite from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm'
+import * as sqlite from 'drizzle-orm/sqlite-core'
 
-export const id = () => sqlite.integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true });
+export const id = () => sqlite.integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true })
 
 export const timestamps = () => ({
   created_at: sqlite
@@ -12,6 +12,6 @@ export const timestamps = () => ({
     .text('updated_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-});
+})
 
-export const deletedAt = () => ({ deleted_at: sqlite.text('deleted_at') });
+export const deletedAt = () => ({ deleted_at: sqlite.text('deleted_at') })

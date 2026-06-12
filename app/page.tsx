@@ -82,7 +82,12 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     />
                     <button type="submit" aria-label="Pesquisar" className="border-0 bg-transparent px-5 py-5">
                       <span className="block w-5">
-                        <svg aria-hidden="true" className="fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <svg
+                          aria-hidden="true"
+                          className="fill-current"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 512 512"
+                        >
                           <path d="M495 466.2L377.2 348.4c29.2-35.6 46.8-81.2 46.8-130.9C424 103.5 331.5 11 217.5 11 103.4 11 11 103.5 11 217.5S103.4 424 217.5 424c49.7 0 95.2-17.5 130.8-46.7L466.1 495c8 8 20.9 8 28.9 0 8-7.9 8-20.9 0-28.8zm-277.5-83.3C126.2 382.9 52 308.7 52 217.5S126.2 52 217.5 52C308.7 52 383 126.3 383 217.5s-74.3 165.4-165.5 165.4z" />
                         </svg>
                       </span>
@@ -94,7 +99,12 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
               <div className="hidden rounded bg-gray-100 p-4">
                 <div className="pb-6">
                   <div className="mx-auto mt-6 w-10 text-gray-900">
-                    <svg aria-hidden="true" className="fill-current" viewBox="-1 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <svg
+                      aria-hidden="true"
+                      className="fill-current"
+                      viewBox="-1 0 512 512"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       <path d="M505.668 246.465c-.89-.906-54.297-54.309-55.668-55.68V55c0-30.328-24.672-55-55-55H115C84.672 0 60 24.672 60 55v135.785C.379 250.406 0 248.301 0 257v210c0 24.813 20.188 45 45 45h420c24.813 0 45-20.188 45-45V257c0-3.855-1.54-7.71-4.332-10.535zm-35.992 6.426L450 262.73v-29.516zM115 30h280c13.785 0 25 11.215 25 25v222.73l-120 60V197c0-8.285-6.715-15-15-15H135c-8.285 0-15 6.715-15 15v95.73l-30-15V55c0-13.785 11.215-25 25-25zm155 257.973l-66.68-44.453a15.004 15.004 0 00-15.027-.938L150 261.73V212h120zm-120 7.297l43.922-21.961L270 324.027v28.703l-15 7.5-105-52.5zm-90-32.54l-19.676-9.84L60 233.216zM465 482H45c-8.27 0-15-6.73-15-15V281.27l218.293 109.148a15.008 15.008 0 0013.414 0L480 281.27V467c0 8.27-6.73 15-15 15zm0 0" />
                       <path d="M195 91h120c8.285 0 15-6.715 15-15s-6.715-15-15-15H195c-8.285 0-15 6.715-15 15s6.715 15 15 15zm0 0M135 151h240c8.285 0 15-6.715 15-15s-6.715-15-15-15H135c-8.285 0-15 6.715-15 15s6.715 15 15 15zm0 0M375 181h-30c-8.285 0-15 6.715-15 15s6.715 15 15 15h30c8.285 0 15-6.715 15-15s-6.715-15-15-15zm0 0M375 241h-30c-8.285 0-15 6.715-15 15s6.715 15 15 15h30c8.285 0 15-6.715 15-15s-6.715-15-15-15zm0 0" />
                     </svg>

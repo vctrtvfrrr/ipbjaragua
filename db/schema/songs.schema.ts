@@ -1,5 +1,5 @@
-import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { deletedAt, id, timestamps } from './common-fields';
+import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { deletedAt, id, timestamps } from './common-fields'
 
 export const songs = sqliteTable('songs', {
   id: id(),
@@ -12,4 +12,4 @@ export const songs = sqliteTable('songs', {
   lyrics: text('lyrics'),
   ...timestamps(),
   ...deletedAt(),
-});
+})

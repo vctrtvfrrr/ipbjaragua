@@ -1,7 +1,7 @@
-import { sql } from 'drizzle-orm';
-import { check, int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { deletedAt, id, timestamps } from './common-fields';
-import { songs } from './songs.schema';
+import { sql } from 'drizzle-orm'
+import { check, int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { deletedAt, id, timestamps } from './common-fields'
+import { songs } from './songs.schema'
 
 export const liturgies = sqliteTable('liturgies', {
   id: id(),
@@ -9,7 +9,7 @@ export const liturgies = sqliteTable('liturgies', {
   theme: text('theme').notNull(),
   ...timestamps(),
   ...deletedAt(),
-});
+})
 
 export const liturgyActs = sqliteTable('liturgy_acts', {
   id: id(),
@@ -19,7 +19,7 @@ export const liturgyActs = sqliteTable('liturgy_acts', {
   position: int('position').notNull(),
   name: text('name').notNull(),
   ...timestamps(),
-});
+})
 
 export const liturgyMoments = sqliteTable(
   'liturgy_moments',
@@ -39,5 +39,5 @@ export const liturgyMoments = sqliteTable(
     sacrament_type: text('sacrament_type', { enum: ['baptism', 'eucharist'] }),
     ...timestamps(),
   },
-  (t) => [check('sacrament_type_required', sql`${t.type} <> 'sacrament' OR ${t.sacrament_type} IS NOT NULL`)],
-);
+  (t) => [check('sacrament_type_required', sql`${t.type} <> 'sacrament' OR ${t.sacrament_type} IS NOT NULL`)]
+)

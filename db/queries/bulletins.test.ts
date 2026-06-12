@@ -41,7 +41,7 @@ describe('listBulletins', () => {
       Array.from({ length: 5 }, (_, i) => ({
         date: `2026-01-0${i + 1}`,
         edition: i + 1,
-      })),
+      }))
     )
 
     const page2 = await listBulletins({ page: 2, pageSize: 2 }, db)

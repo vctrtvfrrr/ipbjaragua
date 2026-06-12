@@ -105,7 +105,7 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
                   <li key={m.id}>
                     {m.birth_date.slice(8, 10)}/{m.birth_date.slice(5, 7)} — {m.full_name}
                   </li>
-                ) : null,
+                ) : null
               )}
             </ul>
           </section>

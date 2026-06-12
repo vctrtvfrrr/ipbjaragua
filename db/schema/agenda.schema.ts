@@ -1,5 +1,5 @@
-import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { deletedAt, id, timestamps } from './common-fields';
+import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { deletedAt, id, timestamps } from './common-fields'
 
 export const agenda = sqliteTable('agenda', {
   id: id(),
@@ -11,4 +11,4 @@ export const agenda = sqliteTable('agenda', {
   event_date: text('event_date'),
   ...timestamps(),
   ...deletedAt(),
-});
+})

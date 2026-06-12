@@ -1,7 +1,7 @@
-import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { deletedAt, id, timestamps } from './common-fields';
-import { articles } from './articles.schema';
-import { liturgies } from './liturgies.schema';
+import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { deletedAt, id, timestamps } from './common-fields'
+import { articles } from './articles.schema'
+import { liturgies } from './liturgies.schema'
 
 export const bulletins = sqliteTable('bulletins', {
   id: id(),
@@ -19,4 +19,4 @@ export const bulletins = sqliteTable('bulletins', {
   birthdays_to: text('birthdays_to').notNull(),
   ...timestamps(),
   ...deletedAt(),
-});
+})

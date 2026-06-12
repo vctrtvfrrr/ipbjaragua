@@ -1,5 +1,5 @@
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { deletedAt, id, timestamps } from './common-fields';
+import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { deletedAt, id, timestamps } from './common-fields'
 
 export const announcements = sqliteTable('announcements', {
   id: id(),
@@ -9,4 +9,4 @@ export const announcements = sqliteTable('announcements', {
   expires_at: text('expires_at').notNull(),
   ...timestamps(),
   ...deletedAt(),
-});
+})

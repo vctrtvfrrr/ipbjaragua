@@ -45,10 +45,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html
-      lang="pt-BR"
-      className={`${ptSans.variable} ${ptSerif.variable} ${ptSansNarrow.variable} h-full antialiased`}
-    >
+    <html lang="pt-BR" className={`${ptSans.variable} ${ptSerif.variable} ${ptSansNarrow.variable} h-full antialiased`}>
       <body className="font-serif">
         <header className="container mx-auto p-4 xl:px-0">
           <div className="-mx-2 my-2 flex flex-wrap justify-center overflow-hidden px-5 md:justify-start lg:px-2">

@@ -21,7 +21,7 @@ export default function BulletinArticle({ article }: { article: Article }) {
         </div>
 
         {expanded ? null : (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-28 items-end justify-center bg-gradient-to-t from-white via-white/90 to-transparent">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-28 items-end justify-center bg-linear-to-t from-white via-white/90 to-transparent">
             <button
               type="button"
               onClick={() => setExpanded(true)}

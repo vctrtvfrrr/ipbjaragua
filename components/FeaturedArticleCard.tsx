@@ -17,9 +17,7 @@ export default function FeaturedArticleCard({ article }: { article: Article | un
         <div className="relative z-20 p-5 text-center">
           <span className="inline-block text-xs tracking-wide text-white uppercase">Artigo</span>
           <h2 className="my-5 font-serif text-xl font-semibold text-white">{article.title}</h2>
-          {article.author ? (
-            <span className="inline-block font-sans text-xs text-white">{article.author}</span>
-          ) : null}
+          {article.author ? <span className="inline-block font-sans text-xs text-white">{article.author}</span> : null}
         </div>
       </div>
     </Link>

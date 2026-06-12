@@ -8,7 +8,7 @@ type Database = typeof defaultDb
 
 export async function listBulletins(
   { page, pageSize }: { page: number; pageSize: number },
-  db: Database = defaultDb,
+  db: Database = defaultDb
 ): Promise<Bulletin[]> {
   return db
     .select()
@@ -31,10 +31,7 @@ export type BulletinWithRefs = {
   liturgy: typeof liturgies.$inferSelect | null
 }
 
-export async function getBulletinByDate(
-  date: string,
-  db: Database = defaultDb,
-): Promise<BulletinWithRefs | undefined> {
+export async function getBulletinByDate(date: string, db: Database = defaultDb): Promise<BulletinWithRefs | undefined> {
   const rows = db
     .select({
       bulletin: bulletins,

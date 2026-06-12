@@ -16,7 +16,7 @@ export async function getArticleBySlug(slug: string, db: Database = defaultDb): 
 
 export async function listArticles(
   { page, pageSize }: { page: number; pageSize: number },
-  db: Database = defaultDb,
+  db: Database = defaultDb
 ): Promise<Article[]> {
   return db
     .select()
