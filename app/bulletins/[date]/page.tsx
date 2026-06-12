@@ -5,11 +5,11 @@ import BulletinArticle from '@/components/BulletinArticle'
 import { listActiveAnnouncements, listAgendaInWindow, listBirthdaysInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
-import { formatLongDatePtBR, formatShortDatePtBR } from '@/lib/date'
+import { formatLongDatePtBR, formatShortDatePtBR, todayISO } from '@/lib/date'
 
 export async function generateMetadata({ params }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
-  const result = await getBulletinByDate(date)
+  const result = await getBulletinByDate(date, todayISO())
   return { title: result?.bulletin.title ?? formatLongDatePtBR(date) }
 }
 
@@ -17,7 +17,7 @@ const sectionCard = 'mb-8 break-inside-avoid rounded border border-gray-200 bg-g
 
 export default async function BulletinDetailPage({ params }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
-  const result = await getBulletinByDate(date)
+  const result = await getBulletinByDate(date, todayISO())
 
   if (!result) notFound()
 
