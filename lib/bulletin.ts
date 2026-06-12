@@ -25,6 +25,16 @@ export function bulletinYear(date: string): number {
   return years + 1
 }
 
+export function liturgySlug(date: string, theme: string): string {
+  const slug = theme
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+  return `${date}-${slug}`
+}
+
 export function formatBulletinSubtitle(edition: number, date: string): string {
   return `${edition}ª Edição — Ano ${toRoman(bulletinYear(date))}`
 }

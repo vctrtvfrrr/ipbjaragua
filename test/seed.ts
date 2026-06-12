@@ -1,4 +1,4 @@
-import { articles, bulletins } from '@/db/schema'
+import { articles, bulletins, liturgies } from '@/db/schema'
 import type { TestDb } from './db'
 
 export type SeedArticle = {
@@ -10,9 +10,10 @@ export type SeedArticle = {
   content?: string
 }
 
-export function seedArticles(db: TestDb, rows: SeedArticle[]) {
-  for (const row of rows) {
-    db.insert(articles)
+export function seedArticles(db: TestDb, rows: SeedArticle[]): number[] {
+  return rows.map((row) => {
+    const result = db
+      .insert(articles)
       .values({
         slug: row.slug,
         title: row.title,
@@ -22,7 +23,8 @@ export function seedArticles(db: TestDb, rows: SeedArticle[]) {
         content: row.content ?? '',
       })
       .run()
-  }
+    return Number(result.lastInsertRowid)
+  })
 }
 
 export type SeedBulletin = {
@@ -38,6 +40,18 @@ export type SeedBulletin = {
   agenda_to?: string
   birthdays_from?: string
   birthdays_to?: string
+}
+
+export type SeedLiturgy = {
+  date: string
+  theme: string
+}
+
+export function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): number[] {
+  return rows.map((row) => {
+    const result = db.insert(liturgies).values({ date: row.date, theme: row.theme }).run()
+    return Number(result.lastInsertRowid)
+  })
 }
 
 export function seedBulletins(db: TestDb, rows: SeedBulletin[]) {

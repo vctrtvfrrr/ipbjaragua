@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bulletinYear, formatBulletinSubtitle, toRoman } from './bulletin'
+import { bulletinYear, formatBulletinSubtitle, liturgySlug, toRoman } from './bulletin'
 
 describe('toRoman', () => {
   it('converts small integers to roman numerals', () => {
@@ -22,6 +22,16 @@ describe('bulletinYear', () => {
     expect(bulletinYear('2026-02-09')).toBe(2) // exactly 1 year after anchor
     expect(bulletinYear('2026-05-24')).toBe(2)
     expect(bulletinYear('2026-06-07')).toBe(2)
+  })
+})
+
+describe('liturgySlug', () => {
+  it('combines date and slugified theme', () => {
+    expect(liturgySlug('2026-06-07', 'Culto Solene')).toBe('2026-06-07-culto-solene')
+  })
+
+  it('handles accents and special chars in theme', () => {
+    expect(liturgySlug('2026-06-07', 'Culto de Ações de Graças')).toBe('2026-06-07-culto-de-acoes-de-gracas')
   })
 })
 

@@ -1,6 +1,6 @@
-import { and, count, desc, isNull } from 'drizzle-orm'
+import { and, count, desc, eq, isNull } from 'drizzle-orm'
 import { db as defaultDb } from '@/db'
-import { bulletins } from '@/db/schema'
+import { articles, bulletins, liturgies } from '@/db/schema'
 
 export type Bulletin = typeof bulletins.$inferSelect
 
@@ -23,4 +23,35 @@ export async function listBulletins(
 export async function countBulletins(db: Database = defaultDb): Promise<number> {
   const row = db.select({ value: count() }).from(bulletins).where(isNull(bulletins.deleted_at)).get()
   return row?.value ?? 0
+}
+
+export type BulletinWithRefs = {
+  bulletin: Bulletin
+  article: typeof articles.$inferSelect | null
+  liturgy: typeof liturgies.$inferSelect | null
+}
+
+export async function getBulletinByDate(
+  date: string,
+  db: Database = defaultDb,
+): Promise<BulletinWithRefs | undefined> {
+  const rows = db
+    .select({
+      bulletin: bulletins,
+      article: articles,
+      liturgy: liturgies,
+    })
+    .from(bulletins)
+    .leftJoin(articles, eq(bulletins.article_id, articles.id))
+    .leftJoin(liturgies, eq(bulletins.liturgy_id, liturgies.id))
+    .where(and(eq(bulletins.date, date), isNull(bulletins.deleted_at)))
+    .get()
+
+  if (!rows) return undefined
+
+  return {
+    bulletin: rows.bulletin,
+    article: rows.article,
+    liturgy: rows.liturgy,
+  }
 }
