@@ -43,3 +43,20 @@ export function formatWeekdayPtBR(value: string): string {
 export function weekdayOf(value: string): number {
   return new Date(`${value}T00:00:00Z`).getUTCDay()
 }
+
+// Returns the Monday→Sunday window containing the given date.
+// Sunday is treated as the last day of the week (not the start of a new week).
+export function currentWeekWindow(today: string): { from: string; to: string } {
+  const d = new Date(`${today}T00:00:00Z`)
+  const wd = d.getUTCDay() // 0=Sun, 1=Mon, ...6=Sat
+  const daysSinceMonday = wd === 0 ? 6 : wd - 1
+  const daysUntilSunday = wd === 0 ? 0 : 7 - wd
+  const monday = new Date(d)
+  monday.setUTCDate(d.getUTCDate() - daysSinceMonday)
+  const sunday = new Date(d)
+  sunday.setUTCDate(d.getUTCDate() + daysUntilSunday)
+  return {
+    from: monday.toISOString().slice(0, 10),
+    to: sunday.toISOString().slice(0, 10),
+  }
+}

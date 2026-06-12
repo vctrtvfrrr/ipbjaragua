@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLongDatePtBR, todayISO } from './date'
+import { currentWeekWindow, formatLongDatePtBR, todayISO } from './date'
 
 describe('todayISO', () => {
   it('returns a YYYY-MM-DD string', () => {
@@ -10,6 +10,25 @@ describe('todayISO', () => {
   it('matches the current date in America/Sao_Paulo', () => {
     const spDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
     expect(todayISO()).toBe(spDate)
+  })
+})
+
+describe('currentWeekWindow', () => {
+  it('returns Mon→Sun window for a Friday', () => {
+    expect(currentWeekWindow('2026-06-12')).toEqual({ from: '2026-06-08', to: '2026-06-14' })
+  })
+
+  it('returns Mon→Sun window when today is Monday', () => {
+    expect(currentWeekWindow('2026-06-08')).toEqual({ from: '2026-06-08', to: '2026-06-14' })
+  })
+
+  it('returns Mon→Sun window when today is Sunday (last day, not start of new week)', () => {
+    expect(currentWeekWindow('2026-06-14')).toEqual({ from: '2026-06-08', to: '2026-06-14' })
+  })
+
+  it('handles a week that spans month boundary', () => {
+    // Tuesday 2026-06-30 → Mon 2026-06-29 to Sun 2026-07-05
+    expect(currentWeekWindow('2026-06-30')).toEqual({ from: '2026-06-29', to: '2026-07-05' })
   })
 })
 

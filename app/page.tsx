@@ -1,17 +1,27 @@
 import Link from 'next/link'
 import ArticleGrid from '@/components/ArticleGrid'
 import FeaturedArticleCard from '@/components/FeaturedArticleCard'
+import { listAgendaInWindow } from '@/db/queries/bulletin-sections'
 import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
+import { groupAgendaByWeekday } from '@/lib/bulletin'
+import { currentWeekWindow, todayISO } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 12
 
 export default async function Home({ searchParams }: PageProps<'/'>) {
   const { page: rawPage } = await searchParams
-  const [latest, total] = await Promise.all([getLatestArticle(), countArticles()])
+  const today = todayISO()
+  const weekWindow = currentWeekWindow(today)
+  const [latest, total, agendaItems] = await Promise.all([
+    getLatestArticle(),
+    countArticles(),
+    listAgendaInWindow(weekWindow.from, weekWindow.to),
+  ])
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
   const articles = await listArticles({ page, pageSize: PAGE_SIZE })
+  const agendaDays = groupAgendaByWeekday(agendaItems)
 
   return (
     <>
@@ -154,86 +164,33 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                 </div>
               </div>
 
-              <div>
-                <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Agenda da Semana</h2>
-                <ol className="space-y-6">
-                  <li>
-                    <h3 className="font-narrow text-xl font-bold">
-                      <span className="text-red-500">‣</span> Segunda-feira
-                    </h3>
-                    <ul>
-                      <li>
-                        <time>19:00</time> – Ensaio do Coral
+              {agendaDays.length > 0 ? (
+                <div>
+                  <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Agenda da Semana</h2>
+                  <ol className="space-y-6">
+                    {agendaDays.map((day) => (
+                      <li key={day.weekday}>
+                        <h3 className="font-narrow text-xl font-bold">
+                          <span className="text-red-500">‣</span> {day.label}
+                        </h3>
+                        <ul>
+                          {day.items.map((item) => (
+                            <li key={item.id}>
+                              {item.time ? (
+                                <>
+                                  <time>{item.time}</time> – {item.title}
+                                </>
+                              ) : (
+                                item.title
+                              )}
+                            </li>
+                          ))}
+                        </ul>
                       </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <h3 className="font-narrow text-xl font-bold">
-                      <span className="text-red-500">‣</span> Terça-feira
-                    </h3>
-                    <ul>
-                      <li>
-                        <time>19:00</time> – Ensaio do Coral
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <h3 className="font-narrow text-xl font-bold">
-                      <span className="text-red-500">‣</span> Quarta-feira
-                    </h3>
-                    <ul>
-                      <li>
-                        <time>19:00</time> – Ensaio do Coral
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <h3 className="font-narrow text-xl font-bold">
-                      <span className="text-red-500">‣</span> Quinta-feira
-                    </h3>
-                    <ul>
-                      <li>
-                        <time>19:00</time> – Ensaio do Coral
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <h3 className="font-narrow text-xl font-bold">
-                      <span className="text-red-500">‣</span> Sexta-feira
-                    </h3>
-                    <ul>
-                      <li>
-                        <time>19:00</time> – Ensaio do Coral
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <h3 className="font-narrow text-xl font-bold">
-                      <span className="text-red-500">‣</span> Sábado
-                    </h3>
-                    <ul>
-                      <li>
-                        <time>19:00</time> – Ensaio do Coral
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <h3 className="font-narrow text-xl font-bold">
-                      <span className="text-red-500">‣</span> Domingo
-                    </h3>
-                    <ul>
-                      <li>
-                        <time>09:00</time> – Escola Bíblica
-                      </li>
-                    </ul>
-                    <ul>
-                      <li>
-                        <time>18:00</time> – Culto Solene
-                      </li>
-                    </ul>
-                  </li>
-                </ol>
-              </div>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
 
               <div>
                 <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Avisos Gerais</h2>
