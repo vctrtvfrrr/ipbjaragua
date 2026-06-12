@@ -2,7 +2,7 @@ import { mkdirSync, rmSync } from 'node:fs'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { articles, bulletins, liturgies } from '../db/schema'
+import { agenda, announcements, articles, bulletins, liturgies, members } from '../db/schema'
 
 export const E2E_DB_PATH = './data/e2e.sqlite'
 
@@ -39,13 +39,31 @@ export const E2E_LITURGY = {
   theme: 'Culto Solene',
 }
 
+// Agenda: one recurring (Sunday) and one one-off within the 2026-06-07..13 window.
+export const E2E_AGENDA = [
+  { title: 'Culto Dominical', is_recurring: true, weekday: 0, time: '10:00' },
+  { title: 'Reunião de Células', is_recurring: false, event_date: '2026-06-10' },
+]
+
+export const E2E_ANNOUNCEMENT = {
+  title: 'Retiro de Jovens',
+  description: 'Inscrições abertas até sexta.',
+  expires_at: '2026-06-14',
+}
+
+export const E2E_MEMBER = {
+  full_name: 'Ana Ferreira',
+  birth_date: '1990-06-10',
+  status: 'active' as const,
+}
+
 export function seedE2eDatabase() {
   mkdirSync('./data', { recursive: true })
   rmSync(E2E_DB_PATH, { force: true })
 
   const sqlite = new Database(E2E_DB_PATH)
   sqlite.pragma('foreign_keys = ON')
-  const db = drizzle(sqlite, { schema: { articles, bulletins, liturgies } })
+  const db = drizzle(sqlite, { schema: { articles, bulletins, liturgies, agenda, announcements, members } })
   migrate(db, { migrationsFolder: './db/migrations' })
 
   // Insert articles and capture the featured article's ID.
@@ -87,9 +105,9 @@ export function seedE2eDatabase() {
       agenda_to: '2026-06-06',
       birthdays_from: '2026-05-31',
       birthdays_to: '2026-06-06',
-      show_announcements: true,
-      show_agenda: true,
-      show_birthdays: true,
+      show_announcements: false,
+      show_agenda: false,
+      show_birthdays: false,
     },
     {
       date: '2026-05-24',
@@ -110,6 +128,13 @@ export function seedE2eDatabase() {
   for (const bulletin of bulletinRows) {
     db.insert(bulletins).values(bulletin).run()
   }
+
+  for (const item of E2E_AGENDA) {
+    db.insert(agenda).values(item).run()
+  }
+
+  db.insert(announcements).values(E2E_ANNOUNCEMENT).run()
+  db.insert(members).values(E2E_MEMBER).run()
 
   sqlite.close()
 }
