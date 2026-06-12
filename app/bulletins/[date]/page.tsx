@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
+import BulletinArticle from '@/components/BulletinArticle'
 import { listActiveAnnouncements, listAgendaInWindow, listBirthdaysInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
@@ -42,16 +43,7 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
         <p className="text-gray-500">{formatBulletinSubtitle(bulletin.edition, bulletin.date)}</p>
       </header>
 
-      {article ? (
-        <section className="mb-10">
-          <h2 className="font-narrow mb-2 text-2xl text-green-900">{article.title}</h2>
-          {article.author ? <p className="mb-1 text-sm text-gray-500">{article.author}</p> : null}
-          {article.excerpt ? <p className="mb-3 text-justify">{article.excerpt}</p> : null}
-          <Link href={`/articles/${article.slug}`} className="text-green-900 underline">
-            Leia mais
-          </Link>
-        </section>
-      ) : null}
+      {article ? <BulletinArticle article={article} /> : null}
 
       <div className="mb-10 lg:columns-3 lg:gap-8">
         {bulletin.show_agenda && agendaDays.length > 0 ? (
