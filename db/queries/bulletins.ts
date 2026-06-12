@@ -38,6 +38,19 @@ export type BulletinWithRefs = {
   liturgy: typeof liturgies.$inferSelect | null
 }
 
+export async function listRecentBulletins(
+  { today, limit }: { today: string; limit: number },
+  db: Database = defaultDb
+): Promise<Bulletin[]> {
+  return db
+    .select()
+    .from(bulletins)
+    .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
+    .orderBy(desc(bulletins.date))
+    .limit(limit)
+    .all()
+}
+
 export async function getBulletinByDate(
   date: string,
   today: string,

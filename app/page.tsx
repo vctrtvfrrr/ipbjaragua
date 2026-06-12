@@ -3,9 +3,10 @@ import ReactMarkdown from 'react-markdown'
 import ArticleGrid from '@/components/ArticleGrid'
 import FeaturedArticleCard from '@/components/FeaturedArticleCard'
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
+import { listRecentBulletins } from '@/db/queries/bulletins'
 import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
-import { groupAgendaByWeekday } from '@/lib/bulletin'
-import { currentWeekWindow, todayISO } from '@/lib/date'
+import { formatBulletinSubtitle, groupAgendaByWeekday } from '@/lib/bulletin'
+import { currentWeekWindow, formatLongDatePtBR, todayISO } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 12
@@ -14,11 +15,12 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
   const { page: rawPage } = await searchParams
   const today = todayISO()
   const weekWindow = currentWeekWindow(today)
-  const [latest, total, agendaItems, announcements] = await Promise.all([
+  const [latest, total, agendaItems, announcements, recentBulletins] = await Promise.all([
     getLatestArticle(),
     countArticles(),
     listAgendaInWindow(weekWindow.from, weekWindow.to),
     listActiveAnnouncements(today),
+    listRecentBulletins({ today, limit: 5 }),
   ])
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
@@ -213,22 +215,23 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                 </div>
               ) : null}
 
-              <div className="rounded bg-gray-100 p-4">
-                <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Boletins Dominicais</h2>
-                <ul className="space-y-6">
-                  {Array.from({ length: 3 }, (_, index) => {
-                    const number = index + 50
-                    return (
-                      <li key={number}>
-                        <Link href="/bulletins/2026-06-07">
-                          <h3 className="font-narrow text-xl font-bold">07 de junho de 2026</h3>
-                          <p className="font-sans text-gray-500">{number}° Edição — Ano II</p>
+              {recentBulletins.length > 0 ? (
+                <div className="rounded bg-gray-100 p-4">
+                  <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">
+                    Boletins Publicados
+                  </h2>
+                  <ul className="space-y-6">
+                    {recentBulletins.map((b) => (
+                      <li key={b.id}>
+                        <Link href={`/bulletins/${b.date}`}>
+                          <h3 className="font-narrow text-xl font-bold">{formatLongDatePtBR(b.date)}</h3>
+                          <p className="font-sans text-gray-500">{formatBulletinSubtitle(b.edition, b.date)}</p>
                         </Link>
                       </li>
-                    )
-                  })}
-                </ul>
-              </div>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           </div>
         </aside>

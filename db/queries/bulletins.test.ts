@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedArticles, seedBulletins, seedLiturgies } from '@/test/seed'
-import { countBulletins, getBulletinByDate, listBulletins } from './bulletins'
+import { countBulletins, getBulletinByDate, listBulletins, listRecentBulletins } from './bulletins'
 
 describe('listBulletins', () => {
   let db: TestDb
@@ -95,6 +95,56 @@ describe('countBulletins', () => {
     ])
 
     expect(await countBulletins({ today: '2026-06-12' }, db)).toBe(1)
+  })
+})
+
+describe('listRecentBulletins', () => {
+  let db: TestDb
+
+  beforeEach(() => {
+    db = createTestDb()
+  })
+
+  it('returns up to limit bulletins ordered newest first', async () => {
+    seedBulletins(
+      db,
+      Array.from({ length: 7 }, (_, i) => ({ date: `2026-01-0${i + 1}`, edition: i + 1 }))
+    )
+
+    const result = await listRecentBulletins({ today: '2026-12-31', limit: 5 }, db)
+
+    expect(result).toHaveLength(5)
+    expect(result[0].date).toBe('2026-01-07')
+    expect(result[4].date).toBe('2026-01-03')
+  })
+
+  it('excludes future-dated bulletins', async () => {
+    seedBulletins(db, [
+      { date: '2026-01-01', edition: 1 },
+      { date: '2026-06-15', edition: 2 },
+    ])
+
+    const result = await listRecentBulletins({ today: '2026-06-12', limit: 5 }, db)
+
+    expect(result.map((b) => b.date)).toEqual(['2026-01-01'])
+  })
+
+  it('excludes soft-deleted bulletins', async () => {
+    seedBulletins(db, [
+      { date: '2026-01-01', edition: 1 },
+      { date: '2026-02-01', edition: 2 },
+    ])
+    db.run(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
+
+    const result = await listRecentBulletins({ today: '2026-12-31', limit: 5 }, db)
+
+    expect(result.map((b) => b.date)).toEqual(['2026-01-01'])
+  })
+
+  it('returns empty array when no bulletins are published', async () => {
+    const result = await listRecentBulletins({ today: '2026-06-12', limit: 5 }, db)
+
+    expect(result).toEqual([])
   })
 })
 
