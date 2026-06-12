@@ -58,13 +58,14 @@ _Avoid_: Usuário, fiel, congregado.
 Um compromisso da igreja. Recorrente (dia da semana + horário) ou pontual (data específica). Uma janela da Agenda é exibida no **Boletim**.
 _Avoid_: Calendário (a Agenda é a coleção; o Evento é a entrada).
 
-**Anúncio** (`announcements`):
-Aviso com prazo de validade (`expires_at`), opcionalmente com link.
-_Avoid_: Notificação, comunicado.
+**Aviso** (`announcements`):
+Mensagem com prazo de validade (`expires_at`), opcionalmente com link. Exibida no **Boletim** e na home (seção "Avisos Gerais").
+_Avoid_: Anúncio (termo anterior), notificação, comunicado.
 
 ## Ambiguidades sinalizadas
 
 - **`liturgies.theme` guarda o Tipo de Culto, não um tema.** A coluna se chama `theme`, mas seu conteúdo ("Culto Solene") é a designação do culto, não o assunto do sermão. O termo de domínio é **Tipo de Culto**; o nome da coluna é um resíduo a ser corrigido num futuro rename, não um conceito novo.
+- **A tabela `announcements` guarda Avisos.** O termo de domínio é **Aviso**; `announcements` (tradução de "Anúncio") é resíduo do código, a ser reconciliado num futuro rename, não um conceito distinto.
 
 ## Diálogo de exemplo
 

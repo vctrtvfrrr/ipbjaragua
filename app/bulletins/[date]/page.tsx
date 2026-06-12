@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
 import { listActiveAnnouncements, listAgendaInWindow, listBirthdaysInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
-import { formatBulletinSubtitle, liturgySlug } from '@/lib/bulletin'
-import { formatLongDatePtBR } from '@/lib/date'
+import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
+import { formatLongDatePtBR, formatShortDatePtBR } from '@/lib/date'
 
 export async function generateMetadata({ params }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
@@ -27,6 +28,8 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
       : Promise.resolve([]),
   ])
 
+  const agendaDays = groupAgendaByWeekday(agendaItems)
+
   return (
     <main className="container mx-auto px-4 py-10 xl:px-0">
       <header className="mb-10">
@@ -48,33 +51,50 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
         </section>
       ) : null}
 
-      {bulletin.show_agenda && agendaItems.length > 0 ? (
+      {bulletin.show_agenda && agendaDays.length > 0 ? (
         <section className="mb-10">
-          <h2 className="font-narrow mb-3 text-2xl text-green-900">Agenda</h2>
-          <ul className="space-y-1">
-            {agendaItems.map((item) => (
-              <li key={item.id}>
-                <span className="font-medium">{formatLongDatePtBR(item.resolvedDate)}</span>
-                {item.time ? ` às ${item.time}` : ''} — {item.title}
+          <h2 className="font-narrow mb-1 text-center text-3xl text-green-900 uppercase">Agenda da Semana</h2>
+          <p className="mb-5 text-center text-gray-500">
+            {formatShortDatePtBR(bulletin.agenda_from)} a {formatShortDatePtBR(bulletin.agenda_to)}
+          </p>
+          <ol className="space-y-6">
+            {agendaDays.map((day) => (
+              <li key={day.weekday}>
+                <h3 className="font-narrow text-xl font-bold">
+                  <span className="text-red-500">‣</span> {day.label}
+                </h3>
+                <ul>
+                  {day.items.map((item) => (
+                    <li key={item.id}>
+                      {item.time ? (
+                        <>
+                          <time>{item.time}</time> – {item.title}
+                        </>
+                      ) : (
+                        item.title
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
-          </ul>
+          </ol>
         </section>
       ) : null}
 
       {bulletin.show_announcements && announcements.length > 0 ? (
         <section className="mb-10">
-          <h2 className="font-narrow mb-3 text-2xl text-green-900">Anúncios</h2>
-          <ul className="space-y-3">
+          <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Avisos Gerais</h2>
+          <ul className="space-y-6">
             {announcements.map((ann) => (
               <li key={ann.id}>
-                <p className="font-medium">{ann.title}</p>
-                {ann.description ? <p className="text-gray-600">{ann.description}</p> : null}
-                {ann.url ? (
-                  <Link href={ann.url} className="text-green-900 underline text-sm">
-                    {ann.url}
-                  </Link>
+                <h3 className="font-narrow text-2xl font-bold">{ann.title}</h3>
+                {ann.description ? (
+                  <div className="text-justify">
+                    <ReactMarkdown>{ann.description}</ReactMarkdown>
+                  </div>
                 ) : null}
+                {ann.url ? <Link href={ann.url}>Acesse</Link> : null}
               </li>
             ))}
           </ul>
@@ -83,13 +103,15 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
 
       {bulletin.show_birthdays && birthdays.length > 0 ? (
         <section className="mb-10">
-          <h2 className="font-narrow mb-3 text-2xl text-green-900">Aniversariantes</h2>
+          <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Aniversariantes</h2>
           <ul className="space-y-1">
-            {birthdays.map((m) => (
-              <li key={m.id}>
-                {m.birth_date!.slice(8, 10)}/{m.birth_date!.slice(5, 7)} — {m.full_name}
-              </li>
-            ))}
+            {birthdays.map((m) =>
+              m.birth_date ? (
+                <li key={m.id}>
+                  {m.birth_date.slice(8, 10)}/{m.birth_date.slice(5, 7)} — {m.full_name}
+                </li>
+              ) : null,
+            )}
           </ul>
         </section>
       ) : null}

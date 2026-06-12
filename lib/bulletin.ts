@@ -1,3 +1,6 @@
+import type { AgendaEntry } from '@/db/queries/bulletin-sections'
+import { formatWeekdayPtBR, weekdayOf } from '@/lib/date'
+
 const ROMAN_VALUES = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
 const ROMAN_NUMERALS = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I']
 
@@ -37,4 +40,26 @@ export function liturgySlug(date: string, theme: string): string {
 
 export function formatBulletinSubtitle(edition: number, date: string): string {
   return `${edition}ª Edição — Ano ${toRoman(bulletinYear(date))}`
+}
+
+export type AgendaDay = { weekday: number; label: string; items: AgendaEntry[] }
+
+// Display order for the weekly agenda: Monday first, Sunday last.
+const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+
+// Groups date-resolved agenda entries by weekday, ordered Monday→Sunday.
+// Days without entries are omitted. Entry order within a day is preserved.
+export function groupAgendaByWeekday(entries: AgendaEntry[]): AgendaDay[] {
+  const byWeekday = new Map<number, AgendaEntry[]>()
+  for (const entry of entries) {
+    const wd = weekdayOf(entry.resolvedDate)
+    const bucket = byWeekday.get(wd) ?? []
+    bucket.push(entry)
+    byWeekday.set(wd, bucket)
+  }
+
+  return WEEKDAY_DISPLAY_ORDER.filter((wd) => byWeekday.has(wd)).map((wd) => {
+    const items = byWeekday.get(wd)!
+    return { weekday: wd, label: formatWeekdayPtBR(items[0].resolvedDate), items }
+  })
 }
