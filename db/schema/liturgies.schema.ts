@@ -7,6 +7,7 @@ export const liturgies = sqliteTable('liturgies', {
   id: id(),
   date: text('date').notNull(),
   theme: text('theme').notNull(),
+  time: text('time'),
   ...timestamps(),
   ...deletedAt(),
 })

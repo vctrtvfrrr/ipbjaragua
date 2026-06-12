@@ -27,7 +27,7 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
                 const subtitle = liturgy.sermonDescription ?? liturgy.sermonSpeaker
                 return (
                   <div key={liturgy.id}>
-                    <Link href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme)}`}>
+                    <Link href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}>
                       <h3 className="font-narrow mt-4 mb-2 text-2xl leading-7">
                         {liturgy.theme}
                         <small className="mb-2 block font-sans text-base text-gray-500">

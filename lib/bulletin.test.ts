@@ -33,6 +33,15 @@ describe('liturgySlug', () => {
   it('handles accents and special chars in theme', () => {
     expect(liturgySlug('2026-06-07', 'Culto de Ações de Graças')).toBe('2026-06-07-culto-de-acoes-de-gracas')
   })
+
+  it('inserts HHMM between date and theme slug when time is provided', () => {
+    expect(liturgySlug('2026-06-07', 'Culto Solene', '09:00')).toBe('2026-06-07-0900-culto-solene')
+  })
+
+  it('ignores null or undefined time', () => {
+    expect(liturgySlug('2026-06-07', 'Culto Solene', null)).toBe('2026-06-07-culto-solene')
+    expect(liturgySlug('2026-06-07', 'Culto Solene', undefined)).toBe('2026-06-07-culto-solene')
+  })
 })
 
 describe('formatBulletinSubtitle', () => {

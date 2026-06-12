@@ -45,11 +45,15 @@ export type SeedBulletin = {
 export type SeedLiturgy = {
   date: string
   theme: string
+  time?: string | null
 }
 
 export function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): number[] {
   return rows.map((row) => {
-    const result = db.insert(liturgies).values({ date: row.date, theme: row.theme }).run()
+    const result = db
+      .insert(liturgies)
+      .values({ date: row.date, theme: row.theme, time: row.time ?? null })
+      .run()
     return Number(result.lastInsertRowid)
   })
 }

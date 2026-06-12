@@ -36,6 +36,13 @@
       "when": 1781227569715,
       "tag": "0004_amazing_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781400000000,
+      "tag": "0005_liturgy_time",
+      "breakpoints": true
     }
   ]
 }
