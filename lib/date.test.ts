@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { formatLongDatePtBR } from './date'
+import { formatLongDatePtBR, todayISO } from './date'
+
+describe('todayISO', () => {
+  it('returns a YYYY-MM-DD string', () => {
+    const result = todayISO()
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('matches the current date in America/Sao_Paulo', () => {
+    const spDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+    expect(todayISO()).toBe(spDate)
+  })
+})
 
 describe('formatLongDatePtBR', () => {
   it('formats a date-only string as a long pt-BR date', () => {

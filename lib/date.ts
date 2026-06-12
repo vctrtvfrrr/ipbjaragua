@@ -1,3 +1,9 @@
+// Returns today's date as YYYY-MM-DD in the America/Sao_Paulo timezone.
+// Using en-CA locale with that timezone yields the ISO date directly.
+export function todayISO(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+}
+
 const longDateFormatter = new Intl.DateTimeFormat('pt-BR', {
   day: '2-digit',
   month: 'long',
