@@ -12,6 +12,8 @@ export async function generateMetadata({ params }: PageProps<'/bulletins/[date]'
   return { title: result?.bulletin.title ?? formatLongDatePtBR(date) }
 }
 
+const sectionCard = 'mb-8 break-inside-avoid rounded border border-gray-200 bg-gray-50 p-5'
+
 export default async function BulletinDetailPage({ params }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
   const result = await getBulletinByDate(date)
@@ -51,70 +53,72 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
         </section>
       ) : null}
 
-      {bulletin.show_agenda && agendaDays.length > 0 ? (
-        <section className="mb-10">
-          <h2 className="font-narrow mb-1 text-center text-3xl text-green-900 uppercase">Agenda da Semana</h2>
-          <p className="mb-5 text-center text-gray-500">
-            {formatShortDatePtBR(bulletin.agenda_from)} a {formatShortDatePtBR(bulletin.agenda_to)}
-          </p>
-          <ol className="space-y-6">
-            {agendaDays.map((day) => (
-              <li key={day.weekday}>
-                <h3 className="font-narrow text-xl font-bold">
-                  <span className="text-red-500">‣</span> {day.label}
-                </h3>
-                <ul>
-                  {day.items.map((item) => (
-                    <li key={item.id}>
-                      {item.time ? (
-                        <>
-                          <time>{item.time}</time> – {item.title}
-                        </>
-                      ) : (
-                        item.title
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
-
-      {bulletin.show_announcements && announcements.length > 0 ? (
-        <section className="mb-10">
-          <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Avisos Gerais</h2>
-          <ul className="space-y-6">
-            {announcements.map((ann) => (
-              <li key={ann.id}>
-                <h3 className="font-narrow text-2xl font-bold">{ann.title}</h3>
-                {ann.description ? (
-                  <div className="text-justify">
-                    <ReactMarkdown>{ann.description}</ReactMarkdown>
-                  </div>
-                ) : null}
-                {ann.url ? <Link href={ann.url}>Acesse</Link> : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {bulletin.show_birthdays && birthdays.length > 0 ? (
-        <section className="mb-10">
-          <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Aniversariantes</h2>
-          <ul className="space-y-1">
-            {birthdays.map((m) =>
-              m.birth_date ? (
-                <li key={m.id}>
-                  {m.birth_date.slice(8, 10)}/{m.birth_date.slice(5, 7)} — {m.full_name}
+      <div className="mb-10 lg:columns-3 lg:gap-8">
+        {bulletin.show_agenda && agendaDays.length > 0 ? (
+          <section className={sectionCard}>
+            <h2 className="font-narrow mb-1 text-2xl text-green-900 uppercase">Agenda da Semana</h2>
+            <p className="mb-5 text-gray-500">
+              {formatShortDatePtBR(bulletin.agenda_from)} a {formatShortDatePtBR(bulletin.agenda_to)}
+            </p>
+            <ol className="space-y-6">
+              {agendaDays.map((day) => (
+                <li key={day.weekday}>
+                  <h3 className="font-narrow text-xl font-bold">
+                    <span className="text-red-500">‣</span> {day.label}
+                  </h3>
+                  <ul>
+                    {day.items.map((item) => (
+                      <li key={item.id}>
+                        {item.time ? (
+                          <>
+                            <time>{item.time}</time> – {item.title}
+                          </>
+                        ) : (
+                          item.title
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </li>
-              ) : null,
-            )}
-          </ul>
-        </section>
-      ) : null}
+              ))}
+            </ol>
+          </section>
+        ) : null}
+
+        {bulletin.show_announcements && announcements.length > 0 ? (
+          <section className={sectionCard}>
+            <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Avisos Gerais</h2>
+            <ul className="space-y-6">
+              {announcements.map((ann) => (
+                <li key={ann.id}>
+                  <h3 className="font-narrow text-2xl font-bold">{ann.title}</h3>
+                  {ann.description ? (
+                    <div className="text-justify">
+                      <ReactMarkdown>{ann.description}</ReactMarkdown>
+                    </div>
+                  ) : null}
+                  {ann.url ? <Link href={ann.url}>Acesse</Link> : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {bulletin.show_birthdays && birthdays.length > 0 ? (
+          <section className={sectionCard}>
+            <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Aniversariantes</h2>
+            <ul className="space-y-1">
+              {birthdays.map((m) =>
+                m.birth_date ? (
+                  <li key={m.id}>
+                    {m.birth_date.slice(8, 10)}/{m.birth_date.slice(5, 7)} — {m.full_name}
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          </section>
+        ) : null}
+      </div>
 
       {liturgy ? (
         <section className="mt-10">
