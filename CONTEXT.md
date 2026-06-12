@@ -7,7 +7,7 @@ Site da Igreja Presbiteriana do Brasil em Jaraguá. Publica conteúdo da igreja 
 ### Publicações
 
 **Boletim** (`bulletins`):
-Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda** e os aniversariantes (**Membros**) de um intervalo de datas. Cada seção pode ser exibida ou ocultada. Tem uma **Edição** e cai num **Ano**.
+Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda** e os Aniversariantes de um intervalo de datas (aniversários de nascimento de **Membros** e **Aniversários de Casamento** de casais). Cada seção pode ser exibida ou ocultada. Tem uma **Edição** e cai num **Ano**.
 _Avoid_: Folheto, informativo.
 
 **Boletim Dominical / Boletim Excepcional**:
@@ -65,6 +65,10 @@ _Avoid_: Autor, intérprete (são campos individuais; Referência é o campo cal
 **Membro** (`members`):
 Uma pessoa no rol da igreja, com dados de membresia e um status (ativo, etc.). Fonte dos aniversariantes exibidos no **Boletim**.
 _Avoid_: Usuário, fiel, congregado.
+
+**Aniversário de Casamento**:
+A data de núpcias de um casal em que **ambos** os cônjuges são **Membros** ativos. Exibido na seção Aniversariantes do **Boletim** ao lado dos aniversários de nascimento, como o casal unido por um coração ("Mulher ♥ Homem"). Não há vínculo formal entre cônjuges no rol — o casal é reconstruído pelo cruzamento de nome e data de casamento (ver ADR-0004).
+_Avoid_: Bodas, aniversário de núpcias.
 
 **Agenda / Evento** (`agenda`):
 Um compromisso da igreja. Recorrente (dia da semana + horário) ou pontual (data específica). Uma janela da Agenda é exibida no **Boletim**.
