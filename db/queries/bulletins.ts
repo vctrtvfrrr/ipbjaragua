@@ -38,6 +38,23 @@ export type BulletinWithRefs = {
   liturgy: typeof liturgies.$inferSelect | null
 }
 
+export async function getLatestDominicalBulletin(
+  today: string,
+  db: Database = defaultDb
+): Promise<Bulletin | undefined> {
+  // Fetch recent published bulletins in descending order and find the first Sunday.
+  // SQLite's strftime('%w', date) returns '0' for Sunday, but we handle it in JS
+  // to keep the query portable and the filter logic consistent with weekdayOf().
+  const rows = db
+    .select()
+    .from(bulletins)
+    .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
+    .orderBy(desc(bulletins.date))
+    .all()
+
+  return rows.find((b) => new Date(`${b.date}T00:00:00Z`).getUTCDay() === 0)
+}
+
 export async function listRecentBulletins(
   { today, limit }: { today: string; limit: number },
   db: Database = defaultDb

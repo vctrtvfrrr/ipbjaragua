@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import ArticleGrid from '@/components/ArticleGrid'
 import FeaturedArticleCard from '@/components/FeaturedArticleCard'
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
-import { listRecentBulletins } from '@/db/queries/bulletins'
+import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
 import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
 import { formatBulletinSubtitle, groupAgendaByWeekday } from '@/lib/bulletin'
 import { currentWeekWindow, formatLongDatePtBR, todayISO } from '@/lib/date'
@@ -15,12 +15,13 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
   const { page: rawPage } = await searchParams
   const today = todayISO()
   const weekWindow = currentWeekWindow(today)
-  const [latest, total, agendaItems, announcements, recentBulletins] = await Promise.all([
+  const [latest, total, agendaItems, announcements, recentBulletins, dominicalBulletin] = await Promise.all([
     getLatestArticle(),
     countArticles(),
     listAgendaInWindow(weekWindow.from, weekWindow.to),
     listActiveAnnouncements(today),
     listRecentBulletins({ today, limit: 5 }),
+    getLatestDominicalBulletin(today),
   ])
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
@@ -53,24 +54,30 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                 </div>
               </Link>
             </li>
-            <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
-              <Link href="/bulletins/2026-06-07">
-                <div
-                  className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
-                  style={{
-                    height: '260px',
-                    backgroundImage: 'url(/images/featured-image.png)',
-                  }}
-                >
-                  <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
-                  <div className="relative z-20 p-5 text-center">
-                    <span className="inline-block text-xs tracking-wide text-white uppercase">Boletim Semanal</span>
-                    <h2 className="my-5 font-serif text-xl font-semibold text-white">69° Edição — Ano II</h2>
-                    <span className="inline-block font-sans text-xs text-white">07 de junho de 2026</span>
+            {dominicalBulletin ? (
+              <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
+                <Link href={`/bulletins/${dominicalBulletin.date}`}>
+                  <div
+                    className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
+                    style={{
+                      height: '260px',
+                      backgroundImage: 'url(/images/featured-image.png)',
+                    }}
+                  >
+                    <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                    <div className="relative z-20 p-5 text-center">
+                      <span className="inline-block text-xs tracking-wide text-white uppercase">Boletim Semanal</span>
+                      <h2 className="my-5 font-serif text-xl font-semibold text-white">
+                        {formatBulletinSubtitle(dominicalBulletin.edition, dominicalBulletin.date)}
+                      </h2>
+                      <span className="inline-block font-sans text-xs text-white">
+                        {formatLongDatePtBR(dominicalBulletin.date)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            </li>
+                </Link>
+              </li>
+            ) : null}
           </ul>
         </div>
       </div>

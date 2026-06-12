@@ -2,7 +2,13 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedArticles, seedBulletins, seedLiturgies } from '@/test/seed'
-import { countBulletins, getBulletinByDate, listBulletins, listRecentBulletins } from './bulletins'
+import {
+  countBulletins,
+  getBulletinByDate,
+  getLatestDominicalBulletin,
+  listBulletins,
+  listRecentBulletins,
+} from './bulletins'
 
 describe('listBulletins', () => {
   let db: TestDb
@@ -95,6 +101,63 @@ describe('countBulletins', () => {
     ])
 
     expect(await countBulletins({ today: '2026-06-12' }, db)).toBe(1)
+  })
+})
+
+describe('getLatestDominicalBulletin', () => {
+  let db: TestDb
+
+  beforeEach(() => {
+    db = createTestDb()
+  })
+
+  it('returns the most recent Sunday bulletin', async () => {
+    // 2026-06-07 is a Sunday, 2026-06-12 is a Friday
+    seedBulletins(db, [
+      { date: '2026-06-07', edition: 70 },
+      { date: '2026-06-12', edition: 71 },
+    ])
+
+    const result = await getLatestDominicalBulletin('2026-06-12', db)
+
+    expect(result?.date).toBe('2026-06-07')
+  })
+
+  it('ignores exceptional bulletins (weekday != Sunday)', async () => {
+    seedBulletins(db, [
+      { date: '2026-06-12', edition: 71 }, // Friday
+      { date: '2026-06-05', edition: 70 }, // Friday
+    ])
+
+    const result = await getLatestDominicalBulletin('2026-06-12', db)
+
+    expect(result).toBeUndefined()
+  })
+
+  it('ignores future Sunday bulletins', async () => {
+    seedBulletins(db, [
+      { date: '2026-06-14', edition: 71 }, // Sunday but future
+      { date: '2026-06-07', edition: 70 }, // Sunday, published
+    ])
+
+    const result = await getLatestDominicalBulletin('2026-06-12', db)
+
+    expect(result?.date).toBe('2026-06-07')
+  })
+
+  it('returns undefined when no Sunday bulletin is published', async () => {
+    const result = await getLatestDominicalBulletin('2026-06-12', db)
+
+    expect(result).toBeUndefined()
+  })
+
+  it('returns a Sunday bulletin dated exactly today', async () => {
+    // 2026-06-14 is a Sunday
+    seedBulletins(db, [{ date: '2026-06-14', edition: 71 }])
+
+    const result = await getLatestDominicalBulletin('2026-06-14', db)
+
+    expect(result?.date).toBe('2026-06-14')
   })
 })
 
