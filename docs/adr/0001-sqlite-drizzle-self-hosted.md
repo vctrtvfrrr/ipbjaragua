@@ -39,5 +39,5 @@ O schema Drizzle fica dividido por entidade (`db/schema/*.schema.ts`) e modela *
 ## Consequências
 
 - O arquivo `data/db.sqlite` deve viver em volume persistente e ficar fora do git (gitignored); o backup é uma cópia do arquivo.
-- O entrypoint do container precisa rodar `migrate` antes de subir o servidor. (O Dockerfile/entrypoint ainda não existe e fica fora do escopo desta decisão.)
+- As migrations precisam ser aplicadas antes de o servidor atender requisições. O mecanismo concreto foi decidido na [ADR-0008](0008-container-standalone-in-process-migration.md): a migração roda **in-process**, no `register()` do `instrumentation.ts`, no boot do servidor — não num entrypoint com `drizzle-kit migrate` (o `drizzle-kit` é `devDependency` e não está na imagem de runtime). O texto acima ("aplicadas com `drizzle-kit migrate` no start do container, antes do `next start`") descreve a intenção original; o runtime real é `node server.js` (Next standalone), e o `migrate` do `drizzle-orm` é chamado diretamente no boot.
 - Por ser instância única, não há estratégia de concorrência de escrita; escalar horizontalmente exigiria repensar o banco (provável gatilho para reabrir este ADR).
