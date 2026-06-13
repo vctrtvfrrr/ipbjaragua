@@ -63,8 +63,8 @@ _Avoid_: Autor, intérprete (são campos individuais; Referência é o campo cal
 ### Comunidade
 
 **Membro** (`members`):
-Uma pessoa no rol da igreja, com dados de membresia e um status (ativo, etc.). Fonte dos aniversariantes exibidos no **Boletim**.
-_Avoid_: Usuário, fiel, congregado.
+Uma pessoa no rol da igreja, com dados de membresia e um status (ativo, etc.). Fonte dos aniversariantes exibidos no **Boletim**. Não tem nenhuma relação com **Usuário**: a membresia é eclesiástica, não dá acesso ao painel.
+_Avoid_: Usuário (é outro conceito — quem opera o painel), fiel, congregado.
 
 **Aniversário de Casamento**:
 A data de núpcias de um casal em que **ambos** os cônjuges são **Membros** ativos. Exibido na seção Aniversariantes do **Boletim** ao lado dos aniversários de nascimento, como o casal unido por um coração ("Mulher ♥ Homem"). Não há vínculo formal entre cônjuges no rol — o casal é reconstruído pelo cruzamento de nome e data de casamento (ver ADR-0004).
@@ -77,6 +77,24 @@ _Avoid_: Calendário (a Agenda é a coleção; o Evento é a entrada).
 **Aviso** (`announcements`):
 Mensagem com prazo de validade (`expires_at`), opcionalmente com link. Exibida no **Boletim** e na home (seção "Avisos Gerais").
 _Avoid_: Anúncio (termo anterior), notificação, comunicado.
+
+### Acesso ao painel
+
+**Usuário** (`users`):
+Pessoa autenticada que opera o painel administrativo, cadastrando e editando o conteúdo do site. Não tem relação com **Membro** — a membresia eclesiástica não concede acesso ao painel. Autentica-se via Google (OAuth), mas só consegue entrar se o seu e-mail estiver na lista de autorizados, formada por **Convite**. Cada Usuário carrega uma lista de **Permissões** que delimita o que pode fazer. O primeiro Usuário é cadastrado manualmente no banco.
+_Avoid_: Membro, administrador (todo Usuário do painel é administrativo; a alçada se distingue por Permissão, não por um papel à parte), conta.
+
+**Convite**:
+A autorização de acesso de um novo **Usuário**: um Usuário com permissão envia um convite a um e-mail Google, e esse e-mail passa a poder autenticar no painel. Autenticar via Google não basta — sem Convite, o acesso é negado.
+_Avoid_: Cadastro (não há auto-cadastro; o acesso nasce de um Convite), registro.
+
+**Visitante** (`guest`):
+Quem acessa o site público sem estar autenticado. Termo usado só quando é preciso contrastar com **Usuário**; no resto do site, o público é simplesmente o leitor.
+_Avoid_: Usuário (Visitante não é autenticado), anônimo.
+
+**Permissão**:
+Uma autorização concedida a um **Usuário**, na forma _entidade × ação_ (ex: criar Boletim, excluir Artigo). Um Usuário tem uma lista de Permissões; sem a Permissão correspondente, a ação não aparece nem é executável.
+_Avoid_: Papel/role (a alçada é uma lista de Permissões por Usuário, não um papel nomeado), nível de acesso.
 
 ## Ambiguidades sinalizadas
 
