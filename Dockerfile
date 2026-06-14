@@ -1,5 +1,5 @@
 # ------------ Base Stage ------------ #
-FROM node:26-bookworm-slim AS base
+FROM node:26-slim AS base
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN npm install -g corepack@latest && corepack enable
 WORKDIR /app
@@ -10,7 +10,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends build-essential python3 \
   && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-*.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts && pnpm rebuild better-sqlite3
 COPY . .
 EXPOSE 3000
 CMD ["pnpm", "dev"]
@@ -21,18 +21,21 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends build-essential python3 \
   && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-*.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts && pnpm rebuild better-sqlite3
 COPY . .
 RUN mkdir -p data && pnpm build
 
 # --------- Production Stage ---------- #
-FROM node:26-bookworm-slim AS production
+FROM node:26-slim AS production
+ARG UID=1001
+ARG GID=1001
+RUN groupmod -g ${GID} node \
+    && usermod -u ${UID} node
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV DATABASE_PATH=/app/data/db.sqlite
-RUN mkdir -p /app/data && chown node:node /app/data
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
