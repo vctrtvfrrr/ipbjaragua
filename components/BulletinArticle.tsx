@@ -15,7 +15,7 @@ export default function BulletinArticle({ article }: { article: Article }) {
       <div className="relative">
         <div
           className="prose max-w-none overflow-hidden text-justify transition-all duration-500"
-          style={{ maxHeight: expanded ? '9999px' : '12rem' }}
+          style={{ maxHeight: expanded ? '99999px' : '20rem' }}
         >
           <ReactMarkdown>{article.content}</ReactMarkdown>
         </div>

@@ -11,3 +11,9 @@ export function songReference(song: SongFields): string | null {
   if (song.songwriter !== null) return song.songwriter
   return null
 }
+
+export type LyricsBlock = { type: 'verse' | 'chorus' | string; number: number | null; content: string }
+
+export function parseLyrics(raw: string): LyricsBlock[] {
+  return JSON.parse(raw) as LyricsBlock[]
+}

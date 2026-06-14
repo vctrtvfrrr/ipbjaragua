@@ -34,7 +34,7 @@ export type LiturgyDetail = {
       sermon_speaker: string | null
       sacrament_type: 'baptism' | 'eucharist' | null
       scripture_passages: string | null
-      song: { title: string; songReference: string | null } | null
+      song: { title: string; songReference: string | null; lyrics: string | null } | null
     }>
   }>
 }
@@ -158,6 +158,7 @@ export async function getLiturgyBySlug(
         song: row.song
           ? {
               title: row.song.title,
+              lyrics: row.song.lyrics ?? null,
               songReference: songReference({
                 track: row.song.track ?? null,
                 album: row.song.album ?? null,

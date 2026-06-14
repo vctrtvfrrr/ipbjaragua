@@ -132,28 +132,21 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
         {liturgiesOfDay.length > 0 ? (
           <section className={sectionCard}>
             <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Liturgia</h2>
-            {liturgiesOfDay.length === 1 ? (
-              <Link
-                href={`/liturgies/${liturgySlug(liturgiesOfDay[0].date, liturgiesOfDay[0].theme, liturgiesOfDay[0].time)}`}
-                className="text-green-900 underline"
-              >
-                {liturgiesOfDay[0].theme}
-              </Link>
-            ) : (
-              <ul className="space-y-1">
-                {liturgiesOfDay.map((l) => (
-                  <li key={l.id}>
-                    <Link
-                      href={`/liturgies/${liturgySlug(l.date, l.theme, l.time)}`}
-                      className="text-green-900 underline"
-                    >
+            <ul className="space-y-1">
+              {liturgiesOfDay.map((l) => (
+                <li key={l.id}>
+                  <Link
+                    href={`/liturgies/${liturgySlug(l.date, l.theme, l.time)}`}
+                    className="text-green-900 underline"
+                  >
+                    <h3 className="font-narrow mt-4 mb-2 text-xl">
                       {l.theme}
                       {l.time ? ` — ${l.time}` : null}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+                    </h3>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
         ) : null}
       </div>
