@@ -173,8 +173,20 @@ describe('listAnniversariesInWindow', () => {
 
   it('groups a valid couple under their wedding day', async () => {
     seedMembers(db, [
-      { full_name: 'Ana Lúcia de Souza', sex: 'Feminino', wedding_date: '2005-06-10', spouse: 'Júlio Cesar Oliveira', status: 'active' },
-      { full_name: 'Júlio Cesar Oliveira', sex: 'Masculino', wedding_date: '2005-06-10', spouse: 'Ana Lúcia de Souza', status: 'active' },
+      {
+        full_name: 'Ana Lúcia de Souza',
+        sex: 'Feminino',
+        wedding_date: '2005-06-10',
+        spouse: 'Júlio Cesar Oliveira',
+        status: 'active',
+      },
+      {
+        full_name: 'Júlio Cesar Oliveira',
+        sex: 'Masculino',
+        wedding_date: '2005-06-10',
+        spouse: 'Ana Lúcia de Souza',
+        status: 'active',
+      },
     ])
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
@@ -184,8 +196,20 @@ describe('listAnniversariesInWindow', () => {
 
   it('deduplicates couples to a single name entry', async () => {
     seedMembers(db, [
-      { full_name: 'Ana de Souza', sex: 'Feminino', wedding_date: '2005-06-10', spouse: 'Carlos Lima', status: 'active' },
-      { full_name: 'Carlos Lima', sex: 'Masculino', wedding_date: '2005-06-10', spouse: 'Ana de Souza', status: 'active' },
+      {
+        full_name: 'Ana de Souza',
+        sex: 'Feminino',
+        wedding_date: '2005-06-10',
+        spouse: 'Carlos Lima',
+        status: 'active',
+      },
+      {
+        full_name: 'Carlos Lima',
+        sex: 'Masculino',
+        wedding_date: '2005-06-10',
+        spouse: 'Ana de Souza',
+        status: 'active',
+      },
     ])
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
@@ -195,7 +219,13 @@ describe('listAnniversariesInWindow', () => {
 
   it('omits couple silently when one spouse is not an active member', async () => {
     seedMembers(db, [
-      { full_name: 'Maria de Souza', sex: 'Feminino', wedding_date: '2005-06-10', spouse: 'Pedro Ausente', status: 'active' },
+      {
+        full_name: 'Maria de Souza',
+        sex: 'Feminino',
+        wedding_date: '2005-06-10',
+        spouse: 'Pedro Ausente',
+        status: 'active',
+      },
     ])
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
@@ -205,8 +235,20 @@ describe('listAnniversariesInWindow', () => {
 
   it('omits couple when spouse member is inactive', async () => {
     seedMembers(db, [
-      { full_name: 'Lucia de Melo', sex: 'Feminino', wedding_date: '2005-06-10', spouse: 'Paulo Melo', status: 'active' },
-      { full_name: 'Paulo Melo', sex: 'Masculino', wedding_date: '2005-06-10', spouse: 'Lucia de Melo', status: 'transferred' },
+      {
+        full_name: 'Lucia de Melo',
+        sex: 'Feminino',
+        wedding_date: '2005-06-10',
+        spouse: 'Paulo Melo',
+        status: 'active',
+      },
+      {
+        full_name: 'Paulo Melo',
+        sex: 'Masculino',
+        wedding_date: '2005-06-10',
+        spouse: 'Lucia de Melo',
+        status: 'transferred',
+      },
     ])
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
@@ -217,8 +259,20 @@ describe('listAnniversariesInWindow', () => {
   it('places birth anniversaries before wedding anniversaries on the same day', async () => {
     seedMembers(db, [
       { full_name: 'Beatriz Costa', birth_date: '1990-06-10', status: 'active' },
-      { full_name: 'Rosa de Lima', sex: 'Feminino', wedding_date: '2005-06-10', spouse: 'Tiago Lima', status: 'active' },
-      { full_name: 'Tiago Lima', sex: 'Masculino', wedding_date: '2005-06-10', spouse: 'Rosa de Lima', status: 'active' },
+      {
+        full_name: 'Rosa de Lima',
+        sex: 'Feminino',
+        wedding_date: '2005-06-10',
+        spouse: 'Tiago Lima',
+        status: 'active',
+      },
+      {
+        full_name: 'Tiago Lima',
+        sex: 'Masculino',
+        wedding_date: '2005-06-10',
+        spouse: 'Rosa de Lima',
+        status: 'active',
+      },
     ])
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
@@ -228,8 +282,20 @@ describe('listAnniversariesInWindow', () => {
 
   it('handles year-wrap windows for wedding anniversaries (Dec→Jan)', async () => {
     seedMembers(db, [
-      { full_name: 'Clara de Souza', sex: 'Feminino', wedding_date: '2000-12-30', spouse: 'Diego Costa', status: 'active' },
-      { full_name: 'Diego Costa', sex: 'Masculino', wedding_date: '2000-12-30', spouse: 'Clara de Souza', status: 'active' },
+      {
+        full_name: 'Clara de Souza',
+        sex: 'Feminino',
+        wedding_date: '2000-12-30',
+        spouse: 'Diego Costa',
+        status: 'active',
+      },
+      {
+        full_name: 'Diego Costa',
+        sex: 'Masculino',
+        wedding_date: '2000-12-30',
+        spouse: 'Clara de Souza',
+        status: 'active',
+      },
     ])
 
     const result = await listAnniversariesInWindow('2026-12-28', '2027-01-03', db)

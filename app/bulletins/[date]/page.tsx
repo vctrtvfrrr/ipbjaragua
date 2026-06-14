@@ -107,7 +107,7 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
                   <h3 className="font-narrow text-lg font-bold">
                     <span className="text-red-500">‣</span> {day.md} — {day.weekday}
                   </h3>
-                  <ul className="space-y-1 ml-4">
+                  <ul className="ml-4 space-y-1">
                     {day.names.map((name, i) => (
                       <li key={i} dangerouslySetInnerHTML={{ __html: name }} />
                     ))}

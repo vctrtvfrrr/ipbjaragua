@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { bulletinYear, formatBulletinSubtitle, formatCoupleLabel, liturgySlug, toRoman, truncateGivenName } from './bulletin'
+import {
+  bulletinYear,
+  formatBulletinSubtitle,
+  formatCoupleLabel,
+  liturgySlug,
+  toRoman,
+  truncateGivenName,
+} from './bulletin'
 
 describe('toRoman', () => {
   it('converts small integers to roman numerals', () => {

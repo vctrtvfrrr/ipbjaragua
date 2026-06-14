@@ -83,9 +83,7 @@ export async function listAnniversariesInWindow(
   for (const a of withWedding) {
     const b = withWedding.find(
       (m) =>
-        m.id !== a.id &&
-        normalizeName(m.full_name) === normalizeName(a.spouse!) &&
-        m.wedding_date === a.wedding_date
+        m.id !== a.id && normalizeName(m.full_name) === normalizeName(a.spouse!) && m.wedding_date === a.wedding_date
     )
     if (!b) continue
     const pairKey = [Math.min(a.id, b.id), Math.max(a.id, b.id)].join('-')
