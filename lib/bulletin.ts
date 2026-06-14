@@ -1,4 +1,33 @@
 import type { AgendaEntry } from '@/db/queries/bulletin-sections'
+
+const PREPS = new Set(['de', 'da', 'do', 'dos', 'das', 'e'])
+
+export type MemberForCouple = { full_name: string; sex: string | null }
+
+export function formatCoupleLabel(a: MemberForCouple, b: MemberForCouple): string {
+  let woman: MemberForCouple, man: MemberForCouple
+  const aFemale = a.sex === 'Feminino'
+  const bFemale = b.sex === 'Feminino'
+  if (aFemale && !bFemale) {
+    woman = a
+    man = b
+  } else if (bFemale && !aFemale) {
+    woman = b
+    man = a
+  } else {
+    ;[woman, man] = [a, b].sort((x, y) =>
+      truncateGivenName(x.full_name).localeCompare(truncateGivenName(y.full_name), 'pt-BR')
+    )
+  }
+  return `${truncateGivenName(woman.full_name)} <span style="color:red">♥</span> ${truncateGivenName(man.full_name)}`
+}
+
+export function truncateGivenName(name: string): string {
+  const tokens = name.trim().replace(/\s+/g, ' ').split(' ')
+  const result = [tokens[0]]
+  if (tokens[1] && !PREPS.has(tokens[1].toLowerCase())) result.push(tokens[1])
+  return result.join(' ')
+}
 import { formatWeekdayPtBR, weekdayOf } from '@/lib/date'
 
 const ROMAN_VALUES = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
@@ -16,8 +45,6 @@ export function toRoman(n: number): string {
   return result
 }
 
-// Anchor: edition 1 was published on 2025-02-09.
-// Year = complete years since anchor + 1 (starts at I).
 const ANCHOR = '2025-02-09'
 
 export function bulletinYear(date: string): number {
@@ -45,11 +72,8 @@ export function formatBulletinSubtitle(edition: number, date: string): string {
 
 export type AgendaDay = { weekday: number; label: string; items: AgendaEntry[] }
 
-// Display order for the weekly agenda: Monday first, Sunday last.
 const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
-// Groups date-resolved agenda entries by weekday, ordered Monday→Sunday.
-// Days without entries are omitted. Entry order within a day is preserved.
 export function groupAgendaByWeekday(entries: AgendaEntry[]): AgendaDay[] {
   const byWeekday = new Map<number, AgendaEntry[]>()
   for (const entry of entries) {

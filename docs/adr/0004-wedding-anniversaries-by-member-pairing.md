@@ -21,7 +21,7 @@ Um Aniversário de Casamento é construído **pareando dois Membros ativos**: o 
 - A comparação de nomes é **exata**, apenas aparando espaços nas pontas e colapsando espaços internos repetidos — sensível a acento, maiúscula e nomes do meio.
 - Quando nenhum cônjuge-Membro é encontrado (cônjuge não é membro, grafias divergem, ou o parceiro está inativo/falecido), o Aniversário de Casamento é **omitido por inteiro** — nunca renderizamos meio casal.
 - A exibição é `Mulher ♥ Homem` (♥ = U+2665), mulher primeiro pelo campo `sex`: se exatamente um cônjuge tem `sex = 'Feminino'`, ela vem primeiro; caso contrário (ambos iguais, ou algum nulo) a ordem é alfabética pelo nome de exibição. Cada nome usa até seus dois primeiros tokens, parando antes de uma preposição portuguesa (`de/da/do/dos/das/e`, sem distinção de maiúsculas) — assim "Ana Lúcia ♥ Júlio Cesar", mas "Riquiele Monico ♥ Evanildon Lopes".
-- Casamentos reaproveitam a janela `birthdays_from`/`birthdays_to` (cruzada pelo mês-dia do `wedding_date`) e o toggle `show_birthdays` existentes — sem novos campos de schema no boletim. No mesmo dia, aniversários de nascimento vêm antes dos de casamento.
+- Casamentos reaproveitam a janela `birthdays_from`/`birthdays_to` (cruzada pelo mês-dia do `wedding_date`) e o toggle `show_birthdays` existentes — sem novos campos de schema no boletim. A seção é agrupada por dia, sob um cabeçalho `DD/MM — dia da semana`; dentro de cada dia, aniversários de nascimento vêm antes dos de casamento.
 
 ## Rationale
 

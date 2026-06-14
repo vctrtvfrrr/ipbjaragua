@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import BulletinArticle from '@/components/BulletinArticle'
-import { listActiveAnnouncements, listAgendaInWindow, listBirthdaysInWindow } from '@/db/queries/bulletin-sections'
+import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
@@ -24,11 +24,11 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
 
   const { bulletin, article } = result
 
-  const [agendaItems, announcements, birthdays, liturgiesOfDay] = await Promise.all([
+  const [agendaItems, announcements, anniversaries, liturgiesOfDay] = await Promise.all([
     bulletin.show_agenda ? listAgendaInWindow(bulletin.agenda_from, bulletin.agenda_to) : Promise.resolve([]),
     bulletin.show_announcements ? listActiveAnnouncements(bulletin.date) : Promise.resolve([]),
     bulletin.show_birthdays
-      ? listBirthdaysInWindow(bulletin.birthdays_from, bulletin.birthdays_to)
+      ? listAnniversariesInWindow(bulletin.birthdays_from, bulletin.birthdays_to)
       : Promise.resolve([]),
     listLiturgiesByDate(bulletin.date),
   ])
@@ -98,18 +98,23 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
           </section>
         ) : null}
 
-        {bulletin.show_birthdays && birthdays.length > 0 ? (
+        {bulletin.show_birthdays && anniversaries.length > 0 ? (
           <section className={sectionCard}>
             <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Aniversariantes</h2>
-            <ul className="space-y-1">
-              {birthdays.map((m) =>
-                m.birth_date ? (
-                  <li key={m.id}>
-                    {m.birth_date.slice(8, 10)}/{m.birth_date.slice(5, 7)} — {m.full_name}
-                  </li>
-                ) : null
-              )}
-            </ul>
+            <div className="space-y-4">
+              {anniversaries.map((day) => (
+                <div key={day.md}>
+                  <h3 className="font-narrow text-lg font-bold">
+                    <span className="text-red-500">‣</span> {day.md} — {day.weekday}
+                  </h3>
+                  <ul className="space-y-1 ml-4">
+                    {day.names.map((name, i) => (
+                      <li key={i} dangerouslySetInnerHTML={{ __html: name }} />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </section>
         ) : null}
 

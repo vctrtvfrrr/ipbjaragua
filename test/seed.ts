@@ -125,6 +125,9 @@ export type SeedMember = {
   full_name: string
   status: 'active' | 'transferred' | 'deceased' | 'removed'
   birth_date?: string | null
+  sex?: string | null
+  wedding_date?: string | null
+  spouse?: string | null
 }
 
 export function seedMembers(db: TestDb, rows: SeedMember[]) {
@@ -134,6 +137,9 @@ export function seedMembers(db: TestDb, rows: SeedMember[]) {
         full_name: row.full_name,
         status: row.status,
         birth_date: row.birth_date ?? null,
+        sex: row.sex ?? null,
+        wedding_date: row.wedding_date ?? null,
+        spouse: row.spouse ?? null,
       })
       .run()
   }

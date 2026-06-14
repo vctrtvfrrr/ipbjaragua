@@ -1,12 +1,11 @@
-import { and, asc, gte, isNotNull, isNull } from 'drizzle-orm'
+import { and, asc, gte, isNull } from 'drizzle-orm'
 import { db as defaultDb } from '@/db'
+import { formatCoupleLabel } from '@/lib/bulletin'
+import { formatWeekdayPtBR } from '@/lib/date'
 import { agenda, announcements, members } from '@/db/schema'
 
 type Database = typeof defaultDb
 
-// Returns agenda items that fall within [from, to], each resolved to a concrete date.
-// Recurring events resolve to the date of their weekday within the window (if it exists).
-// One-off events resolve to their event_date if it's within [from, to].
 export type AgendaEntry = typeof agenda.$inferSelect & { resolvedDate: string }
 
 export async function listAgendaInWindow(from: string, to: string, db: Database = defaultDb): Promise<AgendaEntry[]> {
@@ -49,44 +48,93 @@ export async function listActiveAnnouncements(
     .all()
 }
 
-export async function listBirthdaysInWindow(
+export type AnniversaryDay = { md: string; weekday: string; names: string[] }
+
+export async function listAnniversariesInWindow(
   from: string,
   to: string,
   db: Database = defaultDb
-): Promise<(typeof members.$inferSelect)[]> {
-  const rows = db
-    .select()
-    .from(members)
-    .where(and(isNull(members.deleted_at), isNotNull(members.birth_date)))
-    .all()
+): Promise<AnniversaryDay[]> {
+  const rows = db.select().from(members).where(isNull(members.deleted_at)).all()
+  const active = rows.filter((m) => m.status === 'active')
 
-  const [fromMM, fromDD] = [from.slice(5, 7), from.slice(8, 10)]
-  const [toMM, toDD] = [to.slice(5, 7), to.slice(8, 10)]
-  const fromMD = `${fromMM}-${fromDD}`
-  const toMD = `${toMM}-${toDD}`
-  const wraps = fromMD > toMD // window crosses year boundary (e.g., Dec→Jan)
+  const fromMD = mdOf(from)
+  const toMD = mdOf(to)
+  const wraps = fromMD > toMD
+  const fromYear = from.slice(0, 4)
+  const toYear = to.slice(0, 4)
 
-  const inWindow = rows.filter((m) => {
-    if (!m.birth_date) return false
-    const md = m.birth_date.slice(5) // MM-DD
-    return wraps ? md >= fromMD || md <= toMD : md >= fromMD && md <= toMD
+  const inMDWindow = (md: string) => (wraps ? md >= fromMD || md <= toMD : md >= fromMD && md <= toMD)
+
+  const resolveYear = (mmdd: string) => (!wraps || mmdd >= fromMD ? fromYear : toYear)
+
+  type Entry = { mmdd: string; rank: number; name: string }
+  const entries: Entry[] = []
+
+  for (const m of active) {
+    if (!m.birth_date) continue
+    const mmdd = m.birth_date.slice(5)
+    if (inMDWindow(mmdd)) entries.push({ mmdd, rank: 0, name: m.full_name })
+  }
+
+  const withWedding = active.filter((m) => m.wedding_date && m.spouse)
+  const seen = new Set<string>()
+
+  for (const a of withWedding) {
+    const b = withWedding.find(
+      (m) =>
+        m.id !== a.id &&
+        normalizeName(m.full_name) === normalizeName(a.spouse!) &&
+        m.wedding_date === a.wedding_date
+    )
+    if (!b) continue
+    const pairKey = [Math.min(a.id, b.id), Math.max(a.id, b.id)].join('-')
+    if (seen.has(pairKey)) continue
+    seen.add(pairKey)
+
+    const wmd = a.wedding_date!.slice(5)
+    if (!inMDWindow(wmd)) continue
+
+    entries.push({ mmdd: wmd, rank: 1, name: formatCoupleLabel(a, b) })
+  }
+
+  entries.sort((a, b) => {
+    if (a.mmdd !== b.mmdd) {
+      if (!wraps) return a.mmdd < b.mmdd ? -1 : 1
+      const aLate = a.mmdd >= fromMD
+      const bLate = b.mmdd >= fromMD
+      if (aLate !== bLate) return aLate ? -1 : 1
+      return a.mmdd < b.mmdd ? -1 : 1
+    }
+    return a.rank - b.rank
   })
 
-  inWindow.sort((a, b) => {
-    const aMD = a.birth_date!.slice(5)
-    const bMD = b.birth_date!.slice(5)
-    if (!wraps) return aMD < bMD ? -1 : 1
-    // In a wrap window, dates >= fromMD come before dates <= toMD.
-    const aInLate = aMD >= fromMD
-    const bInLate = bMD >= fromMD
-    if (aInLate !== bInLate) return aInLate ? -1 : 1
-    return aMD < bMD ? -1 : 1
-  })
+  const days: AnniversaryDay[] = []
+  for (const entry of entries) {
+    const md = formatMD(entry.mmdd)
+    if (days.length > 0 && days[days.length - 1].md === md) {
+      days[days.length - 1].names.push(entry.name)
+    } else {
+      const date = `${resolveYear(entry.mmdd)}-${entry.mmdd}`
+      days.push({ md, weekday: formatWeekdayPtBR(date), names: [entry.name] })
+    }
+  }
 
-  return inWindow.filter((m) => m.status === 'active')
+  return days
 }
 
-// Returns all calendar dates in [from, to] as YYYY-MM-DD strings.
+function mdOf(date: string): string {
+  return date.slice(5, 7) + '-' + date.slice(8, 10)
+}
+
+function formatMD(mmdd: string): string {
+  return `${mmdd.slice(3, 5)}/${mmdd.slice(0, 2)}`
+}
+
+function normalizeName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ')
+}
+
 function datesInRange(from: string, to: string): string[] {
   const dates: string[] = []
   const start = new Date(`${from}T00:00:00Z`)
@@ -99,7 +147,6 @@ function datesInRange(from: string, to: string): string[] {
   return dates
 }
 
-// Returns the day of week (0=Sun, 1=Mon, ..., 6=Sat) for a YYYY-MM-DD string.
 function dayOfWeek(date: string): number {
   return new Date(`${date}T00:00:00Z`).getUTCDay()
 }

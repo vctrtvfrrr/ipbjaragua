@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bulletinYear, formatBulletinSubtitle, liturgySlug, toRoman } from './bulletin'
+import { bulletinYear, formatBulletinSubtitle, formatCoupleLabel, liturgySlug, toRoman, truncateGivenName } from './bulletin'
 
 describe('toRoman', () => {
   it('converts small integers to roman numerals', () => {
@@ -41,6 +41,37 @@ describe('liturgySlug', () => {
   it('ignores null or undefined time', () => {
     expect(liturgySlug('2026-06-07', 'Culto Solene', null)).toBe('2026-06-07-culto-solene')
     expect(liturgySlug('2026-06-07', 'Culto Solene', undefined)).toBe('2026-06-07-culto-solene')
+  })
+})
+
+describe('truncateGivenName', () => {
+  it('returns both tokens when neither is a preposition', () => {
+    expect(truncateGivenName('Júlio Cesar')).toBe('Júlio Cesar')
+  })
+
+  it('stops before a preposition as token1', () => {
+    expect(truncateGivenName('João de Souza')).toBe('João')
+    expect(truncateGivenName('Ana da Silva')).toBe('Ana')
+    expect(truncateGivenName('Ana Lúcia de Souza')).toBe('Ana Lúcia')
+  })
+
+  it('returns a single token when name has only one word', () => {
+    expect(truncateGivenName('Maria')).toBe('Maria')
+  })
+})
+
+describe('formatCoupleLabel', () => {
+  it('puts the female member first, separated by ♥', () => {
+    const female = { full_name: 'Ana Lúcia de Souza', sex: 'Feminino' }
+    const male = { full_name: 'Júlio Cesar Oliveira', sex: 'Masculino' }
+    expect(formatCoupleLabel(female, male)).toBe('Ana Lúcia ♥ Júlio Cesar')
+    expect(formatCoupleLabel(male, female)).toBe('Ana Lúcia ♥ Júlio Cesar')
+  })
+
+  it('falls back to alphabetical order when sex is ambiguous', () => {
+    const a = { full_name: 'Marcos da Silva', sex: 'Masculino' }
+    const b = { full_name: 'Bruno de Alves', sex: 'Masculino' }
+    expect(formatCoupleLabel(a, b)).toBe('Bruno ♥ Marcos')
   })
 })
 
