@@ -1,0 +1,34 @@
+# Dependencies (the host's native modules are ABI-incompatible with the image)
+node_modules
+
+# Build artifacts
+.next
+out
+build
+*.tsbuildinfo
+
+# Persistent data (lives on a volume, never baked into the image)
+data
+
+# Tests and reports
+test-results
+playwright-report
+coverage
+
+# Version control and tooling
+.git
+.gitignore
+.claude
+.vscode
+
+# Container and env files
+Dockerfile
+.dockerignore
+compose.yml
+compose.dev.yml
+.env*
+
+# Misc
+.DS_Store
+npm-debug.log*
+.pnpm-debug.log*

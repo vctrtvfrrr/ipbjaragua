@@ -11,11 +11,12 @@ test('shows bulletin header with edition and year', async ({ page }) => {
   await expect(page.getByText('70ª Edição — Ano II')).toBeVisible()
 })
 
-test('shows article section with link to article detail', async ({ page }) => {
+test('shows article section with title and expand control', async ({ page }) => {
   await page.goto(`/bulletins/${BULLETIN_DATE}`)
 
   await expect(page.getByText(FEATURED.title)).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Leia mais' })).toHaveAttribute('href', `/articles/${FEATURED.slug}`)
+  await expect(page.getByText(FEATURED.author)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Continuar lendo' })).toBeVisible()
 })
 
 test('shows liturgy link pointing to correct slug', async ({ page }) => {

@@ -18,9 +18,7 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
       <div className="mt-10 space-y-6">
         {liturgy.acts.map((act, i) => (
           <details key={act.id} open={i === 0}>
-            <summary className="font-narrow mb-2 cursor-pointer text-2xl font-bold uppercase">
-              {act.name}
-            </summary>
+            <summary className="font-narrow mb-2 cursor-pointer text-2xl font-bold uppercase">{act.name}</summary>
             <ul className="mt-2 space-y-4">
               {act.moments.map((moment) => (
                 <li key={moment.id}>
@@ -50,7 +48,7 @@ function MomentView({ moment }: { moment: Moment }) {
               {passage.reference}{' '}
               <small className="font-sans text-sm font-normal text-gray-500 italic">({passage.version})</small>
             </h4>
-            <p className="mt-1 whitespace-pre-line text-sm">{passage.text}</p>
+            <p className="mt-1 text-sm whitespace-pre-line">{passage.text}</p>
           </>
         ) : (
           <p className="text-gray-400">{moment.description ?? 'Leitura bíblica'}</p>

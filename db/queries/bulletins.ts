@@ -20,10 +20,7 @@ export async function listBulletins(
     .all()
 }
 
-export async function countBulletins(
-  { today }: { today: string },
-  db: Database = defaultDb
-): Promise<number> {
+export async function countBulletins({ today }: { today: string }, db: Database = defaultDb): Promise<number> {
   const row = db
     .select({ value: count() })
     .from(bulletins)

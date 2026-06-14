@@ -175,9 +175,7 @@ describe('getLiturgyBySlug', () => {
     const [id] = seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
     db.run(sql`INSERT INTO liturgy_acts (liturgy_id, position, name) VALUES (${id}, 2, 'Adoração')`)
     db.run(sql`INSERT INTO liturgy_acts (liturgy_id, position, name) VALUES (${id}, 1, 'Introdução')`)
-    const act = db.get<{ id: number }>(
-      sql`SELECT id FROM liturgy_acts WHERE liturgy_id = ${id} AND position = 1`
-    )!
+    const act = db.get<{ id: number }>(sql`SELECT id FROM liturgy_acts WHERE liturgy_id = ${id} AND position = 1`)!
     db.run(sql`INSERT INTO liturgy_moments (act_id, position, type) VALUES (${act.id}, 1, 'prayer')`)
 
     const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)

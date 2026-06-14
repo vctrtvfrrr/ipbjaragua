@@ -274,5 +274,4 @@ describe('getBulletinByDate', () => {
 
     expect(result?.article).toBeNull()
   })
-
 })

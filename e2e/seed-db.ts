@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
@@ -6,8 +6,6 @@ import { agenda, announcements, articles, bulletins, liturgies, members } from '
 
 export const E2E_DB_PATH = './data/e2e.sqlite'
 
-// The most recent article — drives the detail-page test and the home
-// featured card. Content carries markdown so rendered output is assertable.
 export const FEATURED = {
   slug: 'graca-soberana',
   title: 'Graça Soberana',
@@ -17,8 +15,6 @@ export const FEATURED = {
   content: '## Subtítulo\n\nConteúdo do artigo com **negrito** e uma lista:\n\n- primeiro\n- segundo\n',
 }
 
-// Older articles with descending dates, enough to exercise a second home page
-// (12 per page). The featured one is the newest.
 const OLDER = Array.from({ length: 14 }, (_, i) => {
   const n = i + 1
   const day = String(28 - i).padStart(2, '0')
@@ -39,7 +35,6 @@ export const E2E_LITURGY = {
   theme: 'Culto Solene',
 }
 
-// Agenda: one recurring (Sunday) and one one-off within the 2026-06-07..13 window.
 export const E2E_AGENDA = [
   { title: 'Culto Dominical', is_recurring: true, weekday: 0, time: '10:00' },
   { title: 'Reunião de Células', is_recurring: false, event_date: '2026-06-10' },
@@ -59,14 +54,19 @@ export const E2E_MEMBER = {
 
 export function seedE2eDatabase() {
   mkdirSync('./data', { recursive: true })
-  rmSync(E2E_DB_PATH, { force: true })
 
   const sqlite = new Database(E2E_DB_PATH)
   sqlite.pragma('foreign_keys = ON')
   const db = drizzle(sqlite, { schema: { articles, bulletins, liturgies, agenda, announcements, members } })
   migrate(db, { migrationsFolder: './db/migrations' })
 
-  // Insert articles and capture the featured article's ID.
+  db.delete(bulletins).run()
+  db.delete(articles).run()
+  db.delete(liturgies).run()
+  db.delete(agenda).run()
+  db.delete(announcements).run()
+  db.delete(members).run()
+
   let featuredArticleId: number | undefined
   for (const article of E2E_ARTICLES) {
     const result = db.insert(articles).values(article).run()
@@ -75,11 +75,9 @@ export function seedE2eDatabase() {
     }
   }
 
-  // Insert liturgy and capture its ID.
   const liturgyResult = db.insert(liturgies).values(E2E_LITURGY).run()
   const liturgyId = Number(liturgyResult.lastInsertRowid)
 
-  // Insert bulletins: the newest one links to the featured article and liturgy.
   const bulletinRows = [
     {
       date: '2026-06-07',

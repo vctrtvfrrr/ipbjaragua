@@ -6,6 +6,8 @@ author: Victor Otávio Ferreira
 status: accepted
 ---
 
+> **Emenda (2026-06-13):** a persistência em produção passou de volume nomeado para **bind-mount em `/opt/data/ipbjaragua`**, por exigência do contrato de deploy do CodeLab (ver [ADR-0009](0009-codelab-deploy-stack-contract.md)). A fricção de uid que motivou a escolha original pelo volume nomeado deixa de existir: a propriedade do diretório no host é provisionada pela infra (o volume já existe com dono uid 1000), fora do escopo deste projeto. As menções a "volume nomeado em `/app/data`" abaixo ficam como registro histórico.
+
 ## Contexto
 
 O app roda em servidor próprio (VPS/Docker), conforme a [ADR-0001](0001-sqlite-drizzle-self-hosted.md), que deixou o Dockerfile explicitamente fora de escopo. Precisamos agora containerizar o projeto com dois ambientes a partir de uma única definição de imagem: desenvolvimento (com watch/HMR) e produção.

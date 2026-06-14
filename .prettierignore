@@ -1,4 +1,9 @@
 .claude
 .next
 node_modules
+.pnpm-store
 public
+pnpm-lock.yaml
+db/migrations
+docs/adr
+docs/agents
