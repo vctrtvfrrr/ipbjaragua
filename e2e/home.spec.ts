@@ -10,7 +10,6 @@ test('features the latest article linking to its detail', async ({ page }) => {
 })
 
 test('paginates the home article grid', async ({ page }) => {
-  // 15 seeded articles, 12 per page -> the oldest (Artigo 14) lands on page 2.
   await page.goto('/?page=2')
 
   await expect(page.getByRole('link', { name: /Artigo 14/ })).toBeVisible()

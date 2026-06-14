@@ -90,7 +90,6 @@ describe('listLiturgies', () => {
 
     const page2 = await listLiturgies({ page: 2, pageSize: 2, today: '2026-12-31' }, db)
 
-    // Newest first: 01-05, 01-04 | 01-03, 01-02 | 01-01 → page 2 is 01-03, 01-02
     expect(page2.map((r) => r.date)).toEqual(['2026-01-03', '2026-01-02'])
   })
 

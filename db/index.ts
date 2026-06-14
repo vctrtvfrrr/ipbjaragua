@@ -4,7 +4,6 @@ import * as schema from './schema'
 
 const DB_PATH = process.env.DATABASE_PATH ?? './data/db.sqlite'
 
-// Reuse one connection across dev hot reloads, which re-evaluate this module.
 const globalForDb = globalThis as unknown as { sqlite?: Database.Database }
 
 const sqlite = globalForDb.sqlite ?? new Database(DB_PATH)

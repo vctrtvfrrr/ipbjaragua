@@ -27,7 +27,6 @@ describe('currentWeekWindow', () => {
   })
 
   it('handles a week that spans month boundary', () => {
-    // Tuesday 2026-06-30 → Mon 2026-06-29 to Sun 2026-07-05
     expect(currentWeekWindow('2026-06-30')).toEqual({ from: '2026-06-29', to: '2026-07-05' })
   })
 })
@@ -38,8 +37,6 @@ describe('formatLongDatePtBR', () => {
   })
 
   it('keeps the calendar day regardless of timezone (no off-by-one)', () => {
-    // A naive new Date('2026-01-01') parses as UTC midnight and can roll back
-    // to Dec 31 in negative-offset zones. The day must stay put.
     expect(formatLongDatePtBR('2026-01-01')).toBe('01 de janeiro de 2026')
   })
 })

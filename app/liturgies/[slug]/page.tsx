@@ -92,6 +92,5 @@ function MomentView({ moment }: { moment: Moment }) {
     return <p className="font-narrow text-xl font-bold">{label}</p>
   }
 
-  // prayer, other, pastoral_act
   return <p>{moment.description}</p>
 }

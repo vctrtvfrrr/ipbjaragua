@@ -112,7 +112,12 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
                       <li key={i}>
                         {name.split('♥').flatMap((part, j, arr) =>
                           j < arr.length - 1
-                            ? [part, <span key={j} className="text-red-500">♥</span>]
+                            ? [
+                                part,
+                                <span key={j} className="text-red-500">
+                                  ♥
+                                </span>,
+                              ]
                             : [part]
                         )}
                       </li>

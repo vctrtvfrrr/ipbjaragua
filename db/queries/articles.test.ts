@@ -78,7 +78,6 @@ describe('listArticles', () => {
 
     const page2 = await listArticles({ page: 2, pageSize: 2 }, db)
 
-    // Newest first: a4, a3 | a2, a1 | a0  -> page 2 is a2, a1
     expect(page2.map((a) => a.slug)).toEqual(['a2', 'a1'])
   })
 })

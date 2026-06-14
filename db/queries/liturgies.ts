@@ -70,7 +70,6 @@ export async function listLiturgies(
     .offset((page - 1) * pageSize)
     .all()
 
-  // Deduplicate: keep first sermon moment found per liturgy (multiple acts may match).
   const seen = new Set<number>()
   const result: LiturgyListItem[] = []
   for (const row of rows) {
@@ -131,7 +130,6 @@ export async function getLiturgyBySlug(
     .orderBy(asc(liturgyActs.position), asc(liturgyMoments.position))
     .all()
 
-  // Group moments under their acts, preserving order.
   const actsMap = new Map<
     number,
     { id: number; position: number; name: string; moments: LiturgyDetail['acts'][0]['moments'] }
@@ -181,7 +179,6 @@ export async function getLiturgyBySlug(
   }
 }
 
-// Returns HH:MM + `minutes` as HH:MM, clamped to 23:59.
 function addMinutesToHHMM(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number)
   const total = Math.min(h * 60 + m + minutes, 23 * 60 + 59)
@@ -227,9 +224,6 @@ const liturgyCardFields = {
 
 export type NextLiturgyResult = { liturgy: LiturgyListItem; label: 'Próxima Liturgia' | 'Liturgia' }
 
-// Returns the next liturgy to display on the home card:
-// 1. The first liturgy today whose start time + 60 min tolerance hasn't passed yet → "Próxima Liturgia".
-// 2. Fallback: the latest published liturgy (date ≤ today) → "Liturgia".
 export async function getNextLiturgy(
   { today, currentTime }: { today: string; currentTime: string },
   db: Database = defaultDb

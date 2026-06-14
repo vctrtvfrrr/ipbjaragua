@@ -38,9 +38,6 @@ export async function getLatestDominicalBulletin(
   today: string,
   db: Database = defaultDb
 ): Promise<Bulletin | undefined> {
-  // Fetch recent published bulletins in descending order and find the first Sunday.
-  // SQLite's strftime('%w', date) returns '0' for Sunday, but we handle it in JS
-  // to keep the query portable and the filter logic consistent with weekdayOf().
   const rows = db
     .select()
     .from(bulletins)

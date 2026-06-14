@@ -20,13 +20,12 @@ describe('toRoman', () => {
 
 describe('bulletinYear', () => {
   it('returns I for dates before the first anniversary', () => {
-    // anchor: 2025-02-09
-    expect(bulletinYear('2025-02-09')).toBe(1) // launch date → Ano I
-    expect(bulletinYear('2026-02-08')).toBe(1) // one day before first anniversary
+    expect(bulletinYear('2025-02-09')).toBe(1)
+    expect(bulletinYear('2026-02-08')).toBe(1)
   })
 
   it('returns II from the first anniversary onward', () => {
-    expect(bulletinYear('2026-02-09')).toBe(2) // exactly 1 year after anchor
+    expect(bulletinYear('2026-02-09')).toBe(2)
     expect(bulletinYear('2026-05-24')).toBe(2)
     expect(bulletinYear('2026-06-07')).toBe(2)
   })

@@ -71,7 +71,6 @@ describe('listBulletins', () => {
 
     const page2 = await listBulletins({ page: 2, pageSize: 2, today: '2026-12-31' }, db)
 
-    // Newest first: 01-05, 01-04 | 01-03, 01-02 | 01-01 -> page 2 is 01-03, 01-02
     expect(page2.map((b) => b.date)).toEqual(['2026-01-03', '2026-01-02'])
   })
 })
@@ -112,7 +111,6 @@ describe('getLatestDominicalBulletin', () => {
   })
 
   it('returns the most recent Sunday bulletin', async () => {
-    // 2026-06-07 is a Sunday, 2026-06-12 is a Friday
     seedBulletins(db, [
       { date: '2026-06-07', edition: 70 },
       { date: '2026-06-12', edition: 71 },
@@ -125,8 +123,8 @@ describe('getLatestDominicalBulletin', () => {
 
   it('ignores exceptional bulletins (weekday != Sunday)', async () => {
     seedBulletins(db, [
-      { date: '2026-06-12', edition: 71 }, // Friday
-      { date: '2026-06-05', edition: 70 }, // Friday
+      { date: '2026-06-12', edition: 71 },
+      { date: '2026-06-05', edition: 70 },
     ])
 
     const result = await getLatestDominicalBulletin('2026-06-12', db)
@@ -136,8 +134,8 @@ describe('getLatestDominicalBulletin', () => {
 
   it('ignores future Sunday bulletins', async () => {
     seedBulletins(db, [
-      { date: '2026-06-14', edition: 71 }, // Sunday but future
-      { date: '2026-06-07', edition: 70 }, // Sunday, published
+      { date: '2026-06-14', edition: 71 },
+      { date: '2026-06-07', edition: 70 },
     ])
 
     const result = await getLatestDominicalBulletin('2026-06-12', db)
@@ -152,7 +150,6 @@ describe('getLatestDominicalBulletin', () => {
   })
 
   it('returns a Sunday bulletin dated exactly today', async () => {
-    // 2026-06-14 is a Sunday
     seedBulletins(db, [{ date: '2026-06-14', edition: 71 }])
 
     const result = await getLatestDominicalBulletin('2026-06-14', db)
