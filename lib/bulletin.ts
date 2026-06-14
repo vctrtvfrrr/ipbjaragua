@@ -19,7 +19,7 @@ export function formatCoupleLabel(a: MemberForCouple, b: MemberForCouple): strin
       truncateGivenName(x.full_name).localeCompare(truncateGivenName(y.full_name), 'pt-BR')
     )
   }
-  return `${truncateGivenName(woman.full_name)} <span style="color:red">♥</span> ${truncateGivenName(man.full_name)}`
+  return `${truncateGivenName(woman.full_name)} ♥ ${truncateGivenName(man.full_name)}`
 }
 
 export function truncateGivenName(name: string): string {

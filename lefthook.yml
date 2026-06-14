@@ -1,0 +1,8 @@
+pre-commit:
+  commands:
+    lint:
+      run: pnpm lint:fix
+      stage_fixed: true
+    format:
+      run: pnpm format
+      stage_fixed: true

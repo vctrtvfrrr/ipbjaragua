@@ -109,7 +109,13 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
                   </h3>
                   <ul className="ml-4 space-y-1">
                     {day.names.map((name, i) => (
-                      <li key={i} dangerouslySetInnerHTML={{ __html: name }} />
+                      <li key={i}>
+                        {name.split('♥').flatMap((part, j, arr) =>
+                          j < arr.length - 1
+                            ? [part, <span key={j} className="text-red-500">♥</span>]
+                            : [part]
+                        )}
+                      </li>
                     ))}
                   </ul>
                 </div>
