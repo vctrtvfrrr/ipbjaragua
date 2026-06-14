@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Article } from '@/db/queries/articles'
 import { formatLongDatePtBR } from '@/lib/date'
+import { Button } from '@/components/ui/button'
 
 type Props = {
   articles: Article[]
@@ -50,17 +51,17 @@ function Pagination({ page, totalPages, basePath }: { page: number; totalPages: 
   return (
     <nav aria-label="Paginação" className="mt-10 flex items-center justify-center gap-6">
       {page > 1 ? (
-        <Link href={`${basePath}?page=${page - 1}`} className="text-green-900">
+        <Button variant="link" render={<Link href={`${basePath}?page=${page - 1}`} />}>
           ← Anterior
-        </Link>
+        </Button>
       ) : null}
       <span className="text-gray-500">
         Página {page} de {totalPages}
       </span>
       {page < totalPages ? (
-        <Link href={`${basePath}?page=${page + 1}`} className="text-green-900">
+        <Button variant="link" render={<Link href={`${basePath}?page=${page + 1}`} />}>
           Próxima →
-        </Link>
+        </Button>
       ) : null}
     </nav>
   )

@@ -6,3 +6,8 @@ pre-commit:
     format:
       run: pnpm format
       stage_fixed: true
+
+pre-push:
+  commands:
+    test:
+      run: pnpm test
