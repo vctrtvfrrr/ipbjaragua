@@ -20,6 +20,10 @@ services:
       retries: 3
       start_period: 20s
     labels:
+      - 'backup.sqlite=/opt/data/ipbjaragua/db.sqlite'
+      - 'probe=true'
+      - 'probe.url=https://ipbjaragua.org.br'
+      - 'probe.mode=public'
       - 'traefik.enable=true'
       - 'traefik.docker.network=traefik-public'
       - 'traefik.http.routers.ipbjaragua.rule=Host(`ipbjaragua.org.br`) || Host(`www.ipbjaragua.org.br`)'
