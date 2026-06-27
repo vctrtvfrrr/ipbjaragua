@@ -27,10 +27,6 @@ RUN mkdir -p data && pnpm build
 
 # --------- Production Stage ---------- #
 FROM node:26-slim AS production
-ARG UID=1001
-ARG GID=1001
-RUN groupmod -g ${GID} node \
-    && usermod -u ${UID} node
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
