@@ -8,6 +8,8 @@ status: accepted
 
 > **Emenda (2026-06-13):** a persistência em produção passou de volume nomeado para **bind-mount em `/opt/data/ipbjaragua`**, por exigência do contrato de deploy do CodeLab (ver [ADR-0009](0009-codelab-deploy-stack-contract.md)). A fricção de uid que motivou a escolha original pelo volume nomeado deixa de existir: a propriedade do diretório no host é provisionada pela infra (o volume já existe com dono uid 1000), fora do escopo deste projeto. As menções a "volume nomeado em `/app/data`" abaixo ficam como registro histórico.
 
+> **Emenda (2026-06-27):** com a migração para Postgres ([ADR-0010](0010-postgres-shared-vps.md)), a justificativa em torno do `better-sqlite3` **deixa de valer**: o driver `postgres-js` é JS puro (sem addon nativo), então caem o `serverExternalPackages: ['better-sqlite3']` no `next.config.ts` e o motivo que ditava a base Debian/glibc (a fragilidade do `better-sqlite3` em musl). A base da imagem **não** é alterada agora — fica como item em aberto. A persistência local em `/app/data` some (não há mais arquivo SQLite). O que **permanece**: a containerização multi-stage com `output: 'standalone'` e a **migração in-process no boot** via `register()` do `instrumentation.ts` — agora com o migrator do `drizzle-orm/postgres-js`; a cópia explícita de `db/migrations` para o runner continua necessária.
+
 ## Contexto
 
 O app roda em servidor próprio (VPS/Docker), conforme a [ADR-0001](0001-sqlite-drizzle-self-hosted.md), que deixou o Dockerfile explicitamente fora de escopo. Precisamos agora containerizar o projeto com dois ambientes a partir de uma única definição de imagem: desenvolvimento (com watch/HMR) e produção.

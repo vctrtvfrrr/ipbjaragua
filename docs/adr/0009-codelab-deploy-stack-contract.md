@@ -6,6 +6,8 @@ author: Victor Otávio Ferreira
 status: accepted
 ---
 
+> **Emenda (2026-06-27):** com a migração para Postgres ([ADR-0010](0010-postgres-shared-vps.md)), a `DATABASE_URL` vira **segredo** e o stack **deixa de ser compose-only** — passa a render-com-Vault. Surge um **`.env.example`** (declarando `DATABASE_URL`); o `deploy-stack` renderiza o `.env` a partir dele, substituindo pelos segredos do **Ansible Vault**, e o `compose.yml` consome esse `.env`. Os inputs `bw-*` saem do `deploy.yml` (a infra não usa mais Bitwarden). O `compose.yml` perde o bind-mount `./data:/app/data` e o label `backup.sqlite=...`; o backup passa a ser `pg_dump` da database dedicada, responsabilidade da infra. As menções a "compose-only" e ao backup do arquivo SQLite abaixo ficam como registro histórico.
+
 ## Contexto
 
 A [ADR-0008](0008-container-standalone-in-process-migration.md) definiu como a aplicação é containerizada, mas deixou em aberto _como_ a imagem chega ao servidor e sobe. O ambiente de produção é o VPS do CodeLab, que padroniza o deploy de todo stack pela composite action `codelab/deploy-stack`: ela faz `rsync` apenas do `compose.yml` para `/opt/compose/<service>/`, opcionalmente renderiza um `.env` a partir de um Vault (Bitwarden), e roda `docker compose up -d` contra o daemon do host.

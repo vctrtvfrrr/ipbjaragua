@@ -3,8 +3,10 @@ number: 1
 title: SQLite + Drizzle em servidor próprio, com migrations como fonte da verdade
 date: 2026-06-10
 author: Victor Otávio Ferreira
-status: accepted
+status: superseded by ADR-0010
 ---
+
+> **Superseded (2026-06-27):** a [ADR-0010](0010-postgres-shared-vps.md) substitui o SQLite pelo **Postgres compartilhado do VPS**. As três premissas abaixo deixaram de valer: surgiu a necessidade de edição remota (DBeaver, sem painel ainda), o objetivo de tipos de coluna ricos, e o argumento de "excesso de infra" caiu — o Postgres compartilhado já está provisionado e operado pela infra. O texto abaixo fica como registro histórico da decisão original.
 
 ## Contexto
 
