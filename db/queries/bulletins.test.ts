@@ -13,12 +13,12 @@ import {
 describe('listBulletins', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns bulletins most recent first', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-03-01', edition: 3 },
       { date: '2026-02-01', edition: 2 },
@@ -30,11 +30,11 @@ describe('listBulletins', () => {
   })
 
   it('excludes soft-deleted bulletins', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-02-01', edition: 2 },
     ])
-    db.run(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
+    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
     const result = await listBulletins({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
 
@@ -42,7 +42,7 @@ describe('listBulletins', () => {
   })
 
   it('excludes future-dated bulletins', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-06-15', edition: 2 },
     ])
@@ -53,7 +53,7 @@ describe('listBulletins', () => {
   })
 
   it('includes a bulletin dated exactly today', async () => {
-    seedBulletins(db, [{ date: '2026-06-12', edition: 1 }])
+    await seedBulletins(db, [{ date: '2026-06-12', edition: 1 }])
 
     const result = await listBulletins({ page: 1, pageSize: 10, today: '2026-06-12' }, db)
 
@@ -61,7 +61,7 @@ describe('listBulletins', () => {
   })
 
   it('returns only the requested page', async () => {
-    seedBulletins(
+    await seedBulletins(
       db,
       Array.from({ length: 5 }, (_, i) => ({
         date: `2026-01-0${i + 1}`,
@@ -78,23 +78,23 @@ describe('listBulletins', () => {
 describe('countBulletins', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('counts only non-deleted bulletins', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-02-01', edition: 2 },
       { date: '2026-03-01', edition: 3 },
     ])
-    db.run(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-03-01'`)
+    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-03-01'`)
 
     expect(await countBulletins({ today: '2026-12-31' }, db)).toBe(2)
   })
 
   it('excludes future-dated bulletins', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-06-15', edition: 2 },
     ])
@@ -106,12 +106,12 @@ describe('countBulletins', () => {
 describe('getLatestDominicalBulletin', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns the most recent Sunday bulletin', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-06-07', edition: 70 },
       { date: '2026-06-12', edition: 71 },
     ])
@@ -122,7 +122,7 @@ describe('getLatestDominicalBulletin', () => {
   })
 
   it('ignores exceptional bulletins (weekday != Sunday)', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-06-12', edition: 71 },
       { date: '2026-06-05', edition: 70 },
     ])
@@ -133,7 +133,7 @@ describe('getLatestDominicalBulletin', () => {
   })
 
   it('ignores future Sunday bulletins', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-06-14', edition: 71 },
       { date: '2026-06-07', edition: 70 },
     ])
@@ -150,7 +150,7 @@ describe('getLatestDominicalBulletin', () => {
   })
 
   it('returns a Sunday bulletin dated exactly today', async () => {
-    seedBulletins(db, [{ date: '2026-06-14', edition: 71 }])
+    await seedBulletins(db, [{ date: '2026-06-14', edition: 71 }])
 
     const result = await getLatestDominicalBulletin('2026-06-14', db)
 
@@ -161,12 +161,12 @@ describe('getLatestDominicalBulletin', () => {
 describe('listRecentBulletins', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns up to limit bulletins ordered newest first', async () => {
-    seedBulletins(
+    await seedBulletins(
       db,
       Array.from({ length: 7 }, (_, i) => ({ date: `2026-01-0${i + 1}`, edition: i + 1 }))
     )
@@ -179,7 +179,7 @@ describe('listRecentBulletins', () => {
   })
 
   it('excludes future-dated bulletins', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-06-15', edition: 2 },
     ])
@@ -190,11 +190,11 @@ describe('listRecentBulletins', () => {
   })
 
   it('excludes soft-deleted bulletins', async () => {
-    seedBulletins(db, [
+    await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-02-01', edition: 2 },
     ])
-    db.run(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
+    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
     const result = await listRecentBulletins({ today: '2026-12-31', limit: 5 }, db)
 
@@ -211,12 +211,12 @@ describe('listRecentBulletins', () => {
 describe('getBulletinByDate', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns bulletin matching the date', async () => {
-    seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
+    await seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
 
     const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
 
@@ -231,7 +231,7 @@ describe('getBulletinByDate', () => {
   })
 
   it('returns undefined for a future date', async () => {
-    seedBulletins(db, [{ date: '2026-06-15', edition: 71 }])
+    await seedBulletins(db, [{ date: '2026-06-15', edition: 71 }])
 
     const result = await getBulletinByDate('2026-06-15', '2026-06-12', db)
 
@@ -239,7 +239,7 @@ describe('getBulletinByDate', () => {
   })
 
   it('returns bulletin dated exactly today', async () => {
-    seedBulletins(db, [{ date: '2026-06-12', edition: 71 }])
+    await seedBulletins(db, [{ date: '2026-06-12', edition: 71 }])
 
     const result = await getBulletinByDate('2026-06-12', '2026-06-12', db)
 
@@ -247,8 +247,8 @@ describe('getBulletinByDate', () => {
   })
 
   it('returns undefined for soft-deleted bulletin', async () => {
-    seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
-    db.run(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
+    await seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
+    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
 
     const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
 
@@ -256,8 +256,8 @@ describe('getBulletinByDate', () => {
   })
 
   it('includes the associated article when present', async () => {
-    const [articleId] = seedArticles(db, [{ slug: 'graca', title: 'Graça Soberana', date: '2026-06-07' }])
-    seedBulletins(db, [{ date: '2026-06-07', edition: 70, article_id: articleId }])
+    const [articleId] = await seedArticles(db, [{ slug: 'graca', title: 'Graça Soberana', date: '2026-06-07' }])
+    await seedBulletins(db, [{ date: '2026-06-07', edition: 70, article_id: articleId }])
 
     const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
 
@@ -265,7 +265,7 @@ describe('getBulletinByDate', () => {
   })
 
   it('returns null article when bulletin has no article', async () => {
-    seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
+    await seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
 
     const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
 

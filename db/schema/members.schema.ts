@@ -1,7 +1,9 @@
-import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, pgEnum, pgTable, text } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 
-export const members = sqliteTable('members', {
+export const memberStatus = pgEnum('member_status', ['active', 'transferred', 'deceased', 'removed'])
+
+export const members = pgTable('members', {
   id: id(),
   full_name: text('full_name').notNull(),
   sex: text('sex'),
@@ -21,15 +23,13 @@ export const members = sqliteTable('members', {
   education: text('education'),
   profession: text('profession'),
   home_church: text('home_church'),
-  baptism_year: int('baptism_year'),
+  baptism_year: integer('baptism_year'),
   baptism_place: text('baptism_place'),
-  prof_faith_year: int('prof_faith_year'),
+  prof_faith_year: integer('prof_faith_year'),
   prof_faith_place: text('prof_faith_place'),
   member_since: text('member_since'),
   member_until: text('member_until'),
-  status: text('status', {
-    enum: ['active', 'transferred', 'deceased', 'removed'],
-  }).notNull(),
+  status: memberStatus('status').notNull(),
   ...timestamps(),
   ...deletedAt(),
 })

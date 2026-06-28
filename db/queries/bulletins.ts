@@ -1,10 +1,8 @@
 import { and, count, desc, eq, isNull, lte } from 'drizzle-orm'
-import { db as defaultDb } from '@/db'
+import { db as defaultDb, type Database } from '@/db'
 import { articles, bulletins } from '@/db/schema'
 
 export type Bulletin = typeof bulletins.$inferSelect
-
-type Database = typeof defaultDb
 
 export async function listBulletins(
   { page, pageSize, today }: { page: number; pageSize: number; today: string },
@@ -17,15 +15,13 @@ export async function listBulletins(
     .orderBy(desc(bulletins.date))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
-    .all()
 }
 
 export async function countBulletins({ today }: { today: string }, db: Database = defaultDb): Promise<number> {
-  const row = db
+  const [row] = await db
     .select({ value: count() })
     .from(bulletins)
     .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
-    .get()
   return row?.value ?? 0
 }
 
@@ -38,12 +34,11 @@ export async function getLatestDominicalBulletin(
   today: string,
   db: Database = defaultDb
 ): Promise<Bulletin | undefined> {
-  const rows = db
+  const rows = await db
     .select()
     .from(bulletins)
     .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
     .orderBy(desc(bulletins.date))
-    .all()
 
   return rows.find((b) => new Date(`${b.date}T00:00:00Z`).getUTCDay() === 0)
 }
@@ -58,7 +53,6 @@ export async function listRecentBulletins(
     .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
     .orderBy(desc(bulletins.date))
     .limit(limit)
-    .all()
 }
 
 export async function getBulletinByDate(
@@ -68,7 +62,7 @@ export async function getBulletinByDate(
 ): Promise<BulletinWithRefs | undefined> {
   if (date > today) return undefined
 
-  const rows = db
+  const [row] = await db
     .select({
       bulletin: bulletins,
       article: articles,
@@ -76,12 +70,12 @@ export async function getBulletinByDate(
     .from(bulletins)
     .leftJoin(articles, eq(bulletins.article_id, articles.id))
     .where(and(eq(bulletins.date, date), isNull(bulletins.deleted_at)))
-    .get()
+    .limit(1)
 
-  if (!rows) return undefined
+  if (!row) return undefined
 
   return {
-    bulletin: rows.bulletin,
-    article: rows.article,
+    bulletin: row.bulletin,
+    article: row.article,
   }
 }

@@ -1,10 +1,15 @@
-import { mkdirSync } from 'node:fs'
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import { migrate } from 'drizzle-orm/postgres-js/migrator'
+import postgres from 'postgres'
 import { agenda, announcements, articles, bulletins, liturgies, members } from '../db/schema'
 
-export const E2E_DB_PATH = './data/e2e.sqlite'
+export const E2E_DATABASE_URL =
+  process.env.E2E_DATABASE_URL ?? 'postgres://ipbjaragua:ipbjaragua@localhost:5432/ipbjaragua_e2e'
+
+const ADMIN_DATABASE_URL =
+  process.env.E2E_ADMIN_DATABASE_URL ?? 'postgres://ipbjaragua:ipbjaragua@localhost:5432/postgres'
+
+const E2E_DB_NAME = 'ipbjaragua_e2e'
 
 export const FEATURED = {
   slug: 'graca-soberana',
@@ -52,31 +57,36 @@ export const E2E_MEMBER = {
   status: 'active' as const,
 }
 
-export function seedE2eDatabase() {
-  mkdirSync('./data', { recursive: true })
+async function ensureE2eDatabase() {
+  const admin = postgres(ADMIN_DATABASE_URL, { max: 1 })
+  try {
+    const rows = await admin`SELECT 1 FROM pg_database WHERE datname = ${E2E_DB_NAME}`
+    if (rows.length === 0) {
+      await admin.unsafe(`CREATE DATABASE "${E2E_DB_NAME}"`)
+    }
+  } finally {
+    await admin.end()
+  }
+}
 
-  const sqlite = new Database(E2E_DB_PATH)
-  sqlite.pragma('foreign_keys = ON')
-  const db = drizzle(sqlite, { schema: { articles, bulletins, liturgies, agenda, announcements, members } })
-  migrate(db, { migrationsFolder: './db/migrations' })
+export async function seedE2eDatabase() {
+  await ensureE2eDatabase()
 
-  db.delete(bulletins).run()
-  db.delete(articles).run()
-  db.delete(liturgies).run()
-  db.delete(agenda).run()
-  db.delete(announcements).run()
-  db.delete(members).run()
+  const client = postgres(E2E_DATABASE_URL, { max: 1 })
+  await client.unsafe('DROP SCHEMA public CASCADE; CREATE SCHEMA public;')
+
+  const db = drizzle(client, { schema: { articles, bulletins, liturgies, agenda, announcements, members } })
+  await migrate(db, { migrationsFolder: './db/migrations' })
 
   let featuredArticleId: number | undefined
   for (const article of E2E_ARTICLES) {
-    const result = db.insert(articles).values(article).run()
+    const [inserted] = await db.insert(articles).values(article).returning({ id: articles.id })
     if (article.slug === FEATURED.slug) {
-      featuredArticleId = Number(result.lastInsertRowid)
+      featuredArticleId = inserted.id
     }
   }
 
-  const liturgyResult = db.insert(liturgies).values(E2E_LITURGY).run()
-  const liturgyId = Number(liturgyResult.lastInsertRowid)
+  await db.insert(liturgies).values(E2E_LITURGY)
 
   const bulletinRows = [
     {
@@ -84,7 +94,6 @@ export function seedE2eDatabase() {
       edition: 70,
       title: 'Boletim 07 de junho de 2026',
       article_id: featuredArticleId ?? null,
-      liturgy_id: liturgyId,
       agenda_from: '2026-06-07',
       agenda_to: '2026-06-13',
       birthdays_from: '2026-06-07',
@@ -98,7 +107,6 @@ export function seedE2eDatabase() {
       edition: 69,
       title: 'Boletim 31 de maio de 2026',
       article_id: null,
-      liturgy_id: null,
       agenda_from: '2026-05-31',
       agenda_to: '2026-06-06',
       birthdays_from: '2026-05-31',
@@ -112,7 +120,6 @@ export function seedE2eDatabase() {
       edition: 68,
       title: 'Boletim 24 de maio de 2026',
       article_id: null,
-      liturgy_id: null,
       agenda_from: '2026-05-24',
       agenda_to: '2026-05-30',
       birthdays_from: '2026-05-24',
@@ -124,17 +131,17 @@ export function seedE2eDatabase() {
   ]
 
   for (const bulletin of bulletinRows) {
-    db.insert(bulletins).values(bulletin).run()
+    await db.insert(bulletins).values(bulletin)
   }
 
   for (const item of E2E_AGENDA) {
-    db.insert(agenda).values(item).run()
+    await db.insert(agenda).values(item)
   }
 
-  db.insert(announcements).values(E2E_ANNOUNCEMENT).run()
-  db.insert(members).values(E2E_MEMBER).run()
+  await db.insert(announcements).values(E2E_ANNOUNCEMENT)
+  await db.insert(members).values(E2E_MEMBER)
 
-  sqlite.close()
+  await client.end()
 }
 
 export const E2E_BULLETINS_COUNT = 3

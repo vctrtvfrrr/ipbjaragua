@@ -10,9 +10,10 @@ export type SeedArticle = {
   content?: string
 }
 
-export function seedArticles(db: TestDb, rows: SeedArticle[]): number[] {
-  return rows.map((row) => {
-    const result = db
+export async function seedArticles(db: TestDb, rows: SeedArticle[]): Promise<number[]> {
+  const ids: number[] = []
+  for (const row of rows) {
+    const [inserted] = await db
       .insert(articles)
       .values({
         slug: row.slug,
@@ -22,9 +23,10 @@ export function seedArticles(db: TestDb, rows: SeedArticle[]): number[] {
         excerpt: row.excerpt ?? null,
         content: row.content ?? '',
       })
-      .run()
-    return Number(result.lastInsertRowid)
-  })
+      .returning({ id: articles.id })
+    ids.push(inserted.id)
+  }
+  return ids
 }
 
 export type SeedBulletin = {
@@ -47,33 +49,33 @@ export type SeedLiturgy = {
   time?: string | null
 }
 
-export function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): number[] {
-  return rows.map((row) => {
-    const result = db
+export async function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): Promise<number[]> {
+  const ids: number[] = []
+  for (const row of rows) {
+    const [inserted] = await db
       .insert(liturgies)
       .values({ date: row.date, theme: row.theme, time: row.time ?? null })
-      .run()
-    return Number(result.lastInsertRowid)
-  })
+      .returning({ id: liturgies.id })
+    ids.push(inserted.id)
+  }
+  return ids
 }
 
-export function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
+export async function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
   for (const row of rows) {
-    db.insert(bulletins)
-      .values({
-        date: row.date,
-        edition: row.edition,
-        title: row.title ?? null,
-        article_id: row.article_id ?? null,
-        show_announcements: row.show_announcements ?? true,
-        show_agenda: row.show_agenda ?? true,
-        show_birthdays: row.show_birthdays ?? true,
-        agenda_from: row.agenda_from ?? row.date,
-        agenda_to: row.agenda_to ?? row.date,
-        birthdays_from: row.birthdays_from ?? row.date,
-        birthdays_to: row.birthdays_to ?? row.date,
-      })
-      .run()
+    await db.insert(bulletins).values({
+      date: row.date,
+      edition: row.edition,
+      title: row.title ?? null,
+      article_id: row.article_id ?? null,
+      show_announcements: row.show_announcements ?? true,
+      show_agenda: row.show_agenda ?? true,
+      show_birthdays: row.show_birthdays ?? true,
+      agenda_from: row.agenda_from ?? row.date,
+      agenda_to: row.agenda_to ?? row.date,
+      birthdays_from: row.birthdays_from ?? row.date,
+      birthdays_to: row.birthdays_to ?? row.date,
+    })
   }
 }
 
@@ -86,18 +88,16 @@ export type SeedAgendaItem = {
   description?: string | null
 }
 
-export function seedAgenda(db: TestDb, rows: SeedAgendaItem[]) {
+export async function seedAgenda(db: TestDb, rows: SeedAgendaItem[]) {
   for (const row of rows) {
-    db.insert(agenda)
-      .values({
-        title: row.title,
-        is_recurring: row.is_recurring,
-        weekday: row.weekday ?? null,
-        time: row.time ?? null,
-        event_date: row.event_date ?? null,
-        description: row.description ?? null,
-      })
-      .run()
+    await db.insert(agenda).values({
+      title: row.title,
+      is_recurring: row.is_recurring,
+      weekday: row.weekday ?? null,
+      time: row.time ?? null,
+      event_date: row.event_date ?? null,
+      description: row.description ?? null,
+    })
   }
 }
 
@@ -108,16 +108,14 @@ export type SeedAnnouncement = {
   url?: string | null
 }
 
-export function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
+export async function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
   for (const row of rows) {
-    db.insert(announcements)
-      .values({
-        title: row.title,
-        expires_at: row.expires_at,
-        description: row.description ?? null,
-        url: row.url ?? null,
-      })
-      .run()
+    await db.insert(announcements).values({
+      title: row.title,
+      expires_at: row.expires_at,
+      description: row.description ?? null,
+      url: row.url ?? null,
+    })
   }
 }
 
@@ -130,17 +128,15 @@ export type SeedMember = {
   spouse?: string | null
 }
 
-export function seedMembers(db: TestDb, rows: SeedMember[]) {
+export async function seedMembers(db: TestDb, rows: SeedMember[]) {
   for (const row of rows) {
-    db.insert(members)
-      .values({
-        full_name: row.full_name,
-        status: row.status,
-        birth_date: row.birth_date ?? null,
-        sex: row.sex ?? null,
-        wedding_date: row.wedding_date ?? null,
-        spouse: row.spouse ?? null,
-      })
-      .run()
+    await db.insert(members).values({
+      full_name: row.full_name,
+      status: row.status,
+      birth_date: row.birth_date ?? null,
+      sex: row.sex ?? null,
+      wedding_date: row.wedding_date ?? null,
+      spouse: row.spouse ?? null,
+    })
   }
 }

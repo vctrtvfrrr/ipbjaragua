@@ -8,6 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
+    env: { DATABASE_URL: 'postgres://placeholder' },
     include: ['**/*.test.{ts,tsx}'],
     exclude: ['node_modules/**', 'e2e/**', '.next/**', '.claude/**'],
   },

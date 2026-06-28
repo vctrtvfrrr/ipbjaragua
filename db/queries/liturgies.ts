@@ -1,12 +1,10 @@
 import { and, asc, count, desc, eq, isNull, lte } from 'drizzle-orm'
-import { db as defaultDb } from '@/db'
+import { db as defaultDb, type Database } from '@/db'
 import { liturgyActs, liturgyMoments, liturgies, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
 import { songReference } from '@/lib/song'
 
 export type Liturgy = typeof liturgies.$inferSelect
-
-type Database = typeof defaultDb
 
 export type LiturgyListItem = {
   id: number
@@ -40,11 +38,10 @@ export type LiturgyDetail = {
 }
 
 export async function countLiturgies({ today }: { today: string }, db: Database = defaultDb): Promise<number> {
-  const row = db
+  const [row] = await db
     .select({ value: count() })
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today)))
-    .get()
   return row?.value ?? 0
 }
 
@@ -52,7 +49,7 @@ export async function listLiturgies(
   { page, pageSize, today }: { page: number; pageSize: number; today: string },
   db: Database = defaultDb
 ): Promise<LiturgyListItem[]> {
-  const rows = db
+  const rows = await db
     .select({
       id: liturgies.id,
       date: liturgies.date,
@@ -68,7 +65,6 @@ export async function listLiturgies(
     .orderBy(desc(liturgies.date))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
-    .all()
 
   const seen = new Set<number>()
   const result: LiturgyListItem[] = []
@@ -92,12 +88,11 @@ export async function listLiturgiesByDate(
   date: string,
   db: Database = defaultDb
 ): Promise<Array<{ id: number; date: string; theme: string; time: string | null }>> {
-  return db
+  const rows = await db
     .select({ id: liturgies.id, date: liturgies.date, theme: liturgies.theme, time: liturgies.time })
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date)))
-    .all()
-    .map((r) => ({ ...r, time: r.time ?? null }))
+  return rows.map((r) => ({ ...r, time: r.time ?? null }))
 }
 
 export async function getLiturgyBySlug(
@@ -108,16 +103,15 @@ export async function getLiturgyBySlug(
   const date = slug.slice(0, 10)
   if (date > today) return undefined
 
-  const candidates = db
+  const candidates = await db
     .select()
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date), lte(liturgies.date, today)))
-    .all()
 
   const liturgy = candidates.find((l) => liturgySlug(l.date, l.theme, l.time) === slug)
   if (!liturgy) return undefined
 
-  const rows = db
+  const rows = await db
     .select({
       act: liturgyActs,
       moment: liturgyMoments,
@@ -128,7 +122,6 @@ export async function getLiturgyBySlug(
     .leftJoin(songs, eq(songs.id, liturgyMoments.song_id))
     .where(eq(liturgyActs.liturgy_id, liturgy.id))
     .orderBy(asc(liturgyActs.position), asc(liturgyMoments.position))
-    .all()
 
   const actsMap = new Map<
     number,
@@ -229,20 +222,19 @@ export async function getNextLiturgy(
   { today, currentTime }: { today: string; currentTime: string },
   db: Database = defaultDb
 ): Promise<NextLiturgyResult | undefined> {
-  const todayRows = db
+  const todayRows = await db
     .select(liturgyCardFields)
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
     .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, today)))
     .orderBy(asc(liturgies.time))
-    .all()
 
   const todayLiturgies = deduplicateByLiturgyId(todayRows)
   const upcoming = todayLiturgies.find((l) => l.time !== null && currentTime <= addMinutesToHHMM(l.time, 60))
   if (upcoming) return { liturgy: upcoming, label: 'Próxima Liturgia' }
 
-  const fallbackRows = db
+  const fallbackRows = await db
     .select(liturgyCardFields)
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
@@ -250,7 +242,6 @@ export async function getNextLiturgy(
     .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today)))
     .orderBy(desc(liturgies.date))
     .limit(20)
-    .all()
 
   const fallback = deduplicateByLiturgyId(fallbackRows)[0]
   return fallback ? { liturgy: fallback, label: 'Liturgia' } : undefined

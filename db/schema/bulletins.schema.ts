@@ -1,16 +1,16 @@
-import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { boolean, integer, pgTable, text } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 import { articles } from './articles.schema'
 
-export const bulletins = sqliteTable('bulletins', {
+export const bulletins = pgTable('bulletins', {
   id: id(),
   title: text('title'),
   date: text('date').notNull().unique(),
-  edition: int('edition').notNull(),
-  article_id: int('article_id').references(() => articles.id),
-  show_announcements: int('show_announcements', { mode: 'boolean' }).notNull().default(true),
-  show_agenda: int('show_agenda', { mode: 'boolean' }).notNull().default(true),
-  show_birthdays: int('show_birthdays', { mode: 'boolean' }).notNull().default(true),
+  edition: integer('edition').notNull(),
+  article_id: integer('article_id').references(() => articles.id),
+  show_announcements: boolean('show_announcements').notNull().default(true),
+  show_agenda: boolean('show_agenda').notNull().default(true),
+  show_birthdays: boolean('show_birthdays').notNull().default(true),
   agenda_from: text('agenda_from').notNull(),
   agenda_to: text('agenda_to').notNull(),
   birthdays_from: text('birthdays_from').notNull(),

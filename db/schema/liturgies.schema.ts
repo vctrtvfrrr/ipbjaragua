@@ -1,9 +1,21 @@
 import { sql } from 'drizzle-orm'
-import { check, int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { check, integer, pgEnum, pgTable, text } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 import { songs } from './songs.schema'
 
-export const liturgies = sqliteTable('liturgies', {
+export const momentType = pgEnum('moment_type', [
+  'bible_reading',
+  'song',
+  'prayer',
+  'sermon',
+  'sacrament',
+  'pastoral_act',
+  'other',
+])
+
+export const sacramentType = pgEnum('sacrament_type', ['baptism', 'eucharist'])
+
+export const liturgies = pgTable('liturgies', {
   id: id(),
   date: text('date').notNull(),
   theme: text('theme').notNull(),
@@ -12,32 +24,30 @@ export const liturgies = sqliteTable('liturgies', {
   ...deletedAt(),
 })
 
-export const liturgyActs = sqliteTable('liturgy_acts', {
+export const liturgyActs = pgTable('liturgy_acts', {
   id: id(),
-  liturgy_id: int('liturgy_id')
+  liturgy_id: integer('liturgy_id')
     .notNull()
     .references(() => liturgies.id),
-  position: int('position').notNull(),
+  position: integer('position').notNull(),
   name: text('name').notNull(),
   ...timestamps(),
 })
 
-export const liturgyMoments = sqliteTable(
+export const liturgyMoments = pgTable(
   'liturgy_moments',
   {
     id: id(),
-    act_id: int('act_id')
+    act_id: integer('act_id')
       .notNull()
       .references(() => liturgyActs.id),
-    position: int('position').notNull(),
-    type: text('type', {
-      enum: ['bible_reading', 'song', 'prayer', 'sermon', 'sacrament', 'pastoral_act', 'other'],
-    }).notNull(),
-    song_id: int('song_id').references(() => songs.id),
+    position: integer('position').notNull(),
+    type: momentType('type').notNull(),
+    song_id: integer('song_id').references(() => songs.id),
     scripture_passages: text('scripture_passages'),
     description: text('description'),
     sermon_speaker: text('sermon_speaker'),
-    sacrament_type: text('sacrament_type', { enum: ['baptism', 'eucharist'] }),
+    sacrament_type: sacramentType('sacrament_type'),
     ...timestamps(),
   },
   (t) => [check('sacrament_type_required', sql`${t.type} <> 'sacrament' OR ${t.sacrament_type} IS NOT NULL`)]

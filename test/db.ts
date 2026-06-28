@@ -1,14 +1,13 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import { PGlite } from '@electric-sql/pglite'
+import { drizzle } from 'drizzle-orm/pglite'
+import { migrate } from 'drizzle-orm/pglite/migrator'
 import * as schema from '@/db/schema'
 
-export type TestDb = ReturnType<typeof createTestDb>
+export type TestDb = Awaited<ReturnType<typeof createTestDb>>
 
-export function createTestDb() {
-  const sqlite = new Database(':memory:')
-  sqlite.pragma('foreign_keys = ON')
-  const db = drizzle(sqlite, { schema })
-  migrate(db, { migrationsFolder: './db/migrations' })
+export async function createTestDb() {
+  const client = new PGlite()
+  const db = drizzle(client, { schema })
+  await migrate(db, { migrationsFolder: './db/migrations' })
   return db
 }

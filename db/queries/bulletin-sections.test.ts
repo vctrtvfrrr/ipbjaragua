@@ -7,12 +7,12 @@ import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow 
 describe('listAgendaInWindow', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('includes a recurring event when its weekday falls in the window', async () => {
-    seedAgenda(db, [{ title: 'Culto', is_recurring: true, weekday: 0, time: '10:00' }])
+    await seedAgenda(db, [{ title: 'Culto', is_recurring: true, weekday: 0, time: '10:00' }])
 
     const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
 
@@ -22,7 +22,7 @@ describe('listAgendaInWindow', () => {
   })
 
   it('excludes a recurring event whose weekday is outside the window', async () => {
-    seedAgenda(db, [{ title: 'Evento Sábado', is_recurring: true, weekday: 6, time: '09:00' }])
+    await seedAgenda(db, [{ title: 'Evento Sábado', is_recurring: true, weekday: 6, time: '09:00' }])
 
     const result = await listAgendaInWindow('2026-06-07', '2026-06-12', db)
 
@@ -30,7 +30,7 @@ describe('listAgendaInWindow', () => {
   })
 
   it('includes a one-off event whose date falls in the window', async () => {
-    seedAgenda(db, [{ title: 'Reunião', is_recurring: false, event_date: '2026-06-10' }])
+    await seedAgenda(db, [{ title: 'Reunião', is_recurring: false, event_date: '2026-06-10' }])
 
     const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
 
@@ -38,7 +38,7 @@ describe('listAgendaInWindow', () => {
   })
 
   it('excludes a one-off event outside the window', async () => {
-    seedAgenda(db, [{ title: 'Fora', is_recurring: false, event_date: '2026-06-20' }])
+    await seedAgenda(db, [{ title: 'Fora', is_recurring: false, event_date: '2026-06-20' }])
 
     const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
 
@@ -46,7 +46,7 @@ describe('listAgendaInWindow', () => {
   })
 
   it('returns events ordered by resolved date then time', async () => {
-    seedAgenda(db, [
+    await seedAgenda(db, [
       { title: 'Quarta', is_recurring: true, weekday: 3, time: '19:30' },
       { title: 'Domingo', is_recurring: true, weekday: 0, time: '10:00' },
     ])
@@ -57,8 +57,8 @@ describe('listAgendaInWindow', () => {
   })
 
   it('excludes soft-deleted events', async () => {
-    seedAgenda(db, [{ title: 'Deletado', is_recurring: true, weekday: 0, time: '10:00' }])
-    db.run(sql`UPDATE agenda SET deleted_at = CURRENT_TIMESTAMP WHERE title = 'Deletado'`)
+    await seedAgenda(db, [{ title: 'Deletado', is_recurring: true, weekday: 0, time: '10:00' }])
+    await db.execute(sql`UPDATE agenda SET deleted_at = CURRENT_TIMESTAMP WHERE title = 'Deletado'`)
 
     const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
 
@@ -69,12 +69,12 @@ describe('listAgendaInWindow', () => {
 describe('listActiveAnnouncements', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns announcements not yet expired as of the given date', async () => {
-    seedAnnouncements(db, [
+    await seedAnnouncements(db, [
       { title: 'Vigente', expires_at: '2026-06-07' },
       { title: 'Expirado', expires_at: '2026-06-06' },
     ])
@@ -85,7 +85,7 @@ describe('listActiveAnnouncements', () => {
   })
 
   it('orders by nearest expiration first', async () => {
-    seedAnnouncements(db, [
+    await seedAnnouncements(db, [
       { title: 'Longe', expires_at: '2026-07-01' },
       { title: 'Perto', expires_at: '2026-06-10' },
     ])
@@ -96,8 +96,8 @@ describe('listActiveAnnouncements', () => {
   })
 
   it('excludes soft-deleted announcements', async () => {
-    seedAnnouncements(db, [{ title: 'Deletado', expires_at: '2026-12-31' }])
-    db.run(sql`UPDATE announcements SET deleted_at = CURRENT_TIMESTAMP WHERE title = 'Deletado'`)
+    await seedAnnouncements(db, [{ title: 'Deletado', expires_at: '2026-12-31' }])
+    await db.execute(sql`UPDATE announcements SET deleted_at = CURRENT_TIMESTAMP WHERE title = 'Deletado'`)
 
     const result = await listActiveAnnouncements('2026-06-07', db)
 
@@ -108,12 +108,12 @@ describe('listActiveAnnouncements', () => {
 describe('listAnniversariesInWindow', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('groups birth anniversaries by day with weekday header', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       { full_name: 'João Silva', birth_date: '1990-06-10', status: 'active' },
       { full_name: 'Maria Santos', birth_date: '1985-01-15', status: 'active' },
     ])
@@ -124,7 +124,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('excludes inactive members from birth anniversaries', async () => {
-    seedMembers(db, [{ full_name: 'Transferido', birth_date: '1990-06-10', status: 'transferred' }])
+    await seedMembers(db, [{ full_name: 'Transferido', birth_date: '1990-06-10', status: 'transferred' }])
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
 
@@ -132,7 +132,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('excludes members without birth_date', async () => {
-    seedMembers(db, [{ full_name: 'Sem data', birth_date: null, status: 'active' }])
+    await seedMembers(db, [{ full_name: 'Sem data', birth_date: null, status: 'active' }])
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
 
@@ -140,7 +140,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('handles year-wrap windows (Dec→Jan) for birth anniversaries', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       { full_name: 'Dezembro', birth_date: '1990-12-30', status: 'active' },
       { full_name: 'Janeiro', birth_date: '1990-01-02', status: 'active' },
       { full_name: 'Fora', birth_date: '1990-06-15', status: 'active' },
@@ -152,7 +152,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('orders days by month-day', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       { full_name: 'Dia 13', birth_date: '1990-06-13', status: 'active' },
       { full_name: 'Dia 08', birth_date: '1990-06-08', status: 'active' },
     ])
@@ -163,8 +163,8 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('excludes soft-deleted members', async () => {
-    seedMembers(db, [{ full_name: 'Removido', birth_date: '1990-06-10', status: 'active' }])
-    db.run(sql`UPDATE members SET deleted_at = CURRENT_TIMESTAMP WHERE full_name = 'Removido'`)
+    await seedMembers(db, [{ full_name: 'Removido', birth_date: '1990-06-10', status: 'active' }])
+    await db.execute(sql`UPDATE members SET deleted_at = CURRENT_TIMESTAMP WHERE full_name = 'Removido'`)
 
     const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
 
@@ -172,7 +172,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('groups a valid couple under their wedding day', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       {
         full_name: 'Ana Lúcia de Souza',
         sex: 'Feminino',
@@ -195,7 +195,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('deduplicates couples to a single name entry', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       {
         full_name: 'Ana de Souza',
         sex: 'Feminino',
@@ -218,7 +218,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('omits couple silently when one spouse is not an active member', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       {
         full_name: 'Maria de Souza',
         sex: 'Feminino',
@@ -234,7 +234,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('omits couple when spouse member is inactive', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       {
         full_name: 'Lucia de Melo',
         sex: 'Feminino',
@@ -257,7 +257,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('places birth anniversaries before wedding anniversaries on the same day', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       { full_name: 'Beatriz Costa', birth_date: '1990-06-10', status: 'active' },
       {
         full_name: 'Rosa de Lima',
@@ -281,7 +281,7 @@ describe('listAnniversariesInWindow', () => {
   })
 
   it('handles year-wrap windows for wedding anniversaries (Dec→Jan)', async () => {
-    seedMembers(db, [
+    await seedMembers(db, [
       {
         full_name: 'Clara de Souza',
         sex: 'Feminino',

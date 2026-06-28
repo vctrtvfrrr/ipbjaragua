@@ -1,7 +1,7 @@
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { pgTable, text } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 
-export const announcements = sqliteTable('announcements', {
+export const announcements = pgTable('announcements', {
   id: id(),
   title: text('title').notNull(),
   description: text('description'),

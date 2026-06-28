@@ -7,12 +7,12 @@ import { countArticles, getArticleBySlug, getLatestArticle, listArticles } from 
 describe('getArticleBySlug', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns the article matching the slug', async () => {
-    seedArticles(db, [{ slug: 'graca-soberana', title: 'Graça Soberana', date: '2026-01-01' }])
+    await seedArticles(db, [{ slug: 'graca-soberana', title: 'Graça Soberana', date: '2026-01-01' }])
 
     const article = await getArticleBySlug('graca-soberana', db)
 
@@ -26,8 +26,8 @@ describe('getArticleBySlug', () => {
   })
 
   it('ignores soft-deleted articles', async () => {
-    seedArticles(db, [{ slug: 'removido', title: 'Removido', date: '2026-01-01' }])
-    db.run(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'removido'`)
+    await seedArticles(db, [{ slug: 'removido', title: 'Removido', date: '2026-01-01' }])
+    await db.execute(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'removido'`)
 
     const article = await getArticleBySlug('removido', db)
 
@@ -38,12 +38,12 @@ describe('getArticleBySlug', () => {
 describe('listArticles', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns articles most recent first', async () => {
-    seedArticles(db, [
+    await seedArticles(db, [
       { slug: 'velho', title: 'Velho', date: '2026-01-01' },
       { slug: 'novo', title: 'Novo', date: '2026-03-01' },
       { slug: 'meio', title: 'Meio', date: '2026-02-01' },
@@ -55,11 +55,11 @@ describe('listArticles', () => {
   })
 
   it('excludes soft-deleted articles', async () => {
-    seedArticles(db, [
+    await seedArticles(db, [
       { slug: 'ativo', title: 'Ativo', date: '2026-01-01' },
       { slug: 'removido', title: 'Removido', date: '2026-02-01' },
     ])
-    db.run(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'removido'`)
+    await db.execute(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'removido'`)
 
     const result = await listArticles({ page: 1, pageSize: 10 }, db)
 
@@ -67,7 +67,7 @@ describe('listArticles', () => {
   })
 
   it('returns only the requested page', async () => {
-    seedArticles(
+    await seedArticles(
       db,
       Array.from({ length: 5 }, (_, i) => ({
         slug: `a${i}`,
@@ -85,17 +85,17 @@ describe('listArticles', () => {
 describe('countArticles', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('counts only non-deleted articles', async () => {
-    seedArticles(db, [
+    await seedArticles(db, [
       { slug: 'a', title: 'A', date: '2026-01-01' },
       { slug: 'b', title: 'B', date: '2026-01-02' },
       { slug: 'c', title: 'C', date: '2026-01-03' },
     ])
-    db.run(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'c'`)
+    await db.execute(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'c'`)
 
     expect(await countArticles(db)).toBe(2)
   })
@@ -104,12 +104,12 @@ describe('countArticles', () => {
 describe('getLatestArticle', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns the most recent article', async () => {
-    seedArticles(db, [
+    await seedArticles(db, [
       { slug: 'velho', title: 'Velho', date: '2026-01-01' },
       { slug: 'recente', title: 'Recente', date: '2026-03-01' },
     ])
@@ -124,11 +124,11 @@ describe('getLatestArticle', () => {
   })
 
   it('ignores soft-deleted articles', async () => {
-    seedArticles(db, [
+    await seedArticles(db, [
       { slug: 'ativo', title: 'Ativo', date: '2026-01-01' },
       { slug: 'recente-removido', title: 'Recente Removido', date: '2026-03-01' },
     ])
-    db.run(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'recente-removido'`)
+    await db.execute(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'recente-removido'`)
 
     const latest = await getLatestArticle(db)
 

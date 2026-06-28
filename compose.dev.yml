@@ -10,3 +10,26 @@ services:
       - /app/node_modules
     environment:
       NODE_ENV: development
+      DATABASE_URL: postgres://ipbjaragua:ipbjaragua@db:5432/ipbjaragua
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ipbjaragua
+      POSTGRES_PASSWORD: ipbjaragua
+      POSTGRES_DB: ipbjaragua
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ipbjaragua -d ipbjaragua']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { E2E_DATABASE_URL } from './e2e/seed-db'
 
 const PORT = 3210
 const baseURL = `http://localhost:${PORT}`
@@ -14,6 +15,6 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { DATABASE_PATH: './data/e2e.sqlite' },
+    env: { DATABASE_URL: E2E_DATABASE_URL },
   },
 })

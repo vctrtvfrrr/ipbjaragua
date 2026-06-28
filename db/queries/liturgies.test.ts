@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { liturgyActs, liturgyMoments } from '@/db/schema'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedLiturgies } from '@/test/seed'
 import { countLiturgies, getLiturgyBySlug, listLiturgies, listLiturgiesByDate } from './liturgies'
@@ -7,12 +8,12 @@ import { countLiturgies, getLiturgyBySlug, listLiturgies, listLiturgiesByDate } 
 describe('countLiturgies', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('excludes future-dated liturgies', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-01-01', theme: 'Culto Solene' },
       { date: '2026-06-15', theme: 'Culto da Família' },
     ])
@@ -21,17 +22,17 @@ describe('countLiturgies', () => {
   })
 
   it('includes a liturgy dated exactly today', async () => {
-    seedLiturgies(db, [{ date: '2026-06-12', theme: 'Culto Solene' }])
+    await seedLiturgies(db, [{ date: '2026-06-12', theme: 'Culto Solene' }])
 
     expect(await countLiturgies({ today: '2026-06-12' }, db)).toBe(1)
   })
 
   it('excludes soft-deleted liturgies', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-01-01', theme: 'Culto Solene' },
       { date: '2026-02-01', theme: 'Culto da Família' },
     ])
-    db.run(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
+    await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
     expect(await countLiturgies({ today: '2026-12-31' }, db)).toBe(1)
   })
@@ -40,12 +41,12 @@ describe('countLiturgies', () => {
 describe('listLiturgies', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns liturgies most recent first', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-01-01', theme: 'Culto Solene' },
       { date: '2026-03-01', theme: 'Culto da Família' },
       { date: '2026-02-01', theme: 'Culto de Oração' },
@@ -57,7 +58,7 @@ describe('listLiturgies', () => {
   })
 
   it('excludes future-dated liturgies', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-01-01', theme: 'Culto Solene' },
       { date: '2026-06-15', theme: 'Culto da Família' },
     ])
@@ -68,11 +69,11 @@ describe('listLiturgies', () => {
   })
 
   it('excludes soft-deleted liturgies', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-01-01', theme: 'Culto Solene' },
       { date: '2026-02-01', theme: 'Culto da Família' },
     ])
-    db.run(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
+    await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
     const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
 
@@ -80,7 +81,7 @@ describe('listLiturgies', () => {
   })
 
   it('returns only the requested page', async () => {
-    seedLiturgies(
+    await seedLiturgies(
       db,
       Array.from({ length: 5 }, (_, i) => ({
         date: `2026-01-0${i + 1}`,
@@ -94,13 +95,18 @@ describe('listLiturgies', () => {
   })
 
   it('returns sermon description and speaker when present', async () => {
-    const [id] = seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
-    db.run(sql`INSERT INTO liturgy_acts (liturgy_id, position, name) VALUES (${id}, 1, 'Mensagem')`)
-    const act = db.get<{ id: number }>(sql`SELECT id FROM liturgy_acts WHERE liturgy_id = ${id}`)!
-    db.run(
-      sql`INSERT INTO liturgy_moments (act_id, position, type, description, sermon_speaker)
-          VALUES (${act.id}, 1, 'sermon', 'A Graça Soberana', 'João Calvino')`
-    )
+    const [id] = await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    const [act] = await db
+      .insert(liturgyActs)
+      .values({ liturgy_id: id, position: 1, name: 'Mensagem' })
+      .returning({ id: liturgyActs.id })
+    await db.insert(liturgyMoments).values({
+      act_id: act.id,
+      position: 1,
+      type: 'sermon',
+      description: 'A Graça Soberana',
+      sermon_speaker: 'João Calvino',
+    })
 
     const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
 
@@ -109,7 +115,7 @@ describe('listLiturgies', () => {
   })
 
   it('returns null sermon fields when no sermon moment exists', async () => {
-    seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
     const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
 
@@ -121,12 +127,12 @@ describe('listLiturgies', () => {
 describe('getLiturgyBySlug', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns liturgy matching the slug', async () => {
-    seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
     const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)
 
@@ -141,7 +147,7 @@ describe('getLiturgyBySlug', () => {
   })
 
   it('returns undefined for future-dated liturgy', async () => {
-    seedLiturgies(db, [{ date: '2026-06-15', theme: 'Culto Solene' }])
+    await seedLiturgies(db, [{ date: '2026-06-15', theme: 'Culto Solene' }])
 
     const result = await getLiturgyBySlug('2026-06-15-culto-solene', '2026-06-12', db)
 
@@ -149,8 +155,8 @@ describe('getLiturgyBySlug', () => {
   })
 
   it('returns undefined for soft-deleted liturgy', async () => {
-    seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
-    db.run(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
+    await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
 
     const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)
 
@@ -158,7 +164,7 @@ describe('getLiturgyBySlug', () => {
   })
 
   it('resolves the correct liturgy when two exist on the same date (time discriminator)', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-06-07', theme: 'Culto Solene', time: '09:00' },
       { date: '2026-06-07', theme: 'Culto Solene', time: '18:00' },
     ])
@@ -171,11 +177,13 @@ describe('getLiturgyBySlug', () => {
   })
 
   it('returns acts and moments ordered by position', async () => {
-    const [id] = seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
-    db.run(sql`INSERT INTO liturgy_acts (liturgy_id, position, name) VALUES (${id}, 2, 'Adoração')`)
-    db.run(sql`INSERT INTO liturgy_acts (liturgy_id, position, name) VALUES (${id}, 1, 'Introdução')`)
-    const act = db.get<{ id: number }>(sql`SELECT id FROM liturgy_acts WHERE liturgy_id = ${id} AND position = 1`)!
-    db.run(sql`INSERT INTO liturgy_moments (act_id, position, type) VALUES (${act.id}, 1, 'prayer')`)
+    const [id] = await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    await db.insert(liturgyActs).values({ liturgy_id: id, position: 2, name: 'Adoração' })
+    const [act] = await db
+      .insert(liturgyActs)
+      .values({ liturgy_id: id, position: 1, name: 'Introdução' })
+      .returning({ id: liturgyActs.id })
+    await db.insert(liturgyMoments).values({ act_id: act.id, position: 1, type: 'prayer' })
 
     const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)
 
@@ -188,8 +196,8 @@ describe('getLiturgyBySlug', () => {
 describe('listLiturgiesByDate', () => {
   let db: TestDb
 
-  beforeEach(() => {
-    db = createTestDb()
+  beforeEach(async () => {
+    db = await createTestDb()
   })
 
   it('returns empty array when no liturgies exist for the date', async () => {
@@ -199,7 +207,7 @@ describe('listLiturgiesByDate', () => {
   })
 
   it('returns the liturgy for the exact date', async () => {
-    seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
     const result = await listLiturgiesByDate('2026-06-07', db)
 
@@ -208,7 +216,7 @@ describe('listLiturgiesByDate', () => {
   })
 
   it('returns all liturgies when multiple exist on the same date', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-06-07', theme: 'Culto Solene', time: '09:00' },
       { date: '2026-06-07', theme: 'Culto Solene', time: '18:00' },
     ])
@@ -219,7 +227,7 @@ describe('listLiturgiesByDate', () => {
   })
 
   it('excludes liturgies from other dates', async () => {
-    seedLiturgies(db, [
+    await seedLiturgies(db, [
       { date: '2026-06-07', theme: 'Culto Solene' },
       { date: '2026-06-14', theme: 'Culto da Família' },
     ])
@@ -230,8 +238,8 @@ describe('listLiturgiesByDate', () => {
   })
 
   it('excludes soft-deleted liturgies', async () => {
-    seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
-    db.run(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
+    await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
 
     const result = await listLiturgiesByDate('2026-06-07', db)
 

@@ -1,17 +1,22 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
 import * as schema from './schema'
 
-const DB_PATH = process.env.DATABASE_PATH ?? './data/db.sqlite'
+export type Database = PgDatabase<PgQueryResultHKT, typeof schema>
 
-const globalForDb = globalThis as unknown as { sqlite?: Database.Database }
+const DATABASE_URL = process.env.DATABASE_URL
 
-const sqlite = globalForDb.sqlite ?? new Database(DB_PATH)
-sqlite.pragma('journal_mode = WAL')
-sqlite.pragma('foreign_keys = ON')
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForDb.sqlite = sqlite
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set')
 }
 
-export const db = drizzle(sqlite, { schema })
+const globalForDb = globalThis as unknown as { client?: ReturnType<typeof postgres> }
+
+const client = globalForDb.client ?? postgres(DATABASE_URL)
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForDb.client = client
+}
+
+export const db = drizzle(client, { schema })

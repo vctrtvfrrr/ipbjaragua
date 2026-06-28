@@ -1,54 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1779577379972,
-      "tag": "0000_simple_fenris",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1779748189980,
-      "tag": "0001_lively_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1779852702845,
-      "tag": "0002_boring_shiva",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1780164129492,
-      "tag": "0003_secret_catseye",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1781227569715,
-      "tag": "0004_amazing_earthquake",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1781400000000,
-      "tag": "0005_liturgy_time",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1781400001000,
-      "tag": "0006_remove_bulletin_liturgy_id",
+      "version": "7",
+      "when": 1782608083074,
+      "tag": "0000_tired_the_liberteens",
       "breakpoints": true
     }
   ]

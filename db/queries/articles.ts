@@ -1,17 +1,16 @@
 import { and, count, desc, eq, isNull } from 'drizzle-orm'
-import { db as defaultDb } from '@/db'
+import { db as defaultDb, type Database } from '@/db'
 import { articles } from '@/db/schema'
 
 export type Article = typeof articles.$inferSelect
 
-type Database = typeof defaultDb
-
 export async function getArticleBySlug(slug: string, db: Database = defaultDb): Promise<Article | undefined> {
-  return db
+  const rows = await db
     .select()
     .from(articles)
     .where(and(eq(articles.slug, slug), isNull(articles.deleted_at)))
-    .get()
+    .limit(1)
+  return rows[0]
 }
 
 export async function listArticles(
@@ -25,20 +24,19 @@ export async function listArticles(
     .orderBy(desc(articles.date), desc(articles.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
-    .all()
 }
 
 export async function getLatestArticle(db: Database = defaultDb): Promise<Article | undefined> {
-  return db
+  const rows = await db
     .select()
     .from(articles)
     .where(isNull(articles.deleted_at))
     .orderBy(desc(articles.date), desc(articles.id))
     .limit(1)
-    .get()
+  return rows[0]
 }
 
 export async function countArticles(db: Database = defaultDb): Promise<number> {
-  const row = db.select({ value: count() }).from(articles).where(isNull(articles.deleted_at)).get()
+  const [row] = await db.select({ value: count() }).from(articles).where(isNull(articles.deleted_at))
   return row?.value ?? 0
 }

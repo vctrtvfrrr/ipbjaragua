@@ -1,15 +1,13 @@
 import { and, asc, gte, isNull } from 'drizzle-orm'
-import { db as defaultDb } from '@/db'
+import { db as defaultDb, type Database } from '@/db'
 import { formatCoupleLabel } from '@/lib/bulletin'
 import { formatWeekdayPtBR } from '@/lib/date'
 import { agenda, announcements, members } from '@/db/schema'
 
-type Database = typeof defaultDb
-
 export type AgendaEntry = typeof agenda.$inferSelect & { resolvedDate: string }
 
 export async function listAgendaInWindow(from: string, to: string, db: Database = defaultDb): Promise<AgendaEntry[]> {
-  const rows = db.select().from(agenda).where(isNull(agenda.deleted_at)).all()
+  const rows = await db.select().from(agenda).where(isNull(agenda.deleted_at))
 
   const window = datesInRange(from, to)
 
@@ -45,7 +43,6 @@ export async function listActiveAnnouncements(
     .from(announcements)
     .where(and(isNull(announcements.deleted_at), gte(announcements.expires_at, asOf)))
     .orderBy(asc(announcements.expires_at))
-    .all()
 }
 
 export type AnniversaryDay = { md: string; weekday: string; names: string[] }
@@ -55,7 +52,7 @@ export async function listAnniversariesInWindow(
   to: string,
   db: Database = defaultDb
 ): Promise<AnniversaryDay[]> {
-  const rows = db.select().from(members).where(isNull(members.deleted_at)).all()
+  const rows = await db.select().from(members).where(isNull(members.deleted_at))
   const active = rows.filter((m) => m.status === 'active')
 
   const fromMD = mdOf(from)
