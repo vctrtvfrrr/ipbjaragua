@@ -8,7 +8,7 @@ const baseArticle: Article = {
   slug: 'graca-soberana',
   title: 'Graça Soberana',
   author: 'Rev. Jean Carlos Almeida',
-  date: '2026-06-07',
+  date: new Date('2026-06-07T00:00:00Z'),
   excerpt: null,
   content: 'Olá **mundo**',
   created_at: '',

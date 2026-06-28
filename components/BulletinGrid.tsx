@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Bulletin } from '@/db/queries/bulletins'
 import { formatBulletinSubtitle } from '@/lib/bulletin'
-import { formatLongDatePtBR } from '@/lib/date'
+import { formatISODate, formatLongDatePtBR } from '@/lib/date'
 
 type Props = {
   bulletins: Bulletin[]
@@ -18,8 +18,8 @@ export default function BulletinGrid({ bulletins, page, totalPages }: Props) {
     <>
       <div className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-3 xl:grid-cols-4">
         {bulletins.map((bulletin) => (
-          <div key={bulletin.date}>
-            <Link href={`/bulletins/${bulletin.date}`}>
+          <div key={formatISODate(bulletin.date)}>
+            <Link href={`/bulletins/${formatISODate(bulletin.date)}`}>
               <h3 className="font-narrow mt-4 mb-2 text-2xl leading-7">{formatLongDatePtBR(bulletin.date)}</h3>
             </Link>
             <small className="mb-2 block text-gray-500">

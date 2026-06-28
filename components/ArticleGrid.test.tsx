@@ -9,7 +9,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
     slug: 'graca-soberana',
     title: 'Graça Soberana',
     author: 'Rev. Jean Carlos Almeida',
-    date: '2026-06-07',
+    date: new Date('2026-06-07T00:00:00Z'),
     excerpt: 'Resumo do artigo.',
     content: 'corpo',
     created_at: '',

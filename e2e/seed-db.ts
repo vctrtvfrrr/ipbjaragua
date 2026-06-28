@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 import { agenda, announcements, articles, bulletins, liturgies, members } from '../db/schema'
+import { parseISODate } from '../lib/date'
 
 export const E2E_DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://ipbjaragua:ipbjaragua@localhost:5432/ipbjaragua_e2e'
@@ -80,13 +81,16 @@ export async function seedE2eDatabase() {
 
   let featuredArticleId: number | undefined
   for (const article of E2E_ARTICLES) {
-    const [inserted] = await db.insert(articles).values(article).returning({ id: articles.id })
+    const [inserted] = await db
+      .insert(articles)
+      .values({ ...article, date: parseISODate(article.date) })
+      .returning({ id: articles.id })
     if (article.slug === FEATURED.slug) {
       featuredArticleId = inserted.id
     }
   }
 
-  await db.insert(liturgies).values(E2E_LITURGY)
+  await db.insert(liturgies).values({ ...E2E_LITURGY, date: parseISODate(E2E_LITURGY.date) })
 
   const bulletinRows = [
     {
@@ -131,15 +135,25 @@ export async function seedE2eDatabase() {
   ]
 
   for (const bulletin of bulletinRows) {
-    await db.insert(bulletins).values(bulletin)
+    await db.insert(bulletins).values({
+      ...bulletin,
+      date: parseISODate(bulletin.date),
+      agenda_from: parseISODate(bulletin.agenda_from),
+      agenda_to: parseISODate(bulletin.agenda_to),
+      birthdays_from: parseISODate(bulletin.birthdays_from),
+      birthdays_to: parseISODate(bulletin.birthdays_to),
+    })
   }
 
   for (const item of E2E_AGENDA) {
-    await db.insert(agenda).values(item)
+    await db.insert(agenda).values({
+      ...item,
+      event_date: 'event_date' in item && item.event_date ? parseISODate(item.event_date) : null,
+    })
   }
 
-  await db.insert(announcements).values(E2E_ANNOUNCEMENT)
-  await db.insert(members).values(E2E_MEMBER)
+  await db.insert(announcements).values({ ...E2E_ANNOUNCEMENT, expires_at: parseISODate(E2E_ANNOUNCEMENT.expires_at) })
+  await db.insert(members).values({ ...E2E_MEMBER, birth_date: parseISODate(E2E_MEMBER.birth_date) })
 
   await client.end()
 }

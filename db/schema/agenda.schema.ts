@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text } from 'drizzle-orm/pg-core'
+import { boolean, date, integer, pgTable, text, time } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 
 export const agenda = pgTable('agenda', {
@@ -6,9 +6,9 @@ export const agenda = pgTable('agenda', {
   title: text('title').notNull(),
   description: text('description'),
   weekday: integer('weekday'),
-  time: text('time'),
+  time: time('time'),
   is_recurring: boolean('is_recurring').notNull(),
-  event_date: text('event_date'),
+  event_date: date('event_date', { mode: 'date' }),
   ...timestamps(),
   ...deletedAt(),
 })

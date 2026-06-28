@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
-import { todayISO, formatLongDatePtBR } from '@/lib/date'
+import { formatLongDatePtBR, today } from '@/lib/date'
 import { parseLyrics } from '@/lib/song'
 
 export default async function LiturgyDetailPage({ params }: PageProps<'/liturgies/[slug]'>) {
   const { slug } = await params
-  const liturgy = await getLiturgyBySlug(slug, todayISO())
+  const liturgy = await getLiturgyBySlug(slug, today())
   if (!liturgy) notFound()
 
   return (

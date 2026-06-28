@@ -1,18 +1,18 @@
 import Link from 'next/link'
 import { countLiturgies, listLiturgies } from '@/db/queries/liturgies'
 import { liturgySlug } from '@/lib/bulletin'
-import { todayISO, formatLongDatePtBR } from '@/lib/date'
+import { formatLongDatePtBR, today } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 50
 
 export default async function LiturgiesPage({ searchParams }: PageProps<'/liturgies'>) {
   const { page: rawPage } = await searchParams
-  const today = todayISO()
-  const total = await countLiturgies({ today })
+  const todayDate = today()
+  const total = await countLiturgies({ today: todayDate })
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
-  const liturgiesList = await listLiturgies({ page, pageSize: PAGE_SIZE, today })
+  const liturgiesList = await listLiturgies({ page, pageSize: PAGE_SIZE, today: todayDate })
 
   return (
     <section className="container mx-auto py-10 xl:px-0">

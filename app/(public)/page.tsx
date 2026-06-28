@@ -6,25 +6,25 @@ import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bullet
 import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
 import { getNextLiturgy } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
-import { currentTimeHHMM, currentWeekWindow, formatLongDatePtBR, todayISO } from '@/lib/date'
+import { currentTimeHHMM, currentWeekWindow, formatISODate, formatLongDatePtBR, today } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 12
 
 export default async function Home({ searchParams }: PageProps<'/'>) {
   const { page: rawPage } = await searchParams
-  const today = todayISO()
+  const todayDate = today()
   const currentTime = currentTimeHHMM()
-  const weekWindow = currentWeekWindow(today)
+  const weekWindow = currentWeekWindow(todayDate)
   const [latest, total, agendaItems, announcements, recentBulletins, dominicalBulletin, nextLiturgy] =
     await Promise.all([
       getLatestArticle(),
       countArticles(),
       listAgendaInWindow(weekWindow.from, weekWindow.to),
-      listActiveAnnouncements(today),
-      listRecentBulletins({ today, limit: 5 }),
-      getLatestDominicalBulletin(today),
-      getNextLiturgy({ today, currentTime }),
+      listActiveAnnouncements(todayDate),
+      listRecentBulletins({ today: todayDate, limit: 5 }),
+      getLatestDominicalBulletin(todayDate),
+      getNextLiturgy({ today: todayDate, currentTime }),
     ])
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
@@ -88,7 +88,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
             ) : null}
             {dominicalBulletin ? (
               <li className="my-2 w-full overflow-hidden px-2 md:w-1/3 lg:w-1/3 xl:w-1/3">
-                <Link href={`/bulletins/${dominicalBulletin.date}`}>
+                <Link href={`/bulletins/${formatISODate(dominicalBulletin.date)}`}>
                   <div
                     className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
                     style={{
@@ -262,7 +262,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                   <ul className="space-y-6">
                     {recentBulletins.map((b) => (
                       <li key={b.id}>
-                        <Link href={`/bulletins/${b.date}`}>
+                        <Link href={`/bulletins/${formatISODate(b.date)}`}>
                           <h3 className="font-narrow text-xl font-bold">{formatLongDatePtBR(b.date)}</h3>
                           <p className="font-sans text-gray-500">{formatBulletinSubtitle(b.edition, b.date)}</p>
                         </Link>

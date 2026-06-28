@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { formatISODate, parseISODate } from '@/lib/date'
 import { liturgyActs, liturgyMoments } from '@/db/schema'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedLiturgies } from '@/test/seed'
@@ -18,13 +19,13 @@ describe('countLiturgies', () => {
       { date: '2026-06-15', theme: 'Culto da Família' },
     ])
 
-    expect(await countLiturgies({ today: '2026-06-12' }, db)).toBe(1)
+    expect(await countLiturgies({ today: parseISODate('2026-06-12') }, db)).toBe(1)
   })
 
   it('includes a liturgy dated exactly today', async () => {
     await seedLiturgies(db, [{ date: '2026-06-12', theme: 'Culto Solene' }])
 
-    expect(await countLiturgies({ today: '2026-06-12' }, db)).toBe(1)
+    expect(await countLiturgies({ today: parseISODate('2026-06-12') }, db)).toBe(1)
   })
 
   it('excludes soft-deleted liturgies', async () => {
@@ -34,7 +35,7 @@ describe('countLiturgies', () => {
     ])
     await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
-    expect(await countLiturgies({ today: '2026-12-31' }, db)).toBe(1)
+    expect(await countLiturgies({ today: parseISODate('2026-12-31') }, db)).toBe(1)
   })
 })
 
@@ -52,9 +53,9 @@ describe('listLiturgies', () => {
       { date: '2026-02-01', theme: 'Culto de Oração' },
     ])
 
-    const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
+    const result = await listLiturgies({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
 
-    expect(result.map((r) => r.date)).toEqual(['2026-03-01', '2026-02-01', '2026-01-01'])
+    expect(result.map((r) => formatISODate(r.date))).toEqual(['2026-03-01', '2026-02-01', '2026-01-01'])
   })
 
   it('excludes future-dated liturgies', async () => {
@@ -63,9 +64,9 @@ describe('listLiturgies', () => {
       { date: '2026-06-15', theme: 'Culto da Família' },
     ])
 
-    const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-06-12' }, db)
+    const result = await listLiturgies({ page: 1, pageSize: 10, today: parseISODate('2026-06-12') }, db)
 
-    expect(result.map((r) => r.date)).toEqual(['2026-01-01'])
+    expect(result.map((r) => formatISODate(r.date))).toEqual(['2026-01-01'])
   })
 
   it('excludes soft-deleted liturgies', async () => {
@@ -75,9 +76,9 @@ describe('listLiturgies', () => {
     ])
     await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
-    const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
+    const result = await listLiturgies({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
 
-    expect(result.map((r) => r.date)).toEqual(['2026-01-01'])
+    expect(result.map((r) => formatISODate(r.date))).toEqual(['2026-01-01'])
   })
 
   it('returns only the requested page', async () => {
@@ -89,9 +90,9 @@ describe('listLiturgies', () => {
       }))
     )
 
-    const page2 = await listLiturgies({ page: 2, pageSize: 2, today: '2026-12-31' }, db)
+    const page2 = await listLiturgies({ page: 2, pageSize: 2, today: parseISODate('2026-12-31') }, db)
 
-    expect(page2.map((r) => r.date)).toEqual(['2026-01-03', '2026-01-02'])
+    expect(page2.map((r) => formatISODate(r.date))).toEqual(['2026-01-03', '2026-01-02'])
   })
 
   it('returns sermon description and speaker when present', async () => {
@@ -108,7 +109,7 @@ describe('listLiturgies', () => {
       sermon_speaker: 'João Calvino',
     })
 
-    const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
+    const result = await listLiturgies({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
 
     expect(result[0].sermonDescription).toBe('A Graça Soberana')
     expect(result[0].sermonSpeaker).toBe('João Calvino')
@@ -117,7 +118,7 @@ describe('listLiturgies', () => {
   it('returns null sermon fields when no sermon moment exists', async () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
-    const result = await listLiturgies({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
+    const result = await listLiturgies({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
 
     expect(result[0].sermonDescription).toBeNull()
     expect(result[0].sermonSpeaker).toBeNull()
@@ -134,14 +135,14 @@ describe('getLiturgyBySlug', () => {
   it('returns liturgy matching the slug', async () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)
+    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
 
-    expect(result?.date).toBe('2026-06-07')
+    expect(formatISODate(result!.date)).toBe('2026-06-07')
     expect(result?.theme).toBe('Culto Solene')
   })
 
   it('returns undefined for unknown slug', async () => {
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)
+    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(result).toBeUndefined()
   })
@@ -149,7 +150,7 @@ describe('getLiturgyBySlug', () => {
   it('returns undefined for future-dated liturgy', async () => {
     await seedLiturgies(db, [{ date: '2026-06-15', theme: 'Culto Solene' }])
 
-    const result = await getLiturgyBySlug('2026-06-15-culto-solene', '2026-06-12', db)
+    const result = await getLiturgyBySlug('2026-06-15-culto-solene', parseISODate('2026-06-12'), db)
 
     expect(result).toBeUndefined()
   })
@@ -158,7 +159,7 @@ describe('getLiturgyBySlug', () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
     await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
 
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)
+    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(result).toBeUndefined()
   })
@@ -169,8 +170,8 @@ describe('getLiturgyBySlug', () => {
       { date: '2026-06-07', theme: 'Culto Solene', time: '18:00' },
     ])
 
-    const morning = await getLiturgyBySlug('2026-06-07-0900-culto-solene', '2026-12-31', db)
-    const evening = await getLiturgyBySlug('2026-06-07-1800-culto-solene', '2026-12-31', db)
+    const morning = await getLiturgyBySlug('2026-06-07-0900-culto-solene', parseISODate('2026-12-31'), db)
+    const evening = await getLiturgyBySlug('2026-06-07-1800-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(morning?.time).toBe('09:00')
     expect(evening?.time).toBe('18:00')
@@ -185,7 +186,7 @@ describe('getLiturgyBySlug', () => {
       .returning({ id: liturgyActs.id })
     await db.insert(liturgyMoments).values({ act_id: act.id, position: 1, type: 'prayer' })
 
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', '2026-12-31', db)
+    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(result?.acts[0].name).toBe('Introdução')
     expect(result?.acts[1].name).toBe('Adoração')
@@ -201,7 +202,7 @@ describe('listLiturgiesByDate', () => {
   })
 
   it('returns empty array when no liturgies exist for the date', async () => {
-    const result = await listLiturgiesByDate('2026-06-07', db)
+    const result = await listLiturgiesByDate(parseISODate('2026-06-07'), db)
 
     expect(result).toEqual([])
   })
@@ -209,7 +210,7 @@ describe('listLiturgiesByDate', () => {
   it('returns the liturgy for the exact date', async () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
-    const result = await listLiturgiesByDate('2026-06-07', db)
+    const result = await listLiturgiesByDate(parseISODate('2026-06-07'), db)
 
     expect(result).toHaveLength(1)
     expect(result[0].theme).toBe('Culto Solene')
@@ -221,7 +222,7 @@ describe('listLiturgiesByDate', () => {
       { date: '2026-06-07', theme: 'Culto Solene', time: '18:00' },
     ])
 
-    const result = await listLiturgiesByDate('2026-06-07', db)
+    const result = await listLiturgiesByDate(parseISODate('2026-06-07'), db)
 
     expect(result).toHaveLength(2)
   })
@@ -232,7 +233,7 @@ describe('listLiturgiesByDate', () => {
       { date: '2026-06-14', theme: 'Culto da Família' },
     ])
 
-    const result = await listLiturgiesByDate('2026-06-07', db)
+    const result = await listLiturgiesByDate(parseISODate('2026-06-07'), db)
 
     expect(result.map((r) => r.theme)).toEqual(['Culto Solene'])
   })
@@ -241,7 +242,7 @@ describe('listLiturgiesByDate', () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
     await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
 
-    const result = await listLiturgiesByDate('2026-06-07', db)
+    const result = await listLiturgiesByDate(parseISODate('2026-06-07'), db)
 
     expect(result).toEqual([])
   })

@@ -1,5 +1,8 @@
 import { agenda, announcements, articles, bulletins, liturgies, members } from '@/db/schema'
+import { parseISODate } from '@/lib/date'
 import type { TestDb } from './db'
+
+const toDate = (value: string | null | undefined): Date | null => (value ? parseISODate(value) : null)
 
 export type SeedArticle = {
   slug: string
@@ -19,7 +22,7 @@ export async function seedArticles(db: TestDb, rows: SeedArticle[]): Promise<num
         slug: row.slug,
         title: row.title,
         author: row.author ?? null,
-        date: row.date,
+        date: parseISODate(row.date),
         excerpt: row.excerpt ?? null,
         content: row.content ?? '',
       })
@@ -54,7 +57,7 @@ export async function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): Promise<nu
   for (const row of rows) {
     const [inserted] = await db
       .insert(liturgies)
-      .values({ date: row.date, theme: row.theme, time: row.time ?? null })
+      .values({ date: parseISODate(row.date), theme: row.theme, time: row.time ?? null })
       .returning({ id: liturgies.id })
     ids.push(inserted.id)
   }
@@ -64,17 +67,17 @@ export async function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): Promise<nu
 export async function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
   for (const row of rows) {
     await db.insert(bulletins).values({
-      date: row.date,
+      date: parseISODate(row.date),
       edition: row.edition,
       title: row.title ?? null,
       article_id: row.article_id ?? null,
       show_announcements: row.show_announcements ?? true,
       show_agenda: row.show_agenda ?? true,
       show_birthdays: row.show_birthdays ?? true,
-      agenda_from: row.agenda_from ?? row.date,
-      agenda_to: row.agenda_to ?? row.date,
-      birthdays_from: row.birthdays_from ?? row.date,
-      birthdays_to: row.birthdays_to ?? row.date,
+      agenda_from: parseISODate(row.agenda_from ?? row.date),
+      agenda_to: parseISODate(row.agenda_to ?? row.date),
+      birthdays_from: parseISODate(row.birthdays_from ?? row.date),
+      birthdays_to: parseISODate(row.birthdays_to ?? row.date),
     })
   }
 }
@@ -95,7 +98,7 @@ export async function seedAgenda(db: TestDb, rows: SeedAgendaItem[]) {
       is_recurring: row.is_recurring,
       weekday: row.weekday ?? null,
       time: row.time ?? null,
-      event_date: row.event_date ?? null,
+      event_date: toDate(row.event_date),
       description: row.description ?? null,
     })
   }
@@ -112,7 +115,7 @@ export async function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
   for (const row of rows) {
     await db.insert(announcements).values({
       title: row.title,
-      expires_at: row.expires_at,
+      expires_at: parseISODate(row.expires_at),
       description: row.description ?? null,
       url: row.url ?? null,
     })
@@ -133,9 +136,9 @@ export async function seedMembers(db: TestDb, rows: SeedMember[]) {
     await db.insert(members).values({
       full_name: row.full_name,
       status: row.status,
-      birth_date: row.birth_date ?? null,
+      birth_date: toDate(row.birth_date),
       sex: row.sex ?? null,
-      wedding_date: row.wedding_date ?? null,
+      wedding_date: toDate(row.wedding_date),
       spouse: row.spouse ?? null,
     })
   }

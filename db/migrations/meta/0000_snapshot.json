@@ -1,5 +1,5 @@
 {
-  "id": "b7140950-c123-4fcb-aa67-2c54d38b558b",
+  "id": "6b3f307b-8d13-446a-859a-091ae623d438",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -45,7 +45,7 @@
         },
         "time": {
           "name": "time",
-          "type": "text",
+          "type": "time",
           "primaryKey": false,
           "notNull": false
         },
@@ -57,7 +57,7 @@
         },
         "event_date": {
           "name": "event_date",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },
@@ -131,7 +131,7 @@
         },
         "expires_at": {
           "name": "expires_at",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
@@ -205,7 +205,7 @@
         },
         "date": {
           "name": "date",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
@@ -287,7 +287,7 @@
         },
         "date": {
           "name": "date",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
@@ -326,25 +326,25 @@
         },
         "agenda_from": {
           "name": "agenda_from",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
         "agenda_to": {
           "name": "agenda_to",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
         "birthdays_from": {
           "name": "birthdays_from",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
         "birthdays_to": {
           "name": "birthdays_to",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
@@ -422,7 +422,7 @@
         },
         "date": {
           "name": "date",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
@@ -434,7 +434,7 @@
         },
         "time": {
           "name": "time",
-          "type": "text",
+          "type": "time",
           "primaryKey": false,
           "notNull": false
         },
@@ -716,7 +716,7 @@
         },
         "birth_date": {
           "name": "birth_date",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },
@@ -734,7 +734,7 @@
         },
         "wedding_date": {
           "name": "wedding_date",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },
@@ -824,13 +824,13 @@
         },
         "member_since": {
           "name": "member_since",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },
         "member_until": {
           "name": "member_until",
-          "type": "text",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },

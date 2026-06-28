@@ -5,7 +5,7 @@ import { articles, bulletins } from '@/db/schema'
 export type Bulletin = typeof bulletins.$inferSelect
 
 export async function listBulletins(
-  { page, pageSize, today }: { page: number; pageSize: number; today: string },
+  { page, pageSize, today }: { page: number; pageSize: number; today: Date },
   db: Database = defaultDb
 ): Promise<Bulletin[]> {
   return db
@@ -17,7 +17,7 @@ export async function listBulletins(
     .offset((page - 1) * pageSize)
 }
 
-export async function countBulletins({ today }: { today: string }, db: Database = defaultDb): Promise<number> {
+export async function countBulletins({ today }: { today: Date }, db: Database = defaultDb): Promise<number> {
   const [row] = await db
     .select({ value: count() })
     .from(bulletins)
@@ -30,21 +30,18 @@ export type BulletinWithRefs = {
   article: typeof articles.$inferSelect | null
 }
 
-export async function getLatestDominicalBulletin(
-  today: string,
-  db: Database = defaultDb
-): Promise<Bulletin | undefined> {
+export async function getLatestDominicalBulletin(today: Date, db: Database = defaultDb): Promise<Bulletin | undefined> {
   const rows = await db
     .select()
     .from(bulletins)
     .where(and(isNull(bulletins.deleted_at), lte(bulletins.date, today)))
     .orderBy(desc(bulletins.date))
 
-  return rows.find((b) => new Date(`${b.date}T00:00:00Z`).getUTCDay() === 0)
+  return rows.find((b) => b.date.getUTCDay() === 0)
 }
 
 export async function listRecentBulletins(
-  { today, limit }: { today: string; limit: number },
+  { today, limit }: { today: Date; limit: number },
   db: Database = defaultDb
 ): Promise<Bulletin[]> {
   return db
@@ -56,8 +53,8 @@ export async function listRecentBulletins(
 }
 
 export async function getBulletinByDate(
-  date: string,
-  today: string,
+  date: Date,
+  today: Date,
   db: Database = defaultDb
 ): Promise<BulletinWithRefs | undefined> {
   if (date > today) return undefined

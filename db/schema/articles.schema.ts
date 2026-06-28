@@ -1,4 +1,4 @@
-import { pgTable, text } from 'drizzle-orm/pg-core'
+import { date, pgTable, text } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 
 export const articles = pgTable('articles', {
@@ -6,7 +6,7 @@ export const articles = pgTable('articles', {
   slug: text('slug').notNull().unique(),
   title: text('title').notNull(),
   author: text('author'),
-  date: text('date').notNull(),
+  date: date('date', { mode: 'date' }).notNull(),
   excerpt: text('excerpt'),
   content: text('content').notNull(),
   ...timestamps(),

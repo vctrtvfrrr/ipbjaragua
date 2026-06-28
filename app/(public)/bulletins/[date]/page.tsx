@@ -6,19 +6,19 @@ import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow 
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
-import { formatLongDatePtBR, formatShortDatePtBR, todayISO } from '@/lib/date'
+import { formatLongDatePtBR, formatShortDatePtBR, parseISODate, today } from '@/lib/date'
 
 export async function generateMetadata({ params }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
-  const result = await getBulletinByDate(date, todayISO())
-  return { title: result?.bulletin.title ?? formatLongDatePtBR(date) }
+  const result = await getBulletinByDate(parseISODate(date), today())
+  return { title: result?.bulletin.title ?? formatLongDatePtBR(parseISODate(date)) }
 }
 
 const sectionCard = 'mb-8 break-inside-avoid rounded border border-gray-200 bg-gray-50 p-5'
 
 export default async function BulletinDetailPage({ params }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
-  const result = await getBulletinByDate(date, todayISO())
+  const result = await getBulletinByDate(parseISODate(date), today())
 
   if (!result) notFound()
 

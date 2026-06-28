@@ -1,17 +1,17 @@
 import BulletinGrid from '@/components/BulletinGrid'
 import { countBulletins, listBulletins } from '@/db/queries/bulletins'
-import { todayISO } from '@/lib/date'
+import { today } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 50
 
 export default async function BulletinsPage({ searchParams }: PageProps<'/bulletins'>) {
   const { page: rawPage } = await searchParams
-  const today = todayISO()
-  const total = await countBulletins({ today })
+  const todayDate = today()
+  const total = await countBulletins({ today: todayDate })
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
-  const bulletinsList = await listBulletins({ page, pageSize: PAGE_SIZE, today })
+  const bulletinsList = await listBulletins({ page, pageSize: PAGE_SIZE, today: todayDate })
 
   return (
     <section className="container mx-auto py-10 xl:px-0">

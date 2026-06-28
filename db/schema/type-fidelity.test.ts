@@ -1,12 +1,13 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { liturgies, liturgyActs, liturgyMoments, members } from '@/db/schema'
+import { parseISODate } from '@/lib/date'
 import { createTestDb, type TestDb } from '@/test/db'
 
 async function seedAct(db: TestDb): Promise<number> {
   const [liturgy] = await db
     .insert(liturgies)
-    .values({ date: '2026-06-07', theme: 'Culto Solene' })
+    .values({ date: parseISODate('2026-06-07'), theme: 'Culto Solene' })
     .returning({ id: liturgies.id })
   const [act] = await db
     .insert(liturgyActs)

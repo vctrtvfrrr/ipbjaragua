@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { formatISODate, parseISODate } from '@/lib/date'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedArticles, seedBulletins } from '@/test/seed'
 import {
@@ -24,9 +25,9 @@ describe('listBulletins', () => {
       { date: '2026-02-01', edition: 2 },
     ])
 
-    const result = await listBulletins({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
+    const result = await listBulletins({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
 
-    expect(result.map((b) => b.date)).toEqual(['2026-03-01', '2026-02-01', '2026-01-01'])
+    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-03-01', '2026-02-01', '2026-01-01'])
   })
 
   it('excludes soft-deleted bulletins', async () => {
@@ -36,9 +37,9 @@ describe('listBulletins', () => {
     ])
     await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
-    const result = await listBulletins({ page: 1, pageSize: 10, today: '2026-12-31' }, db)
+    const result = await listBulletins({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
 
-    expect(result.map((b) => b.date)).toEqual(['2026-01-01'])
+    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-01-01'])
   })
 
   it('excludes future-dated bulletins', async () => {
@@ -47,17 +48,17 @@ describe('listBulletins', () => {
       { date: '2026-06-15', edition: 2 },
     ])
 
-    const result = await listBulletins({ page: 1, pageSize: 10, today: '2026-06-12' }, db)
+    const result = await listBulletins({ page: 1, pageSize: 10, today: parseISODate('2026-06-12') }, db)
 
-    expect(result.map((b) => b.date)).toEqual(['2026-01-01'])
+    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-01-01'])
   })
 
   it('includes a bulletin dated exactly today', async () => {
     await seedBulletins(db, [{ date: '2026-06-12', edition: 1 }])
 
-    const result = await listBulletins({ page: 1, pageSize: 10, today: '2026-06-12' }, db)
+    const result = await listBulletins({ page: 1, pageSize: 10, today: parseISODate('2026-06-12') }, db)
 
-    expect(result.map((b) => b.date)).toEqual(['2026-06-12'])
+    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-06-12'])
   })
 
   it('returns only the requested page', async () => {
@@ -69,9 +70,9 @@ describe('listBulletins', () => {
       }))
     )
 
-    const page2 = await listBulletins({ page: 2, pageSize: 2, today: '2026-12-31' }, db)
+    const page2 = await listBulletins({ page: 2, pageSize: 2, today: parseISODate('2026-12-31') }, db)
 
-    expect(page2.map((b) => b.date)).toEqual(['2026-01-03', '2026-01-02'])
+    expect(page2.map((b) => formatISODate(b.date))).toEqual(['2026-01-03', '2026-01-02'])
   })
 })
 
@@ -90,7 +91,7 @@ describe('countBulletins', () => {
     ])
     await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-03-01'`)
 
-    expect(await countBulletins({ today: '2026-12-31' }, db)).toBe(2)
+    expect(await countBulletins({ today: parseISODate('2026-12-31') }, db)).toBe(2)
   })
 
   it('excludes future-dated bulletins', async () => {
@@ -99,7 +100,7 @@ describe('countBulletins', () => {
       { date: '2026-06-15', edition: 2 },
     ])
 
-    expect(await countBulletins({ today: '2026-06-12' }, db)).toBe(1)
+    expect(await countBulletins({ today: parseISODate('2026-06-12') }, db)).toBe(1)
   })
 })
 
@@ -116,9 +117,9 @@ describe('getLatestDominicalBulletin', () => {
       { date: '2026-06-12', edition: 71 },
     ])
 
-    const result = await getLatestDominicalBulletin('2026-06-12', db)
+    const result = await getLatestDominicalBulletin(parseISODate('2026-06-12'), db)
 
-    expect(result?.date).toBe('2026-06-07')
+    expect(formatISODate(result!.date)).toBe('2026-06-07')
   })
 
   it('ignores exceptional bulletins (weekday != Sunday)', async () => {
@@ -127,7 +128,7 @@ describe('getLatestDominicalBulletin', () => {
       { date: '2026-06-05', edition: 70 },
     ])
 
-    const result = await getLatestDominicalBulletin('2026-06-12', db)
+    const result = await getLatestDominicalBulletin(parseISODate('2026-06-12'), db)
 
     expect(result).toBeUndefined()
   })
@@ -138,13 +139,13 @@ describe('getLatestDominicalBulletin', () => {
       { date: '2026-06-07', edition: 70 },
     ])
 
-    const result = await getLatestDominicalBulletin('2026-06-12', db)
+    const result = await getLatestDominicalBulletin(parseISODate('2026-06-12'), db)
 
-    expect(result?.date).toBe('2026-06-07')
+    expect(formatISODate(result!.date)).toBe('2026-06-07')
   })
 
   it('returns undefined when no Sunday bulletin is published', async () => {
-    const result = await getLatestDominicalBulletin('2026-06-12', db)
+    const result = await getLatestDominicalBulletin(parseISODate('2026-06-12'), db)
 
     expect(result).toBeUndefined()
   })
@@ -152,9 +153,9 @@ describe('getLatestDominicalBulletin', () => {
   it('returns a Sunday bulletin dated exactly today', async () => {
     await seedBulletins(db, [{ date: '2026-06-14', edition: 71 }])
 
-    const result = await getLatestDominicalBulletin('2026-06-14', db)
+    const result = await getLatestDominicalBulletin(parseISODate('2026-06-14'), db)
 
-    expect(result?.date).toBe('2026-06-14')
+    expect(formatISODate(result!.date)).toBe('2026-06-14')
   })
 })
 
@@ -171,11 +172,11 @@ describe('listRecentBulletins', () => {
       Array.from({ length: 7 }, (_, i) => ({ date: `2026-01-0${i + 1}`, edition: i + 1 }))
     )
 
-    const result = await listRecentBulletins({ today: '2026-12-31', limit: 5 }, db)
+    const result = await listRecentBulletins({ today: parseISODate('2026-12-31'), limit: 5 }, db)
 
     expect(result).toHaveLength(5)
-    expect(result[0].date).toBe('2026-01-07')
-    expect(result[4].date).toBe('2026-01-03')
+    expect(formatISODate(result[0].date)).toBe('2026-01-07')
+    expect(formatISODate(result[4].date)).toBe('2026-01-03')
   })
 
   it('excludes future-dated bulletins', async () => {
@@ -184,9 +185,9 @@ describe('listRecentBulletins', () => {
       { date: '2026-06-15', edition: 2 },
     ])
 
-    const result = await listRecentBulletins({ today: '2026-06-12', limit: 5 }, db)
+    const result = await listRecentBulletins({ today: parseISODate('2026-06-12'), limit: 5 }, db)
 
-    expect(result.map((b) => b.date)).toEqual(['2026-01-01'])
+    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-01-01'])
   })
 
   it('excludes soft-deleted bulletins', async () => {
@@ -196,13 +197,13 @@ describe('listRecentBulletins', () => {
     ])
     await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
 
-    const result = await listRecentBulletins({ today: '2026-12-31', limit: 5 }, db)
+    const result = await listRecentBulletins({ today: parseISODate('2026-12-31'), limit: 5 }, db)
 
-    expect(result.map((b) => b.date)).toEqual(['2026-01-01'])
+    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-01-01'])
   })
 
   it('returns empty array when no bulletins are published', async () => {
-    const result = await listRecentBulletins({ today: '2026-06-12', limit: 5 }, db)
+    const result = await listRecentBulletins({ today: parseISODate('2026-06-12'), limit: 5 }, db)
 
     expect(result).toEqual([])
   })
@@ -218,14 +219,14 @@ describe('getBulletinByDate', () => {
   it('returns bulletin matching the date', async () => {
     await seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
 
-    const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
+    const result = await getBulletinByDate(parseISODate('2026-06-07'), parseISODate('2026-12-31'), db)
 
-    expect(result?.bulletin.date).toBe('2026-06-07')
+    expect(formatISODate(result!.bulletin.date)).toBe('2026-06-07')
     expect(result?.bulletin.edition).toBe(70)
   })
 
   it('returns undefined for unknown date', async () => {
-    const result = await getBulletinByDate('2026-01-01', '2026-12-31', db)
+    const result = await getBulletinByDate(parseISODate('2026-01-01'), parseISODate('2026-12-31'), db)
 
     expect(result).toBeUndefined()
   })
@@ -233,7 +234,7 @@ describe('getBulletinByDate', () => {
   it('returns undefined for a future date', async () => {
     await seedBulletins(db, [{ date: '2026-06-15', edition: 71 }])
 
-    const result = await getBulletinByDate('2026-06-15', '2026-06-12', db)
+    const result = await getBulletinByDate(parseISODate('2026-06-15'), parseISODate('2026-06-12'), db)
 
     expect(result).toBeUndefined()
   })
@@ -241,16 +242,16 @@ describe('getBulletinByDate', () => {
   it('returns bulletin dated exactly today', async () => {
     await seedBulletins(db, [{ date: '2026-06-12', edition: 71 }])
 
-    const result = await getBulletinByDate('2026-06-12', '2026-06-12', db)
+    const result = await getBulletinByDate(parseISODate('2026-06-12'), parseISODate('2026-06-12'), db)
 
-    expect(result?.bulletin.date).toBe('2026-06-12')
+    expect(formatISODate(result!.bulletin.date)).toBe('2026-06-12')
   })
 
   it('returns undefined for soft-deleted bulletin', async () => {
     await seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
     await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
 
-    const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
+    const result = await getBulletinByDate(parseISODate('2026-06-07'), parseISODate('2026-12-31'), db)
 
     expect(result).toBeUndefined()
   })
@@ -259,7 +260,7 @@ describe('getBulletinByDate', () => {
     const [articleId] = await seedArticles(db, [{ slug: 'graca', title: 'Graça Soberana', date: '2026-06-07' }])
     await seedBulletins(db, [{ date: '2026-06-07', edition: 70, article_id: articleId }])
 
-    const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
+    const result = await getBulletinByDate(parseISODate('2026-06-07'), parseISODate('2026-12-31'), db)
 
     expect(result?.article?.slug).toBe('graca')
   })
@@ -267,7 +268,7 @@ describe('getBulletinByDate', () => {
   it('returns null article when bulletin has no article', async () => {
     await seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
 
-    const result = await getBulletinByDate('2026-06-07', '2026-12-31', db)
+    const result = await getBulletinByDate(parseISODate('2026-06-07'), parseISODate('2026-12-31'), db)
 
     expect(result?.article).toBeNull()
   })

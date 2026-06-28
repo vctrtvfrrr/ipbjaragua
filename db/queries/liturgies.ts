@@ -2,13 +2,18 @@ import { and, asc, count, desc, eq, isNull, lte } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { liturgyActs, liturgyMoments, liturgies, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
+import { parseISODate } from '@/lib/date'
 import { songReference } from '@/lib/song'
 
 export type Liturgy = typeof liturgies.$inferSelect
 
+function hhmm(time: string | null): string | null {
+  return time ? time.slice(0, 5) : null
+}
+
 export type LiturgyListItem = {
   id: number
-  date: string
+  date: Date
   theme: string
   time: string | null
   sermonDescription: string | null
@@ -17,7 +22,7 @@ export type LiturgyListItem = {
 
 export type LiturgyDetail = {
   id: number
-  date: string
+  date: Date
   theme: string
   time: string | null
   acts: Array<{
@@ -37,7 +42,7 @@ export type LiturgyDetail = {
   }>
 }
 
-export async function countLiturgies({ today }: { today: string }, db: Database = defaultDb): Promise<number> {
+export async function countLiturgies({ today }: { today: Date }, db: Database = defaultDb): Promise<number> {
   const [row] = await db
     .select({ value: count() })
     .from(liturgies)
@@ -46,7 +51,7 @@ export async function countLiturgies({ today }: { today: string }, db: Database 
 }
 
 export async function listLiturgies(
-  { page, pageSize, today }: { page: number; pageSize: number; today: string },
+  { page, pageSize, today }: { page: number; pageSize: number; today: Date },
   db: Database = defaultDb
 ): Promise<LiturgyListItem[]> {
   const rows = await db
@@ -75,7 +80,7 @@ export async function listLiturgies(
         id: row.id,
         date: row.date,
         theme: row.theme,
-        time: row.time ?? null,
+        time: hhmm(row.time),
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
       })
@@ -85,22 +90,22 @@ export async function listLiturgies(
 }
 
 export async function listLiturgiesByDate(
-  date: string,
+  date: Date,
   db: Database = defaultDb
-): Promise<Array<{ id: number; date: string; theme: string; time: string | null }>> {
+): Promise<Array<{ id: number; date: Date; theme: string; time: string | null }>> {
   const rows = await db
     .select({ id: liturgies.id, date: liturgies.date, theme: liturgies.theme, time: liturgies.time })
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date)))
-  return rows.map((r) => ({ ...r, time: r.time ?? null }))
+  return rows.map((r) => ({ ...r, time: hhmm(r.time) }))
 }
 
 export async function getLiturgyBySlug(
   slug: string,
-  today: string,
+  today: Date,
   db: Database = defaultDb
 ): Promise<LiturgyDetail | undefined> {
-  const date = slug.slice(0, 10)
+  const date = parseISODate(slug.slice(0, 10))
   if (date > today) return undefined
 
   const candidates = await db
@@ -168,7 +173,7 @@ export async function getLiturgyBySlug(
     id: liturgy.id,
     date: liturgy.date,
     theme: liturgy.theme,
-    time: liturgy.time ?? null,
+    time: hhmm(liturgy.time),
     acts: Array.from(actsMap.values()),
   }
 }
@@ -182,7 +187,7 @@ function addMinutesToHHMM(time: string, minutes: number): string {
 function deduplicateByLiturgyId(
   rows: Array<{
     id: number
-    date: string
+    date: Date
     theme: string
     time: string | null
     sermonDescription: string | null
@@ -198,7 +203,7 @@ function deduplicateByLiturgyId(
         id: row.id,
         date: row.date,
         theme: row.theme,
-        time: row.time ?? null,
+        time: hhmm(row.time),
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
       })
@@ -219,7 +224,7 @@ const liturgyCardFields = {
 export type NextLiturgyResult = { liturgy: LiturgyListItem; label: 'Próxima Liturgia' | 'Liturgia' }
 
 export async function getNextLiturgy(
-  { today, currentTime }: { today: string; currentTime: string },
+  { today, currentTime }: { today: Date; currentTime: string },
   db: Database = defaultDb
 ): Promise<NextLiturgyResult | undefined> {
   const todayRows = await db

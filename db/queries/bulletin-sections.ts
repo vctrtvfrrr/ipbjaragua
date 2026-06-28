@@ -1,32 +1,33 @@
 import { and, asc, gte, isNull } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { formatCoupleLabel } from '@/lib/bulletin'
-import { formatWeekdayPtBR } from '@/lib/date'
+import { formatWeekdayPtBR, parseISODate } from '@/lib/date'
 import { agenda, announcements, members } from '@/db/schema'
 
-export type AgendaEntry = typeof agenda.$inferSelect & { resolvedDate: string }
+export type AgendaEntry = typeof agenda.$inferSelect & { resolvedDate: Date }
 
-export async function listAgendaInWindow(from: string, to: string, db: Database = defaultDb): Promise<AgendaEntry[]> {
+export async function listAgendaInWindow(from: Date, to: Date, db: Database = defaultDb): Promise<AgendaEntry[]> {
   const rows = await db.select().from(agenda).where(isNull(agenda.deleted_at))
 
   const window = datesInRange(from, to)
 
   const entries: AgendaEntry[] = []
   for (const row of rows) {
+    const time = row.time ? row.time.slice(0, 5) : null
     if (row.is_recurring) {
-      const match = window.find((d) => dayOfWeek(d) === row.weekday)
+      const match = window.find((d) => d.getUTCDay() === row.weekday)
       if (match !== undefined) {
-        entries.push({ ...row, resolvedDate: match })
+        entries.push({ ...row, time, resolvedDate: match })
       }
     } else {
       if (row.event_date && row.event_date >= from && row.event_date <= to) {
-        entries.push({ ...row, resolvedDate: row.event_date })
+        entries.push({ ...row, time, resolvedDate: row.event_date })
       }
     }
   }
 
   entries.sort((a, b) => {
-    const dateCmp = a.resolvedDate.localeCompare(b.resolvedDate)
+    const dateCmp = a.resolvedDate.getTime() - b.resolvedDate.getTime()
     if (dateCmp !== 0) return dateCmp
     return (a.time ?? '').localeCompare(b.time ?? '')
   })
@@ -35,7 +36,7 @@ export async function listAgendaInWindow(from: string, to: string, db: Database 
 }
 
 export async function listActiveAnnouncements(
-  asOf: string,
+  asOf: Date,
   db: Database = defaultDb
 ): Promise<(typeof announcements.$inferSelect)[]> {
   return db
@@ -48,8 +49,8 @@ export async function listActiveAnnouncements(
 export type AnniversaryDay = { md: string; weekday: string; names: string[] }
 
 export async function listAnniversariesInWindow(
-  from: string,
-  to: string,
+  from: Date,
+  to: Date,
   db: Database = defaultDb
 ): Promise<AnniversaryDay[]> {
   const rows = await db.select().from(members).where(isNull(members.deleted_at))
@@ -58,8 +59,8 @@ export async function listAnniversariesInWindow(
   const fromMD = mdOf(from)
   const toMD = mdOf(to)
   const wraps = fromMD > toMD
-  const fromYear = from.slice(0, 4)
-  const toYear = to.slice(0, 4)
+  const fromYear = String(from.getUTCFullYear())
+  const toYear = String(to.getUTCFullYear())
 
   const inMDWindow = (md: string) => (wraps ? md >= fromMD || md <= toMD : md >= fromMD && md <= toMD)
 
@@ -70,7 +71,7 @@ export async function listAnniversariesInWindow(
 
   for (const m of active) {
     if (!m.birth_date) continue
-    const mmdd = m.birth_date.slice(5)
+    const mmdd = mdOf(m.birth_date)
     if (inMDWindow(mmdd)) entries.push({ mmdd, rank: 0, name: m.full_name })
   }
 
@@ -80,14 +81,16 @@ export async function listAnniversariesInWindow(
   for (const a of withWedding) {
     const b = withWedding.find(
       (m) =>
-        m.id !== a.id && normalizeName(m.full_name) === normalizeName(a.spouse!) && m.wedding_date === a.wedding_date
+        m.id !== a.id &&
+        normalizeName(m.full_name) === normalizeName(a.spouse!) &&
+        m.wedding_date!.getTime() === a.wedding_date!.getTime()
     )
     if (!b) continue
     const pairKey = [Math.min(a.id, b.id), Math.max(a.id, b.id)].join('-')
     if (seen.has(pairKey)) continue
     seen.add(pairKey)
 
-    const wmd = a.wedding_date!.slice(5)
+    const wmd = mdOf(a.wedding_date!)
     if (!inMDWindow(wmd)) continue
 
     entries.push({ mmdd: wmd, rank: 1, name: formatCoupleLabel(a, b) })
@@ -110,7 +113,7 @@ export async function listAnniversariesInWindow(
     if (days.length > 0 && days[days.length - 1].md === md) {
       days[days.length - 1].names.push(entry.name)
     } else {
-      const date = `${resolveYear(entry.mmdd)}-${entry.mmdd}`
+      const date = parseISODate(`${resolveYear(entry.mmdd)}-${entry.mmdd}`)
       days.push({ md, weekday: formatWeekdayPtBR(date), names: [entry.name] })
     }
   }
@@ -118,8 +121,10 @@ export async function listAnniversariesInWindow(
   return days
 }
 
-function mdOf(date: string): string {
-  return date.slice(5, 7) + '-' + date.slice(8, 10)
+function mdOf(date: Date): string {
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${month}-${day}`
 }
 
 function formatMD(mmdd: string): string {
@@ -130,18 +135,12 @@ function normalizeName(name: string): string {
   return name.trim().replace(/\s+/g, ' ')
 }
 
-function datesInRange(from: string, to: string): string[] {
-  const dates: string[] = []
-  const start = new Date(`${from}T00:00:00Z`)
-  const end = new Date(`${to}T00:00:00Z`)
-  const cur = new Date(start)
-  while (cur <= end) {
-    dates.push(cur.toISOString().slice(0, 10))
+function datesInRange(from: Date, to: Date): Date[] {
+  const dates: Date[] = []
+  const cur = new Date(from)
+  while (cur <= to) {
+    dates.push(new Date(cur))
     cur.setUTCDate(cur.getUTCDate() + 1)
   }
   return dates
-}
-
-function dayOfWeek(date: string): number {
-  return new Date(`${date}T00:00:00Z`).getUTCDay()
 }

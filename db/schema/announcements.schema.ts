@@ -1,4 +1,4 @@
-import { pgTable, text } from 'drizzle-orm/pg-core'
+import { date, pgTable, text } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 
 export const announcements = pgTable('announcements', {
@@ -6,7 +6,7 @@ export const announcements = pgTable('announcements', {
   title: text('title').notNull(),
   description: text('description'),
   url: text('url'),
-  expires_at: text('expires_at').notNull(),
+  expires_at: date('expires_at', { mode: 'date' }).notNull(),
   ...timestamps(),
   ...deletedAt(),
 })

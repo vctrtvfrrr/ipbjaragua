@@ -28,7 +28,7 @@ export function truncateGivenName(name: string): string {
   if (tokens[1] && !PREPS.has(tokens[1].toLowerCase())) result.push(tokens[1])
   return result.join(' ')
 }
-import { formatWeekdayPtBR, weekdayOf } from '@/lib/date'
+import { formatISODate, formatWeekdayPtBR, weekdayOf } from '@/lib/date'
 
 const ROMAN_VALUES = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
 const ROMAN_NUMERALS = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I']
@@ -47,26 +47,28 @@ export function toRoman(n: number): string {
 
 const ANCHOR = '2025-02-09'
 
-export function bulletinYear(date: string): number {
+export function bulletinYear(date: Date): number {
   const [ay, am, ad] = ANCHOR.split('-').map(Number)
-  const [dy, dm, dd] = date.split('-').map(Number)
+  const dy = date.getUTCFullYear()
+  const dm = date.getUTCMonth() + 1
+  const dd = date.getUTCDate()
   let years = dy - ay
   if (dm < am || (dm === am && dd < ad)) years--
   return years + 1
 }
 
-export function liturgySlug(date: string, theme: string, time?: string | null): string {
+export function liturgySlug(date: Date, theme: string, time?: string | null): string {
   const slug = theme
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-  const timePart = time ? `-${time.replace(':', '')}` : ''
-  return `${date}${timePart}-${slug}`
+  const timePart = time ? `-${time.slice(0, 5).replace(':', '')}` : ''
+  return `${formatISODate(date)}${timePart}-${slug}`
 }
 
-export function formatBulletinSubtitle(edition: number, date: string): string {
+export function formatBulletinSubtitle(edition: number, date: Date): string {
   return `${edition}ª Edição — Ano ${toRoman(bulletinYear(date))}`
 }
 

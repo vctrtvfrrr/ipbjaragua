@@ -1,5 +1,17 @@
+export function parseISODate(value: string): Date {
+  return new Date(`${value}T00:00:00Z`)
+}
+
+export function formatISODate(value: Date): string {
+  return value.toISOString().slice(0, 10)
+}
+
 export function todayISO(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+}
+
+export function today(): Date {
+  return parseISODate(todayISO())
 }
 
 export function currentTimeHHMM(): string {
@@ -21,8 +33,8 @@ const longDateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
 })
 
-export function formatLongDatePtBR(value: string): string {
-  return longDateFormatter.format(new Date(`${value}T00:00:00Z`))
+export function formatLongDatePtBR(value: Date): string {
+  return longDateFormatter.format(value)
 }
 
 const shortDateFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -31,8 +43,8 @@ const shortDateFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
 })
 
-export function formatShortDatePtBR(value: string): string {
-  return shortDateFormatter.format(new Date(`${value}T00:00:00Z`))
+export function formatShortDatePtBR(value: Date): string {
+  return shortDateFormatter.format(value)
 }
 
 const weekdayFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -40,26 +52,22 @@ const weekdayFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
 })
 
-export function formatWeekdayPtBR(value: string): string {
-  const name = weekdayFormatter.format(new Date(`${value}T00:00:00Z`))
+export function formatWeekdayPtBR(value: Date): string {
+  const name = weekdayFormatter.format(value)
   return name.charAt(0).toUpperCase() + name.slice(1)
 }
 
-export function weekdayOf(value: string): number {
-  return new Date(`${value}T00:00:00Z`).getUTCDay()
+export function weekdayOf(value: Date): number {
+  return value.getUTCDay()
 }
 
-export function currentWeekWindow(today: string): { from: string; to: string } {
-  const d = new Date(`${today}T00:00:00Z`)
-  const wd = d.getUTCDay()
+export function currentWeekWindow(reference: Date): { from: Date; to: Date } {
+  const wd = reference.getUTCDay()
   const daysSinceMonday = wd === 0 ? 6 : wd - 1
   const daysUntilSunday = wd === 0 ? 0 : 7 - wd
-  const monday = new Date(d)
-  monday.setUTCDate(d.getUTCDate() - daysSinceMonday)
-  const sunday = new Date(d)
-  sunday.setUTCDate(d.getUTCDate() + daysUntilSunday)
-  return {
-    from: monday.toISOString().slice(0, 10),
-    to: sunday.toISOString().slice(0, 10),
-  }
+  const monday = new Date(reference)
+  monday.setUTCDate(reference.getUTCDate() - daysSinceMonday)
+  const sunday = new Date(reference)
+  sunday.setUTCDate(reference.getUTCDate() + daysUntilSunday)
+  return { from: monday, to: sunday }
 }

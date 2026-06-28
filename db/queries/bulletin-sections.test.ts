@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { formatISODate, parseISODate } from '@/lib/date'
 import { createTestDb, type TestDb } from '@/test/db'
 import { seedAgenda, seedAnnouncements, seedMembers } from '@/test/seed'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from './bulletin-sections'
@@ -14,17 +15,17 @@ describe('listAgendaInWindow', () => {
   it('includes a recurring event when its weekday falls in the window', async () => {
     await seedAgenda(db, [{ title: 'Culto', is_recurring: true, weekday: 0, time: '10:00' }])
 
-    const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(1)
     expect(result[0].title).toBe('Culto')
-    expect(result[0].resolvedDate).toBe('2026-06-07')
+    expect(formatISODate(result[0].resolvedDate)).toBe('2026-06-07')
   })
 
   it('excludes a recurring event whose weekday is outside the window', async () => {
     await seedAgenda(db, [{ title: 'Evento Sábado', is_recurring: true, weekday: 6, time: '09:00' }])
 
-    const result = await listAgendaInWindow('2026-06-07', '2026-06-12', db)
+    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-12'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -32,15 +33,15 @@ describe('listAgendaInWindow', () => {
   it('includes a one-off event whose date falls in the window', async () => {
     await seedAgenda(db, [{ title: 'Reunião', is_recurring: false, event_date: '2026-06-10' }])
 
-    const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
-    expect(result[0].resolvedDate).toBe('2026-06-10')
+    expect(formatISODate(result[0].resolvedDate)).toBe('2026-06-10')
   })
 
   it('excludes a one-off event outside the window', async () => {
     await seedAgenda(db, [{ title: 'Fora', is_recurring: false, event_date: '2026-06-20' }])
 
-    const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -51,7 +52,7 @@ describe('listAgendaInWindow', () => {
       { title: 'Domingo', is_recurring: true, weekday: 0, time: '10:00' },
     ])
 
-    const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result.map((e) => e.title)).toEqual(['Domingo', 'Quarta'])
   })
@@ -60,7 +61,7 @@ describe('listAgendaInWindow', () => {
     await seedAgenda(db, [{ title: 'Deletado', is_recurring: true, weekday: 0, time: '10:00' }])
     await db.execute(sql`UPDATE agenda SET deleted_at = CURRENT_TIMESTAMP WHERE title = 'Deletado'`)
 
-    const result = await listAgendaInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -79,7 +80,7 @@ describe('listActiveAnnouncements', () => {
       { title: 'Expirado', expires_at: '2026-06-06' },
     ])
 
-    const result = await listActiveAnnouncements('2026-06-07', db)
+    const result = await listActiveAnnouncements(parseISODate('2026-06-07'), db)
 
     expect(result.map((a) => a.title)).toEqual(['Vigente'])
   })
@@ -90,7 +91,7 @@ describe('listActiveAnnouncements', () => {
       { title: 'Perto', expires_at: '2026-06-10' },
     ])
 
-    const result = await listActiveAnnouncements('2026-06-07', db)
+    const result = await listActiveAnnouncements(parseISODate('2026-06-07'), db)
 
     expect(result.map((a) => a.title)).toEqual(['Perto', 'Longe'])
   })
@@ -99,7 +100,7 @@ describe('listActiveAnnouncements', () => {
     await seedAnnouncements(db, [{ title: 'Deletado', expires_at: '2026-12-31' }])
     await db.execute(sql`UPDATE announcements SET deleted_at = CURRENT_TIMESTAMP WHERE title = 'Deletado'`)
 
-    const result = await listActiveAnnouncements('2026-06-07', db)
+    const result = await listActiveAnnouncements(parseISODate('2026-06-07'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -118,7 +119,7 @@ describe('listAnniversariesInWindow', () => {
       { full_name: 'Maria Santos', birth_date: '1985-01-15', status: 'active' },
     ])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toEqual([{ md: '10/06', weekday: 'Quarta-feira', names: ['João Silva'] }])
   })
@@ -126,7 +127,7 @@ describe('listAnniversariesInWindow', () => {
   it('excludes inactive members from birth anniversaries', async () => {
     await seedMembers(db, [{ full_name: 'Transferido', birth_date: '1990-06-10', status: 'transferred' }])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -134,7 +135,7 @@ describe('listAnniversariesInWindow', () => {
   it('excludes members without birth_date', async () => {
     await seedMembers(db, [{ full_name: 'Sem data', birth_date: null, status: 'active' }])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -146,9 +147,24 @@ describe('listAnniversariesInWindow', () => {
       { full_name: 'Fora', birth_date: '1990-06-15', status: 'active' },
     ])
 
-    const result = await listAnniversariesInWindow('2026-12-28', '2027-01-03', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-12-28'), parseISODate('2027-01-03'), db)
 
     expect(result.map((d) => d.names).flat()).toEqual(['Dezembro', 'Janeiro'])
+  })
+
+  it('matches a couple by wedding date across a year-wrap window', async () => {
+    await seedMembers(db, [
+      { full_name: 'Ana Lima', sex: 'Feminino', wedding_date: '2010-12-31', spouse: 'Bruno Lima', status: 'active' },
+      { full_name: 'Bruno Lima', sex: 'Masculino', wedding_date: '2010-12-31', spouse: 'Ana Lima', status: 'active' },
+      { full_name: 'Clara Reis', birth_date: '1992-01-02', status: 'active' },
+    ])
+
+    const result = await listAnniversariesInWindow(parseISODate('2026-12-28'), parseISODate('2027-01-03'), db)
+
+    expect(result.map((d) => ({ md: d.md, names: d.names }))).toEqual([
+      { md: '31/12', names: ['Ana Lima ♥ Bruno Lima'] },
+      { md: '02/01', names: ['Clara Reis'] },
+    ])
   })
 
   it('orders days by month-day', async () => {
@@ -157,7 +173,7 @@ describe('listAnniversariesInWindow', () => {
       { full_name: 'Dia 08', birth_date: '1990-06-08', status: 'active' },
     ])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result.map((d) => d.md)).toEqual(['08/06', '13/06'])
   })
@@ -166,7 +182,7 @@ describe('listAnniversariesInWindow', () => {
     await seedMembers(db, [{ full_name: 'Removido', birth_date: '1990-06-10', status: 'active' }])
     await db.execute(sql`UPDATE members SET deleted_at = CURRENT_TIMESTAMP WHERE full_name = 'Removido'`)
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -189,7 +205,7 @@ describe('listAnniversariesInWindow', () => {
       },
     ])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toEqual([{ md: '10/06', weekday: 'Quarta-feira', names: ['Ana Lúcia ♥ Júlio Cesar'] }])
   })
@@ -212,7 +228,7 @@ describe('listAnniversariesInWindow', () => {
       },
     ])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result[0].names).toHaveLength(1)
   })
@@ -228,7 +244,7 @@ describe('listAnniversariesInWindow', () => {
       },
     ])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -251,7 +267,7 @@ describe('listAnniversariesInWindow', () => {
       },
     ])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toHaveLength(0)
   })
@@ -275,7 +291,7 @@ describe('listAnniversariesInWindow', () => {
       },
     ])
 
-    const result = await listAnniversariesInWindow('2026-06-07', '2026-06-13', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(result).toEqual([{ md: '10/06', weekday: 'Quarta-feira', names: ['Beatriz Costa', 'Rosa ♥ Tiago Lima'] }])
   })
@@ -298,7 +314,7 @@ describe('listAnniversariesInWindow', () => {
       },
     ])
 
-    const result = await listAnniversariesInWindow('2026-12-28', '2027-01-03', db)
+    const result = await listAnniversariesInWindow(parseISODate('2026-12-28'), parseISODate('2027-01-03'), db)
 
     expect(result).toEqual([{ md: '30/12', weekday: 'Quarta-feira', names: ['Clara ♥ Diego Costa'] }])
   })
