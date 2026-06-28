@@ -1,9 +1,9 @@
 import { and, asc, count, desc, eq, isNull, lte } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { liturgyActs, liturgyMoments, liturgies, songs } from '@/db/schema'
+import { liturgyActs, liturgyMoments, liturgies, type ScripturePassage, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
 import { parseISODate } from '@/lib/date'
-import { songReference } from '@/lib/song'
+import { type LyricsBlock, songReference } from '@/lib/song'
 
 export type Liturgy = typeof liturgies.$inferSelect
 
@@ -36,8 +36,8 @@ export type LiturgyDetail = {
       description: string | null
       sermon_speaker: string | null
       sacrament_type: 'baptism' | 'eucharist' | null
-      scripture_passages: string | null
-      song: { title: string; songReference: string | null; lyrics: string | null } | null
+      scripture_passages: ScripturePassage[] | null
+      song: { title: string; songReference: string | null; lyrics: LyricsBlock[] | null } | null
     }>
   }>
 }

@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm'
-import { check, date, integer, pgEnum, pgTable, text, time } from 'drizzle-orm/pg-core'
+import { check, date, integer, jsonb, pgEnum, pgTable, text, time } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 import { songs } from './songs.schema'
+
+export type ScripturePassage = { reference: string; text: string; version: string }
 
 export const momentType = pgEnum('moment_type', [
   'bible_reading',
@@ -44,7 +46,7 @@ export const liturgyMoments = pgTable(
     position: integer('position').notNull(),
     type: momentType('type').notNull(),
     song_id: integer('song_id').references(() => songs.id),
-    scripture_passages: text('scripture_passages'),
+    scripture_passages: jsonb('scripture_passages').$type<ScripturePassage[]>(),
     description: text('description'),
     sermon_speaker: text('sermon_speaker'),
     sacrament_type: sacramentType('sacrament_type'),

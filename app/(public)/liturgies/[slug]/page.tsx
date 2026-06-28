@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
 import { formatLongDatePtBR, today } from '@/lib/date'
-import { parseLyrics } from '@/lib/song'
 
 export default async function LiturgyDetailPage({ params }: PageProps<'/liturgies/[slug]'>) {
   const { slug } = await params
@@ -40,16 +39,11 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
 }
 
 type Moment = LiturgyDetail['acts'][0]['moments'][0]
-type ScripturePassage = { reference: string; text: string; version: string }
 
-function parsePassages(raw: string): ScripturePassage[] {
-  return JSON.parse(raw) as ScripturePassage[]
-}
-
-function PassagesView({ raw }: { raw: string }) {
+function PassagesView({ passages }: { passages: NonNullable<Moment['scripture_passages']> }) {
   return (
     <>
-      {parsePassages(raw).map((passage, i) => (
+      {passages.map((passage, i) => (
         <div key={i}>
           <h4 className="font-narrow text-xl font-bold text-green-900 uppercase">
             {passage.reference}{' '}
@@ -69,7 +63,7 @@ function MomentView({ moment }: { moment: Moment }) {
         <strong className="font-narrow mb-2 text-xl">
           <span className="text-red-500">‣</span> Leitura Bíblica:
         </strong>
-        <PassagesView raw={moment.scripture_passages} />
+        <PassagesView passages={moment.scripture_passages} />
         {moment.description ? <p className="text-gray-400">{moment.description}</p> : null}
       </>
     )
@@ -86,7 +80,7 @@ function MomentView({ moment }: { moment: Moment }) {
         </h4>
         {moment.song?.lyrics ? (
           <div className="mt-2 space-y-2">
-            {parseLyrics(moment.song.lyrics).map((block, i) => {
+            {moment.song.lyrics.map((block, i) => {
               if (block.type === 'verse')
                 return (
                   <p key={i}>
@@ -111,7 +105,7 @@ function MomentView({ moment }: { moment: Moment }) {
   if (moment.type === 'sermon') {
     return (
       <>
-        {moment.scripture_passages ? <PassagesView raw={moment.scripture_passages} /> : null}
+        {moment.scripture_passages ? <PassagesView passages={moment.scripture_passages} /> : null}
         {moment.description ? (
           <p className="font-narrow text-center text-lg font-bold text-green-900">
             {moment.description}

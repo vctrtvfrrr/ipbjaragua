@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { liturgies, liturgyActs, liturgyMoments, members } from '@/db/schema'
+import { liturgies, liturgyActs, liturgyMoments, members, songs } from '@/db/schema'
 import { parseISODate } from '@/lib/date'
 import { createTestDb, type TestDb } from '@/test/db'
 
@@ -82,5 +82,38 @@ describe('sacrament_type_required check', () => {
     await expect(
       db.insert(liturgyMoments).values({ act_id: actId, position: 1, type: 'prayer' })
     ).resolves.toBeDefined()
+  })
+})
+
+describe('jsonb round-trip', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('preserves the lyric block structure of a song', async () => {
+    const lyrics = [
+      { type: 'verse', number: 1, content: 'Sublime graça' },
+      { type: 'chorus', number: null, content: 'Quão doce a voz' },
+    ]
+
+    await db.insert(songs).values({ slug: 'sublime-graca', title: 'Sublime Graça', lyrics })
+    const [row] = await db.select().from(songs)
+
+    expect(row.lyrics).toEqual(lyrics)
+    expect(row.lyrics?.[1].number).toBeNull()
+  })
+
+  it('preserves scripture passages on a moment', async () => {
+    const actId = await seedAct(db)
+    const passages = [{ reference: 'Salmos 23', text: 'O Senhor é o meu pastor', version: 'ARA' }]
+
+    await db
+      .insert(liturgyMoments)
+      .values({ act_id: actId, position: 1, type: 'bible_reading', scripture_passages: passages })
+    const [row] = await db.select().from(liturgyMoments)
+
+    expect(row.scripture_passages).toEqual(passages)
   })
 })
