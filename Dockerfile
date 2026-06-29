@@ -6,24 +6,18 @@ WORKDIR /app
 
 # ------------- Dev Stage ------------ #
 FROM base AS dev
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential python3 \
-  && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-*.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts && pnpm rebuild better-sqlite3
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 EXPOSE 3000
 CMD ["pnpm", "dev"]
 
 # ------------ Build Stage ------------ #
 FROM base AS build
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential python3 \
-  && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-*.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts && pnpm rebuild better-sqlite3
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN mkdir -p data && pnpm build
+RUN pnpm build
 
 # --------- Production Stage ---------- #
 FROM node:26-slim AS production
@@ -31,7 +25,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV DATABASE_PATH=/app/data/db.sqlite
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
