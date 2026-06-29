@@ -25,7 +25,7 @@ As **migrations são a fonte canônica do schema**. São versionadas no git (`db
 
 O schema Drizzle fica dividido por entidade (`db/schema/*.schema.ts`) e modela **todas** as tabelas do domínio, não apenas as expostas no site, para evitar que um `generate` futuro produza migrations destrutivas.
 
-## Solução
+## Justificativa
 
 - **SQLite + arquivo local** é adequado à escala e ao deploy self-hosted: backup é copiar um arquivo, zero serviço externo, zero ops de banco.
 - **better-sqlite3** é o driver SQLite mais maduro e testado do ecossistema Drizzle, síncrono e simples de usar em Server Components/Actions. (Exige `serverExternalPackages: ['better-sqlite3']` no `next.config.ts` por ser addon nativo.)

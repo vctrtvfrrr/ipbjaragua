@@ -6,13 +6,13 @@ author: Victor Otávio Ferreira
 status: accepted
 ---
 
-## Context
+## Contexto
 
 A **Boletim** (bulletin) compõe um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda**, os aniversariantes (**Membros**) de um intervalo e os **Anúncios** vigentes. Cada uma dessas seções poderia ser resolvida de duas formas: relativa ao momento em que a página é aberta ("hoje") ou relativa à própria semana do boletim.
 
 A tabela `bulletins` já carrega janelas armazenadas (`agenda_from/to`, `birthdays_from/to`) em vez de calcular intervalos a partir da data do culto. Ao popular as páginas de boletim, foi preciso decidir a mesma questão para os anúncios (filtrar por `expires_at >= hoje` ou `>= data do boletim`).
 
-## Decision
+## Decisão
 
 Toda seção do boletim é ancorada na própria data e nas janelas armazenadas do boletim, nunca no relógio do servidor:
 
@@ -22,7 +22,7 @@ Toda seção do boletim é ancorada na própria data e nas janelas armazenadas d
 
 Reabrir um boletim antigo reproduz exatamente o que ele exibia naquela semana.
 
-## Rationale
+## Justificativa
 
 O boletim é o equivalente digital do folheto impresso semanal: um documento datado, não um painel ao vivo. Ancorar tudo na data do boletim dá **fidelidade histórica** — o arquivo de boletins é um registro fiel, e cada edição é reproduzível e cacheável de forma estável. A alternativa (resolver seções contra "hoje") faria boletins antigos exibirem agendas vazias, aniversariantes errados e nenhum anúncio, descaracterizando o arquivo.
 

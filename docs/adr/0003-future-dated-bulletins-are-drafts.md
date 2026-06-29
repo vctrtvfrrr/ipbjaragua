@@ -12,14 +12,14 @@ Os **Boletins** são publicados semanalmente, em geral aos domingos. Para prepar
 
 O modelo já carrega janelas fixas (`agenda_from/to`, `birthdays_from/to`) e uma **Edição** armazenada — ou seja, um boletim pode estar totalmente preenchido e mesmo assim não dever aparecer ainda. Não havia, porém, nenhuma marca de publicação: as queries públicas (`listBulletins`, `countBulletins`, `getBulletinByDate`) filtravam apenas `deleted_at`, de modo que qualquer boletim de data futura vazava no índice `/bulletins` e por URL direta.
 
-## Decision
+## Decisão
 
 Um **Boletim** com data até hoje (inclusive) está **publicado**; com data futura é **rascunho** e não aparece em nenhum lugar do site. Não há coluna de status: a data do boletim é o único critério de publicação.
 
 - As queries públicas filtram `date <= hoje` além de `deleted_at` — índice, contagem, busca e detalhe. Um boletim futuro acessado por URL direta resulta em 404.
 - "Hoje" é resolvido no fuso `America/Sao_Paulo` e passado como parâmetro às queries (como já se faz com `listActiveAnnouncements(asOf)`), mantendo-as puras e testáveis em vez de chamarem o relógio internamente.
 
-## Rationale
+## Justificativa
 
 Usar a própria data como gate de publicação custa quase nada: a data já existe, já identifica o boletim e já define sua ordem. Uma coluna `status` separada seria mais um campo para manter em sincronia (e mais um estado inválido possível: publicado com data futura, ou rascunho com data passada). Para uma cadência semanal e datada, "publica quando chega o dia" é a regra natural.
 

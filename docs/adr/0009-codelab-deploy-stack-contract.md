@@ -6,7 +6,7 @@ author: Victor Otávio Ferreira
 status: accepted
 ---
 
-> **Emenda (2026-06-27):** com a migração para Postgres ([ADR-0010](0010-postgres-shared-vps.md)), a `DATABASE_URL` vira **segredo** e o stack **deixa de ser compose-only** — passa a render-com-Vault. Surge um **`.env.example`** (declarando `DATABASE_URL`); o `deploy-stack` renderiza o `.env` a partir dele, substituindo pelos segredos do **Ansible Vault**, e o `compose.yml` consome esse `.env`. Os inputs `bw-*` saem do `deploy.yml` (a infra não usa mais Bitwarden). O `compose.yml` perde o bind-mount `./data:/app/data` e o label `backup.sqlite=...`; o backup passa a ser `pg_dump` da database dedicada, responsabilidade da infra. As menções a "compose-only" e ao backup do arquivo SQLite abaixo ficam como registro histórico.
+> **Emenda (2026-06-27, redação corrigida em 2026-06-29):** com a migração para Postgres ([ADR-0010](0010-postgres-shared-vps.md)), a `DATABASE_URL` vira **segredo** e o stack **deixa de ser compose-only**. O `.env` de produção é **renderizado pela `deploy-stack`** a partir dos **Gitea Actions secrets deste repo**. O mecanismo concreto pertence ao contrato da plataforma — ver **infra ADR-0003**: o `deploy.yml` declara cada chave no `env:` do step com o prefixo `APPENV_` (p.ex. `APPENV_DATABASE_URL: ${{ secrets.DATABASE_URL }}`), e a action colhe as `APPENV_*` e escreve o `.env`. O **`.env.example`** sobrevive apenas como documentação das chaves esperadas (consumido pelo `compose.dev.yml`, não pela `deploy-stack`). O `compose.yml` perde o bind-mount `./data:/app/data` e o label `backup.sqlite=...`; o backup passa a ser `pg_dump` da database dedicada, responsabilidade da infra. As menções a "compose-only" e ao backup do arquivo SQLite abaixo ficam como registro histórico.
 
 ## Contexto
 
@@ -29,14 +29,14 @@ A validação (lint, format, testes unitários e e2e) roda à parte, no `.gitea/
 
 Por isso o `compose.yml` de produção referencia `image: registry.codelab.tec.br/codelab/ipbjaragua:latest` (nunca `build:`) e persiste o SQLite via **bind-mount `/opt/data/ipbjaragua:/app/data`** — substituindo o volume nomeado da ADR-0008.
 
-## Rationale
+## Justificativa
 
 - **`image:` em vez de `build:`** é a única forma compatível com o `deploy-stack`, que só transporta o `compose.yml` ao host. Como o build e o `deploy-stack` rodam no mesmo job, sobre o mesmo daemon do host, a `:latest` recém-buildada já está local quando o `docker compose up -d` sobe. O push ao registry serve de imagem versionada para rollback.
 - **Compose-only** porque não há segredos hoje: criar um `.env.example` vazio só para destrancar o Vault seria cerimônia inútil. Quando a autenticação (ADR-0006) entrar e trouxer segredos, basta adicionar `.env.example` e os `bw-*` — o `deploy-stack` passa a renderizar o `.env` automaticamente.
 - **Bind-mount em `/opt/data/ipbjaragua`** segue a convenção de persistência do CodeLab (backup unificado sob `/opt/data`). A propriedade do diretório no host é responsabilidade da infra (o volume já existe com dono uid 1000), então o container roda não-root sem que a imagem ou o CI precisem ajustar permissão.
 - **Secret dedicado para o registry** desacopla o push das permissões do ator do workflow, ao custo de manter o par de credenciais como Action secret.
 
-## Consequences
+## Consequências
 
 - O critério "o `compose.yml` builda o target production" da issue original não vale para produção: quem builda é o job de CI; o `compose.yml` só dá pull. O build local do target `production` continua possível à parte (sem `deploy-stack`).
 - Como build e deploy compartilham o daemon do host, o `compose.yml` não precisa de `pull_policy: always`. Se um dia o build migrar para outro runner, será preciso forçar o pull da `:latest` antes do `up`.

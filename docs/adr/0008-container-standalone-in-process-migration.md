@@ -32,20 +32,20 @@ Forças em jogo:
 
 pnpm é obtido via `corepack`. O stage de build inclui `build-essential` + `python3` para garantir a compilação do `better-sqlite3` caso o binário pré-compilado não exista para a plataforma; como o stage é descartado no multi-stage, isso não infla a imagem final.
 
-## Rationale
+## Justificativa
 
 - **`output: 'standalone'`** produz uma imagem de runtime muito menor (só as dependências rastreadas, sem o `node_modules` completo nem o CLI do Next). O custo é desviar do `pnpm start` literal: o runtime passa a ser `node server.js`. Pesamos os dois e o ganho de tamanho/superfície justificou a mudança no `next.config.ts`.
 - **Migração in-process via `instrumentation.ts`** é o único mecanismo que sobrevive no standalone: o `drizzle-kit` é `devDependency` e não está na imagem de runtime. Reaproveita código que já existe, falha rápido se a migração quebrar (o servidor não sobe) e dispensa um entrypoint customizado. Em troca, exige copiar `db/migrations` explicitamente — os `.sql` são lidos do disco em runtime e o tracer do standalone não os inclui sozinho.
 - **Usuário não-root + volume nomeado** garante que a escrita do SQLite funcione sem ajuste manual de permissão: o volume nomeado herda o dono (`node`, uid 1000) do diretório `/app/data` criado na imagem, na primeira inicialização. Rodar como root resolveria permissões, mas é má prática e contraria o default do standalone.
 
-## Considered Alternatives
+## Alternativas Consideradas
 
 - **`node:*-alpine`.** Rejeitado: musl força build do `better-sqlite3` a partir do fonte e é historicamente mais frágil; o ganho de tamanho não compensa o risco.
 - **`pnpm start` (sem standalone).** Rejeitado: manteria o `node_modules` de produção inteiro + CLI do Next na imagem de runtime, sem necessidade.
 - **Entrypoint com `drizzle-kit migrate` antes do servidor.** Rejeitado: traria `drizzle-kit` e deps de dev pra imagem de runtime, inflando o standalone, e duplicaria o que o `instrumentation.ts` já faz.
 - **Bind-mount do host para os dados em produção.** Rejeitado por ora: carregaria o uid do host e exigiria `chown` manual para casar com o uid 1000; o volume nomeado evita essa fricção.
 
-## Consequences
+## Consequências
 
 - O `next.config.ts` passa a declarar `output: 'standalone'`, que afeta todo `next build` (inclusive local); o `next dev` ignora a opção.
 - Qualquer nova dependência de arquivos lidos do disco em runtime (além de `db/migrations`) precisa ser copiada explicitamente para o runner — o tracer do standalone só inclui código JS importado.

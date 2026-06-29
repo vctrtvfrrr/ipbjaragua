@@ -24,24 +24,24 @@ Migrar toda a integração de banco para **PostgreSQL**, via **Drizzle ORM + dri
 - **Tipos ricos:** o motor novo é aproveitado para promover as colunas — `date` real (entregue ao código como `Date`, ancorado em UTC), `time` nativo, `timestamptz`, `boolean`, `pgEnum`, `jsonb` tipado, identity para ids, e o `check` do domínio portado. O comportamento de domínio observável é preservado (URLs de Liturgia, Aniversariantes, Dominical/Rascunho).
 - **Migrations:** o histórico SQLite é descartado e uma única migration inicial Postgres é regenerada (`dialect: 'postgresql'`). A migração de schema continua **in-process** no boot (mecanismo da [ADR-0008](0008-container-standalone-in-process-migration.md)), agora via migrator do `postgres-js`.
 - **Testes:** unitários em **PGlite** (Postgres in-process, WASM — hermético, sem container); e2e contra o **Postgres dockerizado** do `compose.dev.yml`.
-- **Deploy:** com a `DATABASE_URL` virando segredo, o stack deixa de ser compose-only e passa a render-com-Vault (ver emenda na [ADR-0009](0009-codelab-deploy-stack-contract.md)).
+- **Deploy:** com a `DATABASE_URL` virando segredo, o stack deixa de ser compose-only; o `.env` passa a ser renderizado pela `deploy-stack` a partir dos Gitea Actions secrets deste repo, via convenção de prefixo `APPENV_` (ver emenda na [ADR-0009](0009-codelab-deploy-stack-contract.md) e o contrato em infra ADR-0003).
 
 A migração dos **dados** existentes é uma fase posterior, por script descartável, fora do escopo desta decisão.
 
-## Rationale
+## Justificativa
 
 - **Postgres compartilhado** elimina o contra-argumento central da ADR-0001: não há "excesso de infra" a montar — o servidor já existe, com backup (`pg_dump`) e provisionamento padronizados. Ganha-se acesso remoto (DBeaver) e padronização com os demais projetos do VPS, sem operar um banco novo.
 - **`postgres-js`** é o driver assíncrono canônico do Drizzle, JS puro (sem addon nativo — some a fricção que ditou base Debian e `serverExternalPackages` na [ADR-0008](0008-container-standalone-in-process-migration.md)), adequado a uma instância de baixa concorrência.
 - **Tipos ricos no banco e no código** são o objetivo declarado: integridade que o SQLite não oferecia (enum/check rejeitando valores, datas/instantes corretos) e padronização do tratamento de datas como `Date` no código, não só no schema.
 - **Database dedicada** isola dados, backup e permissões dos demais projetos, e dá ao DBeaver um recorte limpo.
 
-## Considered Alternatives
+## Alternativas Consideradas
 
 - **Manter SQLite.** Rejeitado: não resolve nenhuma das três forças — tipos continuam fracos, o acesso remoto continua sendo mexer no arquivo, e segue fora do padrão do VPS.
 - **`date({ mode: 'string' })` em vez de `Date` real.** Rejeitado: criaria colunas `DATE` de verdade no banco sem reescrita transversal, mas a meta era padronizar o tratamento de datas **no código** — daí a escolha por `Date`, assumindo a reescrita de `lib/date`, `lib/bulletin`, páginas e o algoritmo de Aniversariantes.
 - **Postgres gerenciado dedicado (não o compartilhado).** Rejeitado: reintroduz o "excesso de infra/operação" que a ADR-0001 recusou, sem ganho sobre a instância compartilhada que já existe.
 
-## Consequences
+## Consequências
 
 - A camada de queries vira **assíncrona de ponta a ponta** (sem `.get()`/`.all()`/`lastInsertRowid`); o blast radius fica contido em `db/queries/*` e na infra de teste, pois as assinaturas públicas já eram `async`.
 - O backup deixa de ser a cópia do arquivo SQLite (o label `backup.sqlite` some do `compose.yml`) e passa a ser `pg_dump` da database dedicada, responsabilidade da infra.

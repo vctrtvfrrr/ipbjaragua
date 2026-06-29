@@ -45,3 +45,5 @@ jobs:
         with:
           app: ipbjaragua
           image-tag: ${{ env.TAG }}
+        env:
+          APPENV_DATABASE_URL: ${{ secrets.DATABASE_URL }}
