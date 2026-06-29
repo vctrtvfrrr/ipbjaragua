@@ -17,13 +17,6 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    container:
-      image: docker.gitea.com/runner-images:ubuntu-latest
-      volumes:
-        - /opt/codelab/apps:/opt/codelab/apps
     steps:
       - uses: actions/checkout@v4
 
