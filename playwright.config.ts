@@ -1,12 +1,12 @@
 import { defineConfig, devices } from '@playwright/test'
-import { E2E_DATABASE_URL } from './e2e/seed-db'
+import { E2E_DATABASE_URL } from './tests/e2e/seed-db'
 
 const PORT = 3210
 const baseURL = `http://localhost:${PORT}`
 
 export default defineConfig({
-  testDir: './e2e',
-  globalSetup: './e2e/global-setup.ts',
+  testDir: './tests/e2e',
+  globalSetup: './tests/e2e/global-setup.ts',
   reporter: 'list',
   use: { baseURL },
   projects: [{ name: 'chrome', use: { ...devices['Desktop Chrome'], channel: 'chrome' } }],

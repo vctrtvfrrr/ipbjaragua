@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestDb, type TestDb } from '@/test/db'
-import { seedArticles } from '@/test/seed'
+import { createTestDb, type TestDb } from '@/tests/db'
+import { seedArticles } from '@/tests/seed'
 import { countArticles, getArticleBySlug, getLatestArticle, listArticles } from './articles'
 
 describe('getArticleBySlug', () => {

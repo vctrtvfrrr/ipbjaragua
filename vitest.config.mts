@@ -10,6 +10,6 @@ export default defineConfig({
     globals: true,
     env: { DATABASE_URL: 'postgres://placeholder' },
     include: ['**/*.test.{ts,tsx}'],
-    exclude: ['node_modules/**', 'e2e/**', '.next/**', '.claude/**'],
+    exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', '.claude/**'],
   },
 })

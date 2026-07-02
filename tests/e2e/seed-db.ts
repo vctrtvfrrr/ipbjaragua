@@ -1,8 +1,8 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
-import { agenda, announcements, articles, bulletins, liturgies, members } from '../db/schema'
-import { parseISODate } from '../lib/date'
+import { agenda, announcements, articles, bulletins, liturgies, members } from '../../db/schema'
+import { parseISODate } from '../../lib/date'
 
 export const E2E_DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://ipbjaragua:ipbjaragua@localhost:5432/ipbjaragua_e2e'

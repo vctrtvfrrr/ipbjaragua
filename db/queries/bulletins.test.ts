@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { formatISODate, parseISODate } from '@/lib/date'
-import { createTestDb, type TestDb } from '@/test/db'
-import { seedArticles, seedBulletins } from '@/test/seed'
+import { createTestDb, type TestDb } from '@/tests/db'
+import { seedArticles, seedBulletins } from '@/tests/seed'
 import {
   countBulletins,
   getBulletinByDate,

@@ -2,8 +2,8 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { formatISODate, parseISODate } from '@/lib/date'
 import { liturgyActs, liturgyMoments } from '@/db/schema'
-import { createTestDb, type TestDb } from '@/test/db'
-import { seedLiturgies } from '@/test/seed'
+import { createTestDb, type TestDb } from '@/tests/db'
+import { seedLiturgies } from '@/tests/seed'
 import { countLiturgies, getLiturgyBySlug, listLiturgies, listLiturgiesByDate } from './liturgies'
 
 describe('countLiturgies', () => {

@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { formatISODate, parseISODate } from '@/lib/date'
-import { createTestDb, type TestDb } from '@/test/db'
-import { seedAgenda, seedAnnouncements, seedMembers } from '@/test/seed'
+import { createTestDb, type TestDb } from '@/tests/db'
+import { seedAgenda, seedAnnouncements, seedMembers } from '@/tests/seed'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from './bulletin-sections'
 
 describe('listAgendaInWindow', () => {

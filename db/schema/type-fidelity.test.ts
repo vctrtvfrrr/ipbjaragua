@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { liturgies, liturgyActs, liturgyMoments, members, songs } from '@/db/schema'
 import { parseISODate } from '@/lib/date'
-import { createTestDb, type TestDb } from '@/test/db'
+import { createTestDb, type TestDb } from '@/tests/db'
 
 async function seedAct(db: TestDb): Promise<number> {
   const [liturgy] = await db
