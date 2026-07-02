@@ -6,6 +6,8 @@ author: Victor Otávio Ferreira
 status: accepted
 ---
 
+> **Atualização (ADR-0012):** onde este ADR menciona as "janelas fixas" (`agenda_from/to`, `birthdays_from/to`) como colunas, leia-se "janela derivada da data". A decisão deste ADR (data futura = rascunho; a data é o único critério de publicação) não muda.
+
 ## Contexto
 
 Os **Boletins** são publicados semanalmente, em geral aos domingos. Para preparar uma edição com antecedência, é útil criar a linha no banco antes do dia em que ela deve ir ao ar. Surgiu então a pergunta: o que distingue um boletim "no ar" de um que ainda está sendo montado?

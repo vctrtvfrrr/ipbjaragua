@@ -6,6 +6,8 @@ author: Victor Otávio Ferreira
 status: accepted
 ---
 
+> **Atualização (ADR-0012):** os casamentos continuam reaproveitando a janela de aniversariantes e o toggle `show_birthdays`, mas essa janela deixou de ser as colunas `birthdays_from/to` e passou a ser derivada da data do Boletim. O pareamento e a exibição descritos abaixo não mudam.
+
 ## Contexto
 
 A seção Aniversariantes do **Boletim** listava apenas aniversários de nascimento de **Membros** ativos. Quisemos incluir também os **Aniversários de Casamento**, exibidos como o casal unido por um coração ("Mulher ♥ Homem", mulher primeiro).

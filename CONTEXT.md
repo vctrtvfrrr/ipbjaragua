@@ -7,7 +7,7 @@ Site da Igreja Presbiteriana do Brasil em Jaraguá. Publica conteúdo da igreja 
 ### Publicações
 
 **Boletim** (`bulletins`):
-Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda** e os Aniversariantes de um intervalo de datas (aniversários de nascimento de **Membros** e **Aniversários de Casamento** de casais). Cada seção pode ser exibida ou ocultada. Tem uma **Edição** e cai num **Ano**.
+Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, a(s) **Liturgia(s)** do dia, uma janela de eventos da **Agenda** e os Aniversariantes de um intervalo de datas (aniversários de nascimento de **Membros** e **Aniversários de Casamento** de casais). Só o **Artigo** é _referenciado por escolha_ (o autor do Boletim seleciona qual); **Liturgia**, **Agenda** e Aniversariantes são _derivados da data/das janelas_ — a Liturgia de um Boletim é toda Liturgia daquela data (podendo haver mais de uma, ex.: matutino e vespertino), não uma escolhida à parte. Cada seção pode ser exibida ou ocultada. Tem uma **Edição** e cai num **Ano**.
 _Avoid_: Folheto, informativo.
 
 **Boletim Dominical / Boletim Excepcional**:

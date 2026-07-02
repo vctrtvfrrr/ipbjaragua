@@ -6,6 +6,8 @@ author: Victor Otávio Ferreira
 status: accepted
 ---
 
+> **Atualização (ADR-0012):** as "janelas armazenadas" citadas abaixo deixaram de ser colunas e passaram a ser derivadas da data do Boletim. O princípio deste ADR (toda seção ancorada na data do boletim, não em "hoje") permanece — a janela derivada é função pura da data imutável, logo continua reproduzível.
+
 ## Contexto
 
 A **Boletim** (bulletin) compõe um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda**, os aniversariantes (**Membros**) de um intervalo e os **Anúncios** vigentes. Cada uma dessas seções poderia ser resolvida de duas formas: relativa ao momento em que a página é aberta ("hoje") ou relativa à própria semana do boletim.
