@@ -19,6 +19,7 @@ coverage
 .git
 .gitignore
 .claude
+.claude-octopus
 .vscode
 
 # Container and env files

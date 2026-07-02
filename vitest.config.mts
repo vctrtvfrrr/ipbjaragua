@@ -5,11 +5,41 @@ export default defineConfig({
   plugins: [react()],
   resolve: { tsconfigPaths: true },
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
     globals: true,
     env: { DATABASE_URL: 'postgres://placeholder' },
-    include: ['**/*.test.{ts,tsx}'],
-    exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', '.claude/**'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'db',
+          environment: 'node',
+          include: ['db/**/*.test.ts', 'tests/db.test.ts'],
+          exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', '.claude/**'],
+          isolate: false,
+          fileParallelism: false,
+          maxWorkers: 1,
+          sequence: { groupOrder: 1 },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['**/*.test.ts'],
+          exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', '.claude/**', 'db/**/*.test.ts', 'tests/db.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'jsdom',
+          environment: 'jsdom',
+          setupFiles: ['./vitest.setup.ts'],
+          include: ['**/*.test.tsx'],
+          exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', '.claude/**'],
+        },
+      },
+    ],
   },
 })

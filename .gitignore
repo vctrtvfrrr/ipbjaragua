@@ -50,4 +50,5 @@ next-env.d.ts
 # Claude Code
 .claude/worktrees/
 .claude/settings.local.json
+.claude-octopus
 CLAUDE.local.md
