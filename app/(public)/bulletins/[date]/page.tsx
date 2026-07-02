@@ -6,7 +6,7 @@ import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow 
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
-import { formatLongDatePtBR, formatShortDatePtBR, parseISODate, today } from '@/lib/date'
+import { bulletinSectionWindows, formatLongDatePtBR, formatShortDatePtBR, parseISODate, today } from '@/lib/date'
 
 export async function generateMetadata({ params }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
@@ -23,12 +23,13 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
   if (!result) notFound()
 
   const { bulletin, article } = result
+  const windows = bulletinSectionWindows(bulletin.date)
 
   const [agendaItems, announcements, anniversaries, liturgiesOfDay] = await Promise.all([
-    bulletin.show_agenda ? listAgendaInWindow(bulletin.agenda_from, bulletin.agenda_to) : Promise.resolve([]),
+    bulletin.show_agenda ? listAgendaInWindow(windows.agenda.from, windows.agenda.to) : Promise.resolve([]),
     bulletin.show_announcements ? listActiveAnnouncements(bulletin.date) : Promise.resolve([]),
     bulletin.show_birthdays
-      ? listAnniversariesInWindow(bulletin.birthdays_from, bulletin.birthdays_to)
+      ? listAnniversariesInWindow(windows.birthdays.from, windows.birthdays.to)
       : Promise.resolve([]),
     listLiturgiesByDate(bulletin.date),
   ])
@@ -52,7 +53,7 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
           <section className={sectionCard}>
             <h2 className="font-narrow mb-1 text-2xl text-green-900 uppercase">Agenda da Semana</h2>
             <p className="mb-5 text-gray-500">
-              {formatShortDatePtBR(bulletin.agenda_from)} a {formatShortDatePtBR(bulletin.agenda_to)}
+              {formatShortDatePtBR(windows.agenda.from)} a {formatShortDatePtBR(windows.agenda.to)}
             </p>
             <ol className="space-y-6">
               {agendaDays.map((day) => (

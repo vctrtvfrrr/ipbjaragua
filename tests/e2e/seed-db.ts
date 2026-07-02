@@ -74,7 +74,9 @@ export async function seedE2eDatabase() {
   await ensureE2eDatabase()
 
   const client = postgres(E2E_DATABASE_URL, { max: 1 })
-  await client.unsafe('DROP SCHEMA public CASCADE; CREATE SCHEMA public;')
+  await client.unsafe('DROP SCHEMA public CASCADE')
+  await client.unsafe('DROP SCHEMA IF EXISTS drizzle CASCADE')
+  await client.unsafe('CREATE SCHEMA public')
 
   const db = drizzle(client, { schema: { articles, bulletins, liturgies, agenda, announcements, members } })
   await migrate(db, { migrationsFolder: './db/migrations' })
@@ -98,10 +100,6 @@ export async function seedE2eDatabase() {
       edition: 70,
       title: 'Boletim 07 de junho de 2026',
       article_id: featuredArticleId ?? null,
-      agenda_from: '2026-06-07',
-      agenda_to: '2026-06-13',
-      birthdays_from: '2026-06-07',
-      birthdays_to: '2026-06-13',
       show_announcements: true,
       show_agenda: true,
       show_birthdays: true,
@@ -111,10 +109,6 @@ export async function seedE2eDatabase() {
       edition: 69,
       title: 'Boletim 31 de maio de 2026',
       article_id: null,
-      agenda_from: '2026-05-31',
-      agenda_to: '2026-06-06',
-      birthdays_from: '2026-05-31',
-      birthdays_to: '2026-06-06',
       show_announcements: false,
       show_agenda: false,
       show_birthdays: false,
@@ -124,10 +118,6 @@ export async function seedE2eDatabase() {
       edition: 68,
       title: 'Boletim 24 de maio de 2026',
       article_id: null,
-      agenda_from: '2026-05-24',
-      agenda_to: '2026-05-30',
-      birthdays_from: '2026-05-24',
-      birthdays_to: '2026-05-30',
       show_announcements: true,
       show_agenda: true,
       show_birthdays: true,
@@ -138,10 +128,6 @@ export async function seedE2eDatabase() {
     await db.insert(bulletins).values({
       ...bulletin,
       date: parseISODate(bulletin.date),
-      agenda_from: parseISODate(bulletin.agenda_from),
-      agenda_to: parseISODate(bulletin.agenda_to),
-      birthdays_from: parseISODate(bulletin.birthdays_from),
-      birthdays_to: parseISODate(bulletin.birthdays_to),
     })
   }
 

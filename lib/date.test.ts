@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bulletinSectionWindows,
   currentWeekWindow,
   formatISODate,
   formatLongDatePtBR,
@@ -49,6 +50,37 @@ describe('currentWeekWindow', () => {
 
   it('handles a week that spans month boundary', () => {
     expect(window('2026-06-30')).toEqual({ from: '2026-06-29', to: '2026-07-05' })
+  })
+})
+
+describe('bulletinSectionWindows', () => {
+  const windows = (iso: string) => {
+    const result = bulletinSectionWindows(parseISODate(iso))
+    return {
+      agenda: { from: formatISODate(result.agenda.from), to: formatISODate(result.agenda.to) },
+      birthdays: { from: formatISODate(result.birthdays.from), to: formatISODate(result.birthdays.to) },
+    }
+  }
+
+  it('derives birthdays as Sunday→Saturday and agenda as Monday→next Sunday for a Sunday bulletin', () => {
+    expect(windows('2026-06-07')).toEqual({
+      agenda: { from: '2026-06-08', to: '2026-06-14' },
+      birthdays: { from: '2026-06-07', to: '2026-06-13' },
+    })
+  })
+
+  it('uses the containing week for an exceptional weekday bulletin', () => {
+    expect(windows('2026-06-10')).toEqual({
+      agenda: { from: '2026-06-08', to: '2026-06-14' },
+      birthdays: { from: '2026-06-07', to: '2026-06-13' },
+    })
+  })
+
+  it('handles windows that cross year boundaries', () => {
+    expect(windows('2026-12-31')).toEqual({
+      agenda: { from: '2026-12-28', to: '2027-01-03' },
+      birthdays: { from: '2026-12-27', to: '2027-01-02' },
+    })
   })
 })
 

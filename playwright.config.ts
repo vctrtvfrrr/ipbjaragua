@@ -6,12 +6,11 @@ const baseURL = `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: './tests/e2e',
-  globalSetup: './tests/e2e/global-setup.ts',
   reporter: 'list',
   use: { baseURL },
   projects: [{ name: 'chrome', use: { ...devices['Desktop Chrome'], channel: 'chrome' } }],
   webServer: {
-    command: `next dev --port ${PORT}`,
+    command: `tsx -e "import('./tests/e2e/seed-db.ts').then((m) => m.seedE2eDatabase())" && next dev --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,

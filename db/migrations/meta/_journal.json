@@ -8,6 +8,13 @@
       "when": 1782610331348,
       "tag": "0000_talented_ravenous",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783028814250,
+      "tag": "0001_fresh_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

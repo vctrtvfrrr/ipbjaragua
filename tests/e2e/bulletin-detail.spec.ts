@@ -38,8 +38,9 @@ test('shows agenda, announcements and birthdays sections when flags are on', asy
   await page.goto(`/bulletins/${BULLETIN_DATE}`)
 
   await expect(page.getByRole('heading', { name: 'Agenda' })).toBeVisible()
+  await expect(page.getByText('08/06 a 14/06')).toBeVisible()
   await expect(page.getByText('Culto Dominical')).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Anúncios' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Avisos Gerais' })).toBeVisible()
   await expect(page.getByText(E2E_ANNOUNCEMENT.title)).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Aniversariantes' })).toBeVisible()
   await expect(page.getByText(new RegExp(E2E_MEMBER.full_name))).toBeVisible()
@@ -49,6 +50,6 @@ test('omits sections when flags are off', async ({ page }) => {
   await page.goto(`/bulletins/${BULLETIN_FLAGS_OFF}`)
 
   await expect(page.getByRole('heading', { name: 'Agenda' })).not.toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Anúncios' })).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Avisos Gerais' })).not.toBeVisible()
   await expect(page.getByRole('heading', { name: 'Aniversariantes' })).not.toBeVisible()
 })

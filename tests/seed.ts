@@ -40,10 +40,6 @@ export type SeedBulletin = {
   show_announcements?: boolean
   show_agenda?: boolean
   show_birthdays?: boolean
-  agenda_from?: string
-  agenda_to?: string
-  birthdays_from?: string
-  birthdays_to?: string
 }
 
 export type SeedLiturgy = {
@@ -74,10 +70,6 @@ export async function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
       show_announcements: row.show_announcements ?? true,
       show_agenda: row.show_agenda ?? true,
       show_birthdays: row.show_birthdays ?? true,
-      agenda_from: parseISODate(row.agenda_from ?? row.date),
-      agenda_to: parseISODate(row.agenda_to ?? row.date),
-      birthdays_from: parseISODate(row.birthdays_from ?? row.date),
-      birthdays_to: parseISODate(row.birthdays_to ?? row.date),
     })
   }
 }

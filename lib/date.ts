@@ -71,3 +71,24 @@ export function currentWeekWindow(reference: Date): { from: Date; to: Date } {
   sunday.setUTCDate(reference.getUTCDate() + daysUntilSunday)
   return { from: monday, to: sunday }
 }
+
+export type DateWindow = { from: Date; to: Date }
+
+export function bulletinSectionWindows(date: Date): { agenda: DateWindow; birthdays: DateWindow } {
+  const sunday = new Date(date)
+  sunday.setUTCDate(date.getUTCDate() - date.getUTCDay())
+
+  const birthdaysTo = new Date(sunday)
+  birthdaysTo.setUTCDate(sunday.getUTCDate() + 6)
+
+  const agendaFrom = new Date(sunday)
+  agendaFrom.setUTCDate(sunday.getUTCDate() + 1)
+
+  const agendaTo = new Date(sunday)
+  agendaTo.setUTCDate(sunday.getUTCDate() + 7)
+
+  return {
+    agenda: { from: agendaFrom, to: agendaTo },
+    birthdays: { from: sunday, to: birthdaysTo },
+  }
+}
