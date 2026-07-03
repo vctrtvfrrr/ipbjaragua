@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import Pagination from '@/components/Pagination'
 import type { Article } from '@/db/queries/articles'
 import { formatLongDatePtBR } from '@/lib/date'
 
@@ -44,25 +44,5 @@ export default function ArticleGrid({ articles, page, totalPages, basePath }: Pr
 
       {totalPages > 1 ? <Pagination page={page} totalPages={totalPages} basePath={basePath} /> : null}
     </>
-  )
-}
-
-function Pagination({ page, totalPages, basePath }: { page: number; totalPages: number; basePath: string }) {
-  return (
-    <nav aria-label="Paginação" className="mt-10 flex items-center justify-center gap-6">
-      {page > 1 ? (
-        <Button variant="link" render={<Link href={`${basePath}?page=${page - 1}`} />}>
-          ← Anterior
-        </Button>
-      ) : null}
-      <span className="text-gray-500">
-        Página {page} de {totalPages}
-      </span>
-      {page < totalPages ? (
-        <Button variant="link" render={<Link href={`${basePath}?page=${page + 1}`} />}>
-          Próxima →
-        </Button>
-      ) : null}
-    </nav>
   )
 }

@@ -86,6 +86,15 @@ export async function softDeleteArticle(id: number, db: Database = defaultDb): P
   return article
 }
 
+export async function getArticleById(id: number, db: Database = defaultDb): Promise<Article | undefined> {
+  const rows = await db
+    .select()
+    .from(articles)
+    .where(and(eq(articles.id, id), isNull(articles.deleted_at)))
+    .limit(1)
+  return rows[0]
+}
+
 export async function getArticleBySlug(slug: string, db: Database = defaultDb): Promise<Article | undefined> {
   const rows = await db
     .select()

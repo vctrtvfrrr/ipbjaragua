@@ -7,6 +7,7 @@ import {
   ArticleSlugCollisionError,
   countArticles,
   createArticle,
+  getArticleById,
   getArticleBySlug,
   getLatestArticle,
   listArticles,
@@ -250,6 +251,37 @@ describe('getArticleBySlug', () => {
     await db.execute(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE slug = 'removido'`)
 
     const article = await getArticleBySlug('removido', db)
+
+    expect(article).toBeUndefined()
+  })
+})
+
+describe('getArticleById', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('returns the article matching the id', async () => {
+    const [id] = await seedArticles(db, [{ slug: 'graca-soberana', title: 'Graça Soberana', date: '2026-01-01' }])
+
+    const article = await getArticleById(id, db)
+
+    expect(article?.title).toBe('Graça Soberana')
+  })
+
+  it('returns undefined when no article matches the id', async () => {
+    const article = await getArticleById(999, db)
+
+    expect(article).toBeUndefined()
+  })
+
+  it('ignores soft-deleted articles', async () => {
+    const [id] = await seedArticles(db, [{ slug: 'removido', title: 'Removido', date: '2026-01-01' }])
+    await db.execute(sql`UPDATE articles SET deleted_at = CURRENT_TIMESTAMP WHERE id = ${id}`)
+
+    const article = await getArticleById(id, db)
 
     expect(article).toBeUndefined()
   })

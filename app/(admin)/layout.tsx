@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { logout } from '@/app/logout/actions'
 import { Button } from '@/components/ui/button'
+import { Toaster } from '@/components/ui/sonner'
 import { ADMIN_NAV } from '@/lib/admin/nav'
 import { type CurrentUser, getCurrentUser } from '@/lib/auth/current-user'
 
@@ -59,6 +60,7 @@ export default async function AdminLayout({
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <Toaster />
     </div>
   )
 }
