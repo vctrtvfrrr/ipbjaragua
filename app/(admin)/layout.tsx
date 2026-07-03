@@ -1,9 +1,9 @@
 import { LogOut } from 'lucide-react'
 import { redirect } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { PERMISSION_ENTITIES, type Entity } from '@/lib/authz'
-import { getCurrentUser, type CurrentUser } from '@/lib/auth/current-user'
 import { logout } from '@/app/logout/actions'
+import { Button } from '@/components/ui/button'
+import { type CurrentUser, getCurrentUser } from '@/lib/auth/current-user'
+import { type Entity, PERMISSION_ENTITIES } from '@/lib/authz'
 
 const navLabels: Record<Entity, string> = {
   bulletins: 'Boletins',

@@ -2,17 +2,13 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { users } from '@/db/schema'
 import { createTestDb, type TestDb } from '@/tests/db'
-import { normalizeGoogleEmail, resolveGoogleLogin } from './google-login'
+import { resolveGoogleLogin } from './google-login'
 
 describe('Google login decision', () => {
   let db: TestDb
 
   beforeEach(async () => {
     db = await createTestDb()
-  })
-
-  it('normalizes email with trim and lowercase only', () => {
-    expect(normalizeGoogleEmail('  USER+Alias@Gmail.com  ')).toBe('user+alias@gmail.com')
   })
 
   it('denies unverified email with the generic denial result', async () => {

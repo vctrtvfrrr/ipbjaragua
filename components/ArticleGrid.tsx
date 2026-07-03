@@ -1,8 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import type { Article } from '@/db/queries/articles'
 import { formatLongDatePtBR } from '@/lib/date'
-import { Button } from '@/components/ui/button'
 
 type Props = {
   articles: Article[]

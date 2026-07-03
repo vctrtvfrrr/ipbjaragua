@@ -1,7 +1,7 @@
-import MainNav from '@/components/MainNav'
-import SocialLinks from '@/components/SocialLinks'
 import Image from 'next/image'
 import Link from 'next/link'
+import MainNav from '@/components/MainNav'
+import SocialLinks from '@/components/SocialLinks'
 
 export default function PublicLayout({
   children,

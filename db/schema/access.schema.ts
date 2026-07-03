@@ -1,20 +1,12 @@
 import { integer, pgEnum, pgTable, text, unique } from 'drizzle-orm/pg-core'
+import { PERMISSION_ACTIONS, PERMISSION_ENTITIES } from '../../lib/authz'
 import { id, timestamps } from './common-fields'
 
 export const userStatus = pgEnum('user_status', ['pending', 'active', 'disabled'])
 
-export const permissionEntity = pgEnum('entity', [
-  'bulletins',
-  'articles',
-  'liturgies',
-  'announcements',
-  'songs',
-  'members',
-  'agenda',
-  'users',
-])
+export const permissionEntity = pgEnum('permission_entity', PERMISSION_ENTITIES)
 
-export const permissionAction = pgEnum('action', ['read', 'create', 'update', 'delete'])
+export const permissionAction = pgEnum('permission_action', PERMISSION_ACTIONS)
 
 export const users = pgTable('users', {
   id: id(),

@@ -4,7 +4,6 @@ import type { Database } from '@/db'
 import { userPermissions, users } from '@/db/schema'
 import { db } from '@/db'
 import { can, type Action, type Entity, type Permission } from '@/lib/authz'
-import type { TestDb } from '@/tests/db'
 import { SESSION_COOKIE_NAME, verifySessionToken } from './session'
 
 export type CurrentUser = {
@@ -14,10 +13,10 @@ export type CurrentUser = {
   can: (entity: Entity, action: Action) => boolean
 }
 
-// Keeps the loader injectable across postgres-js in runtime and PGlite in tests.
-type AuthDb = Database | TestDb
-
-export async function getCurrentUserFromToken(authDb: AuthDb, token: string | undefined): Promise<CurrentUser | null> {
+export async function getCurrentUserFromToken(
+  authDb: Database,
+  token: string | undefined
+): Promise<CurrentUser | null> {
   if (!token) return null
 
   const session = await verifySessionToken(token)

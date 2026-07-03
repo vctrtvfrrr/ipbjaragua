@@ -11,7 +11,7 @@ VALUES ('email@gmail.com', 'Nome', 'active');
 INSERT INTO user_permissions (user_id, entity, action)
 SELECT u.id, e.entity, a.action
 FROM users u
-CROSS JOIN unnest(enum_range(NULL::entity)) AS e(entity)
-CROSS JOIN unnest(enum_range(NULL::action)) AS a(action)
+CROSS JOIN unnest(enum_range(NULL::permission_entity)) AS e(entity)
+CROSS JOIN unnest(enum_range(NULL::permission_action)) AS a(action)
 WHERE u.email = 'email@gmail.com';
 ```

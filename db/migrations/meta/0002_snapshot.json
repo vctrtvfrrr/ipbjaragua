@@ -16,14 +16,14 @@
         },
         "entity": {
           "name": "entity",
-          "type": "entity",
+          "type": "permission_entity",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
         "action": {
           "name": "action",
-          "type": "action",
+          "type": "permission_action",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
@@ -1083,8 +1083,8 @@
     }
   },
   "enums": {
-    "public.action": {
-      "name": "action",
+    "public.permission_action": {
+      "name": "permission_action",
       "schema": "public",
       "values": [
         "read",
@@ -1093,8 +1093,8 @@
         "delete"
       ]
     },
-    "public.entity": {
-      "name": "entity",
+    "public.permission_entity": {
+      "name": "permission_entity",
       "schema": "public",
       "values": [
         "bulletins",

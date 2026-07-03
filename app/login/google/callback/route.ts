@@ -1,12 +1,12 @@
 import { decodeIdToken } from 'arctic'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { resolveGoogleLogin } from '@/lib/auth/google-login'
 import {
-  getGoogleOAuthClient,
-  getOAuthTransientCookieOptions,
   GOOGLE_CODE_VERIFIER_COOKIE,
   GOOGLE_OAUTH_STATE_COOKIE,
+  getGoogleOAuthClient,
+  getOAuthTransientCookieOptions,
 } from '@/lib/auth/oauth'
 import { createSessionToken, getSessionCookieOptions, SESSION_COOKIE_NAME } from '@/lib/auth/session'
 

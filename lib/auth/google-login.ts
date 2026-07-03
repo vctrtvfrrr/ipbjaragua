@@ -2,7 +2,6 @@ import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/db'
 import { users } from '@/db/schema'
-import type { TestDb } from '@/tests/db'
 
 const googleProfileSchema = z.object({
   email: z.string().trim().toLowerCase(),
@@ -11,21 +10,14 @@ const googleProfileSchema = z.object({
 
 export type GoogleLoginResult = { ok: true; userId: number } | { ok: false; reason: string }
 
-// Keeps the decision logic injectable across postgres-js in runtime and PGlite in tests.
-type AuthDb = Database | TestDb
-
-export function normalizeGoogleEmail(email: string): string {
-  return email.trim().toLowerCase()
-}
-
-export async function resolveGoogleLogin(db: AuthDb, profile: unknown): Promise<GoogleLoginResult> {
+export async function resolveGoogleLogin(db: Database, profile: unknown): Promise<GoogleLoginResult> {
   const parsed = googleProfileSchema.safeParse(profile)
 
   if (!parsed.success) {
     return { ok: false, reason: 'unverified_or_invalid_profile' }
   }
 
-  const email = normalizeGoogleEmail(parsed.data.email)
+  const email = parsed.data.email
   const [user] = await db
     .select({ id: users.id, status: users.status })
     .from(users)
@@ -38,7 +30,7 @@ export async function resolveGoogleLogin(db: AuthDb, profile: unknown): Promise<
   if (user.status === 'pending') {
     await db
       .update(users)
-      .set({ status: 'active' })
+      .set({ status: 'active', updated_at: sql`now()` })
       .where(sql`${users.id} = ${user.id}`)
   }
 

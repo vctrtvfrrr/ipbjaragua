@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { SESSION_COOKIE_NAME } from '@/lib/auth/session'
 
 export async function GET(request: NextRequest) {

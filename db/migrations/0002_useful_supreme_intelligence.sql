@@ -1,10 +1,10 @@
-CREATE TYPE "public"."action" AS ENUM('read', 'create', 'update', 'delete');--> statement-breakpoint
-CREATE TYPE "public"."entity" AS ENUM('bulletins', 'articles', 'liturgies', 'announcements', 'songs', 'members', 'agenda', 'users');--> statement-breakpoint
+CREATE TYPE "public"."permission_action" AS ENUM('read', 'create', 'update', 'delete');--> statement-breakpoint
+CREATE TYPE "public"."permission_entity" AS ENUM('bulletins', 'articles', 'liturgies', 'announcements', 'songs', 'members', 'agenda', 'users');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('pending', 'active', 'disabled');--> statement-breakpoint
 CREATE TABLE "user_permissions" (
 	"user_id" integer NOT NULL,
-	"entity" "entity" NOT NULL,
-	"action" "action" NOT NULL,
+	"entity" "permission_entity" NOT NULL,
+	"action" "permission_action" NOT NULL,
 	CONSTRAINT "user_permissions_user_entity_action_unique" UNIQUE("user_id","entity","action")
 );
 --> statement-breakpoint
