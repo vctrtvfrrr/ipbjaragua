@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 import type { Database } from '@/db'
 import { userPermissions, users } from '@/db/schema'
 import { db } from '@/db'
@@ -43,7 +44,7 @@ export async function getCurrentUserFromToken(
   }
 }
 
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const cookieStore = await cookies()
   return getCurrentUserFromToken(db, cookieStore.get(SESSION_COOKIE_NAME)?.value)
-}
+})

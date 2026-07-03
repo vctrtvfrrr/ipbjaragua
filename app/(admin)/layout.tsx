@@ -1,33 +1,29 @@
 import { LogOut } from 'lucide-react'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { logout } from '@/app/logout/actions'
 import { Button } from '@/components/ui/button'
+import { ADMIN_NAV } from '@/lib/admin/nav'
 import { type CurrentUser, getCurrentUser } from '@/lib/auth/current-user'
-import { type Entity, PERMISSION_ENTITIES } from '@/lib/authz'
-
-const navLabels: Record<Entity, string> = {
-  bulletins: 'Boletins',
-  articles: 'Artigos',
-  liturgies: 'Liturgias',
-  announcements: 'Avisos',
-  songs: 'Músicas',
-  members: 'Membros',
-  agenda: 'Agenda',
-  users: 'Usuários',
-}
 
 function AdminNav({ user }: { user: CurrentUser }) {
-  const readableEntities = PERMISSION_ENTITIES.filter((entity) => user.can(entity, 'read'))
+  const items = ADMIN_NAV.filter((item) => user.can(item.entity, 'read'))
 
-  if (readableEntities.length === 0) return null
+  if (items.length === 0) return null
 
   return (
     <nav className="flex flex-wrap gap-1">
-      {readableEntities.map((entity) => (
-        <span key={entity} className="text-muted-foreground rounded-md border px-2 py-1 text-sm">
-          {navLabels[entity]}
-        </span>
-      ))}
+      {items.map((item) =>
+        item.href ? (
+          <Link key={item.entity} href={item.href} className="hover:bg-muted rounded-md border px-2 py-1 text-sm">
+            {item.label}
+          </Link>
+        ) : (
+          <span key={item.entity} className="text-muted-foreground rounded-md border px-2 py-1 text-sm">
+            {item.label}
+          </span>
+        )
+      )}
     </nav>
   )
 }
