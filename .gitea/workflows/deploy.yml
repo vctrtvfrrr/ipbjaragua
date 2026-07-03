@@ -1,18 +1,18 @@
 name: build-and-deploy
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
-  group: build-and-deploy
+  group: deploy
   cancel-in-progress: false
 
 env:
   REGISTRY: git.codelab.tec.br
   IMAGE: git.codelab.tec.br/codelab/ipbjaragua
-  TAG: ${{ github.ref_name }}
+  TAG: ${{ github.sha }}
 
 jobs:
   build-and-deploy:
