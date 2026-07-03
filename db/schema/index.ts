@@ -1,3 +1,4 @@
+export { permissionAction, permissionEntity, userPermissions, users, userStatus } from './access.schema'
 export { agenda } from './agenda.schema'
 export { announcements } from './announcements.schema'
 export { articles } from './articles.schema'

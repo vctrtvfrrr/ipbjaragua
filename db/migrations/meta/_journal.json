@@ -15,6 +15,13 @@
       "when": 1783028814250,
       "tag": "0001_fresh_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783039389580,
+      "tag": "0002_useful_supreme_intelligence",
+      "breakpoints": true
     }
   ]
 }
