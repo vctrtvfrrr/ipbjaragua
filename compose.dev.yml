@@ -5,12 +5,13 @@ services:
       target: dev
     env_file:
       - .env
-    command: sh -c "sleep 1 && pnpm dev --webpack"
+    command: sh -c "sleep 1 && CI=true pnpm install --frozen-lockfile --ignore-scripts && ./node_modules/.bin/next dev --webpack"
     ports:
       - '3000:3000'
     volumes:
       - .:/app
       - /app/node_modules
+      - /app/.next
     depends_on:
       db:
         condition: service_healthy
