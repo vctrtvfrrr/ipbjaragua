@@ -92,6 +92,10 @@ _Avoid_: Membro, administrador (todo Usuário do painel é administrativo; a al�
 A autorização de acesso de um novo **Usuário**: um Usuário com permissão envia um convite a um e-mail Google, e esse e-mail passa a poder autenticar no painel. Autenticar via Google não basta — sem Convite, o acesso é negado.
 _Avoid_: Cadastro (não há auto-cadastro; o acesso nasce de um Convite), registro.
 
+**Convidado / Ativo / Desabilitado** (`users.status`):
+Os três estados de um **Usuário**. _Convidado_ (`pending`): tem Convite mas nunca logou. _Ativo_ (`active`): logou ao menos uma vez e tem acesso. _Desabilitado_ (`disabled`): acesso revogado sem apagar o registro. A transição Convidado→Ativo acontece no primeiro login com e-mail correspondente; a revogação leva a Desabilitado e o login **não** ressuscita um Usuário Desabilitado (o e-mail segue na allowlist, mas barrado). Apagar o registro é a revogação definitiva.
+_Avoid_: Suspenso, inativo, bloqueado (nomes de código: `pending`/`active`/`disabled`).
+
 **Visitante** (`guest`):
 Quem acessa o site público sem estar autenticado. Termo usado só quando é preciso contrastar com **Usuário**; no resto do site, o público é simplesmente o leitor.
 _Avoid_: Usuário (Visitante não é autenticado), anônimo.

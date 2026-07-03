@@ -41,5 +41,5 @@ Esta decisão **reabre conscientemente o "zero serviço externo" do [ADR-0001](.
 
 - Entram duas dependências externas em runtime, ausentes no ADR-0001: **Google OAuth** (login) e **SMTP** (envio de Convite). Ambas afetam só o painel, não o site público.
 - É preciso registrar credenciais OAuth no Google Cloud (client id/secret) e configurá-las como variáveis de ambiente no servidor.
-- Acesso é revogado removendo (ou marcando) a linha em `users`; não há fluxo no Google a desfazer.
+- Acesso é revogado marcando a linha em `users` como `disabled` (revogação preservando o registro) ou apagando-a (definitiva); não há fluxo no Google a desfazer. Marcar de volta para `pending` **não** revoga — o primeiro login reativaria (ver ADR-0011, estado `disabled`).
 - Um e-mail convidado que nunca faz login permanece como linha pendente — estado normal, não erro.
