@@ -9,10 +9,11 @@ import {
   getOAuthTransientCookieOptions,
 } from '@/lib/auth/oauth'
 import { createSessionToken, getSessionCookieOptions, SESSION_COOKIE_NAME } from '@/lib/auth/session'
+import { publicUrl } from '@/lib/http/request-origin'
 
 function loginError(request: NextRequest, reason: string): NextResponse {
   console.warn('Google login denied:', reason)
-  const response = NextResponse.redirect(new URL('/login?erro=login', request.url))
+  const response = NextResponse.redirect(publicUrl('/login?erro=login', request))
   clearOAuthTransientCookies(response)
   return response
 }
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
       return loginError(request, result.reason)
     }
 
-    const response = NextResponse.redirect(new URL('/admin', request.url))
+    const response = NextResponse.redirect(publicUrl('/admin', request))
     clearOAuthTransientCookies(response)
     response.cookies.set(SESSION_COOKIE_NAME, await createSessionToken(result.userId), getSessionCookieOptions())
     return response

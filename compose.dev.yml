@@ -3,14 +3,14 @@ services:
     build:
       context: .
       target: dev
+    env_file:
+      - .env
+    command: sh -c "sleep 1 && pnpm dev --webpack"
     ports:
       - '3000:3000'
     volumes:
       - .:/app
       - /app/node_modules
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgres://ipbjaragua:ipbjaragua@db:5432/ipbjaragua
     depends_on:
       db:
         condition: service_healthy

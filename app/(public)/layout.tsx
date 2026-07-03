@@ -17,10 +17,11 @@ export default function PublicLayout({
               <Link href="/">
                 <Image
                   src="/images/logo.svg"
-                  width={50}
-                  height={40}
-                  alt="IPB de Jaraguá do Sul"
                   className="mr-2 inline-block align-bottom"
+                  alt="IPB de Jaraguá do Sul"
+                  width={182}
+                  height={150}
+                  style={{ width: 50, height: 40 }}
                 />
                 IPB de Jaraguá do Sul
               </Link>
