@@ -18,7 +18,8 @@ export const FEATURED = {
   author: 'Rev. Jean Carlos Almeida',
   date: '2026-06-07',
   excerpt: 'Um breve resumo do artigo em destaque.',
-  content: '## Subtítulo\n\nConteúdo do artigo com **negrito** e uma lista:\n\n- primeiro\n- segundo\n',
+  content:
+    '## Subtítulo\n\nConteúdo do artigo com **negrito** e uma lista:\n\n- primeiro\n- segundo\n\n| Doutrina | Ênfase |\n| --- | --- |\n| Graça | Soberana |\n',
 }
 
 const OLDER = Array.from({ length: 14 }, (_, i) => {
@@ -48,8 +49,8 @@ export const E2E_AGENDA = [
 
 export const E2E_ANNOUNCEMENT = {
   title: 'Retiro de Jovens',
-  description: 'Inscrições abertas até sexta.',
-  expires_at: '2026-06-14',
+  description: 'Inscrições abertas até sexta.\n\n| Item | Valor |\n| --- | --- |\n| Inscrição | R$ 80 |\n',
+  expires_at: '2026-07-14',
 }
 
 export const E2E_MEMBER = {

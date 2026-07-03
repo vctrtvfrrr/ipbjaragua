@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import ReactMarkdown from 'react-markdown'
 import BulletinArticle from '@/components/BulletinArticle'
+import Markdown from '@/components/Markdown'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
@@ -89,7 +89,7 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
                   <h3 className="font-narrow text-2xl font-bold">{ann.title}</h3>
                   {ann.description ? (
                     <div className="text-justify">
-                      <ReactMarkdown>{ann.description}</ReactMarkdown>
+                      <Markdown content={ann.description} />
                     </div>
                   ) : null}
                   {ann.url ? <Link href={ann.url}>Acesse</Link> : null}

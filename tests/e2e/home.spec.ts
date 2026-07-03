@@ -7,6 +7,7 @@ test('features the latest article linking to its detail', async ({ page }) => {
   await expect(page.locator(`a[href="/articles/${FEATURED.slug}"]`).first()).toBeVisible()
   const nav = page.getByRole('navigation', { name: 'Paginação' })
   await expect(nav.getByRole('link', { name: /próxima/i })).toBeVisible()
+  await expect(page.getByRole('table').filter({ hasText: 'Inscrição' })).toBeVisible()
 })
 
 test('paginates the home article grid', async ({ page }) => {

@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import ReactMarkdown from 'react-markdown'
 import ArticleGrid from '@/components/ArticleGrid'
+import Markdown from '@/components/Markdown'
 import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
 import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
@@ -244,7 +244,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                         <h3 className="font-narrow text-2xl font-bold">{ann.title}</h3>
                         {ann.description ? (
                           <div className="text-justify">
-                            <ReactMarkdown>{ann.description}</ReactMarkdown>
+                            <Markdown content={ann.description} />
                           </div>
                         ) : null}
                         {ann.url ? <Link href={ann.url}>Acesse</Link> : null}

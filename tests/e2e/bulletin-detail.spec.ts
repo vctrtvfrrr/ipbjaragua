@@ -16,6 +16,7 @@ test('shows article section with title and expand control', async ({ page }) => 
 
   await expect(page.getByText(FEATURED.title)).toBeVisible()
   await expect(page.getByText(FEATURED.author)).toBeVisible()
+  await expect(page.getByRole('table').filter({ hasText: 'Graça' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Continuar lendo' })).toBeVisible()
 })
 
@@ -42,6 +43,7 @@ test('shows agenda, announcements and birthdays sections when flags are on', asy
   await expect(page.getByText('Culto Dominical')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Avisos Gerais' })).toBeVisible()
   await expect(page.getByText(E2E_ANNOUNCEMENT.title)).toBeVisible()
+  await expect(page.getByRole('table').filter({ hasText: 'Inscrição' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Aniversariantes' })).toBeVisible()
   await expect(page.getByText(new RegExp(E2E_MEMBER.full_name))).toBeVisible()
 })

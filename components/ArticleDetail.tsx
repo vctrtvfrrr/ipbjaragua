@@ -1,6 +1,6 @@
-import ReactMarkdown from 'react-markdown'
 import type { Article } from '@/db/queries/articles'
 import { formatLongDatePtBR } from '@/lib/date'
+import Markdown from './Markdown'
 
 export default function ArticleDetail({ article }: { article: Article }) {
   const date = formatLongDatePtBR(article.date)
@@ -23,7 +23,7 @@ export default function ArticleDetail({ article }: { article: Article }) {
         </header>
 
         <article className="prose prose-lg max-w-none">
-          <ReactMarkdown>{article.content}</ReactMarkdown>
+          <Markdown content={article.content} />
         </article>
       </main>
     </>

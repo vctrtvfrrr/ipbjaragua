@@ -8,6 +8,7 @@ test('shows the article title, byline and rendered markdown', async ({ page }) =
   await expect(page.getByText('Rev. Jean Carlos Almeida — 07 de junho de 2026')).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Subtítulo' })).toBeVisible()
   await expect(page.getByText('negrito')).toBeVisible()
+  await expect(page.getByRole('table').filter({ hasText: 'Graça' })).toBeVisible()
 })
 
 test('returns 404 for an unknown slug', async ({ page }) => {

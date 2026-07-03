@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
 import type { Article } from '@/db/queries/articles'
+import Markdown from './Markdown'
 
 export default function BulletinArticle({ article }: { article: Article }) {
   const [expanded, setExpanded] = useState(false)
@@ -17,7 +17,7 @@ export default function BulletinArticle({ article }: { article: Article }) {
           className="prose max-w-none overflow-hidden text-justify transition-all duration-500"
           style={{ maxHeight: expanded ? '99999px' : '20rem' }}
         >
-          <ReactMarkdown>{article.content}</ReactMarkdown>
+          <Markdown content={article.content} />
         </div>
 
         {expanded ? null : (
