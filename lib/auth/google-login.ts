@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/db'
-import { userPermissions, users } from '@/db/schema'
+import { users } from '@/db/schema'
 import type { TestDb } from '@/tests/db'
 
 const googleProfileSchema = z.object({
@@ -43,13 +43,4 @@ export async function resolveGoogleLogin(db: AuthDb, profile: unknown): Promise<
   }
 
   return { ok: true, userId: user.id }
-}
-
-export async function grantAllPermissions(db: AuthDb, userId: number) {
-  await db.execute(sql`
-    INSERT INTO ${userPermissions} (user_id, entity, action)
-    SELECT ${userId}, e.entity, a.action
-    FROM unnest(enum_range(NULL::entity)) AS e(entity)
-    CROSS JOIN unnest(enum_range(NULL::action)) AS a(action)
-  `)
 }

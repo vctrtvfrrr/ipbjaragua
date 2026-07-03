@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { userPermissions, users } from '@/db/schema'
+import { users } from '@/db/schema'
 import { createTestDb, type TestDb } from '@/tests/db'
-import { grantAllPermissions, normalizeGoogleEmail, resolveGoogleLogin } from './google-login'
+import { normalizeGoogleEmail, resolveGoogleLogin } from './google-login'
 
 describe('Google login decision', () => {
   let db: TestDb
@@ -68,17 +68,5 @@ describe('Google login decision', () => {
 
     const [row] = await db.select({ status: users.status }).from(users).where(eq(users.id, user.id))
     expect(row.status).toBe('disabled')
-  })
-
-  it('can grant all 32 permissions from the database enums', async () => {
-    const [user] = await db
-      .insert(users)
-      .values({ email: 'ana@example.com', status: 'active' })
-      .returning({ id: users.id })
-
-    await grantAllPermissions(db, user.id)
-
-    const permissions = await db.select().from(userPermissions).where(eq(userPermissions.user_id, user.id))
-    expect(permissions).toHaveLength(32)
   })
 })

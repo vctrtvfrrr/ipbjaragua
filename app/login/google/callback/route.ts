@@ -13,10 +13,14 @@ import { createSessionToken, getSessionCookieOptions, SESSION_COOKIE_NAME } from
 function loginError(request: NextRequest, reason: string): NextResponse {
   console.warn('Google login denied:', reason)
   const response = NextResponse.redirect(new URL('/login?erro=login', request.url))
+  clearOAuthTransientCookies(response)
+  return response
+}
+
+function clearOAuthTransientCookies(response: NextResponse) {
   const transientOptions = getOAuthTransientCookieOptions()
   response.cookies.delete({ name: GOOGLE_OAUTH_STATE_COOKIE, path: transientOptions.path })
   response.cookies.delete({ name: GOOGLE_CODE_VERIFIER_COOKIE, path: transientOptions.path })
-  return response
 }
 
 export async function GET(request: NextRequest) {
@@ -39,9 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = NextResponse.redirect(new URL('/admin', request.url))
-    const transientOptions = getOAuthTransientCookieOptions()
-    response.cookies.delete({ name: GOOGLE_OAUTH_STATE_COOKIE, path: transientOptions.path })
-    response.cookies.delete({ name: GOOGLE_CODE_VERIFIER_COOKIE, path: transientOptions.path })
+    clearOAuthTransientCookies(response)
     response.cookies.set(SESSION_COOKIE_NAME, await createSessionToken(result.userId), getSessionCookieOptions())
     return response
   } catch (error) {

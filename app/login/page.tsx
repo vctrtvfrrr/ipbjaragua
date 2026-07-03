@@ -2,7 +2,7 @@ import { LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { startGoogleLogin } from './actions'
 
-const GENERIC_LOGIN_ERROR = 'Não foi possível entrar. Confira se você está usando o e-mail convidado.'
+const GENERIC_LOGIN_ERROR = 'Não foi possível entrar. Tente novamente ou fale com a liderança.'
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const params = await searchParams
