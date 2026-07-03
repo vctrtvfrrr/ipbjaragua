@@ -3,8 +3,8 @@ services:
     image: git.codelab.tec.br/codelab/ipbjaragua:${IMAGE_TAG:-latest}
     container_name: ipbjaragua
     restart: unless-stopped
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
+    env_file:
+      - .env
     networks:
       - web
       - postgres

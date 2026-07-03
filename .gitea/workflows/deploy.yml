@@ -47,3 +47,7 @@ jobs:
           image-tag: ${{ env.TAG }}
         env:
           APPENV_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APPENV_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          APPENV_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          APPENV_GOOGLE_OAUTH_REDIRECT_URI: ${{ vars.GOOGLE_OAUTH_REDIRECT_URI }}
+          APPENV_SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
