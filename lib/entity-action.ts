@@ -88,8 +88,6 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
   }
 
   async function action(prev: ActionState, formData: FormData): Promise<ActionState> {
-    'use server'
-
     void prev
 
     return execute({ user: await getCurrentUser(), db: defaultDb }, formData)
