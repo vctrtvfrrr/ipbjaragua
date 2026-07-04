@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { createArticle, updateArticle } from '@/app/(admin)/admin/articles/form-actions'
+import { createArticleFormAction, updateArticleFormAction } from '@/app/(admin)/admin/articles/form-actions'
 import { Button } from '@/components/ui/button'
 import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,7 @@ type Props = { mode: 'create' } | { mode: 'edit'; article: Article }
 
 export function ArticleForm(props: Props) {
   const article = props.mode === 'edit' ? props.article : undefined
-  const action = props.mode === 'edit' ? updateArticle : createArticle
+  const action = props.mode === 'edit' ? updateArticleFormAction : createArticleFormAction
 
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE)
   const [title, setTitle] = useState(article?.title ?? '')

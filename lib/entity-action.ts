@@ -3,6 +3,7 @@ import { db as defaultDb, type Database } from '@/db'
 import { getCurrentUser, type CurrentUser } from '@/lib/auth/current-user'
 import type { Action, Entity } from '@/lib/authz'
 
+const SESSION_ERROR = 'Sua sessão expirou. Faça login novamente.'
 const PERMISSION_ERROR = 'Você não tem permissão para executar esta ação.'
 const GENERIC_ERROR = 'Não foi possível concluir a ação.'
 
@@ -52,9 +53,8 @@ export function parseForm(formData: FormData): Record<string, string> {
 }
 
 export function requirePermission(user: CurrentUser | null, entity: Entity, action: Action): ActionState | null {
-  if (!user?.can(entity, action)) {
-    return { status: 'error', formError: PERMISSION_ERROR }
-  }
+  if (!user) return { status: 'error', formError: SESSION_ERROR }
+  if (!user.can(entity, action)) return { status: 'error', formError: PERMISSION_ERROR }
 
   return null
 }
@@ -67,7 +67,7 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
     if (permissionError) return permissionError
 
     const user = context.user
-    if (!user) return { status: 'error', formError: PERMISSION_ERROR }
+    if (!user) return { status: 'error', formError: SESSION_ERROR }
 
     try {
       const parsedForm = options.parse ? options.parse(formData) : parseForm(formData)

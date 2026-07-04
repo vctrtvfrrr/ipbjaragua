@@ -3,7 +3,7 @@
 import { Trash2 } from 'lucide-react'
 import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { deleteArticle } from '@/app/(admin)/admin/articles/form-actions'
+import { deleteArticleFormAction } from '@/app/(admin)/admin/articles/form-actions'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,7 +21,7 @@ import { FormError } from './FormFeedback'
 const INITIAL_STATE: ActionState = { status: 'idle' }
 
 export function DeleteArticleButton({ article }: { article: { id: number; title: string } }) {
-  const [state, formAction, isPending] = useActionState(deleteArticle, INITIAL_STATE)
+  const [state, formAction, isPending] = useActionState(deleteArticleFormAction, INITIAL_STATE)
 
   const formError = state.status === 'error' ? state.formError : undefined
 

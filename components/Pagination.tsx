@@ -15,7 +15,7 @@ export default function Pagination({ page, totalPages, basePath }: Props) {
           ← Anterior
         </Button>
       ) : null}
-      <span className="text-gray-500">
+      <span className="text-muted-foreground">
         Página {page} de {totalPages}
       </span>
       {page < totalPages ? (

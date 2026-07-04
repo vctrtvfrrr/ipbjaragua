@@ -49,7 +49,7 @@ describe('requirePermission', () => {
   it('returns an error state for absent users or missing permissions', () => {
     expect(requirePermission(null, 'articles', 'create')).toEqual({
       status: 'error',
-      formError: 'Você não tem permissão para executar esta ação.',
+      formError: 'Sua sessão expirou. Faça login novamente.',
     })
 
     expect(requirePermission(userWithPermission(false), 'articles', 'create')).toEqual({
@@ -88,7 +88,7 @@ describe('defineEntityAction', () => {
 
     expect(state).toEqual({
       status: 'error',
-      formError: 'Você não tem permissão para executar esta ação.',
+      formError: 'Sua sessão expirou. Faça login novamente.',
     })
     expect(parse).not.toHaveBeenCalled()
     expect(write).not.toHaveBeenCalled()
