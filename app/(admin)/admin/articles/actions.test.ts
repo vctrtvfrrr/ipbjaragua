@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { articles } from '@/db/schema'
 import type { CurrentUser } from '@/lib/auth/current-user'
 import { createTestDb, type TestDb } from '@/tests/db'
-import { seedArticles } from '@/tests/seed'
+import { seedArticles, seedUsers } from '@/tests/seed'
 import { createArticleAction, deleteArticleAction, updateArticleAction } from './actions'
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
+
+let authorId: number
 
 function formData(entries: [string, string][]) {
   const data = new FormData()
@@ -22,13 +24,18 @@ function articleForm(overrides: Partial<Record<string, string>> = {}) {
     Object.entries({
       title: 'Graça Soberana',
       slug: 'graca-soberana',
-      author: '',
+      author_id: String(authorId),
       date: '2026-01-02',
       excerpt: '',
       content: 'Conteúdo',
       ...overrides,
     })
   )
+}
+
+async function seedActiveAuthor(db: TestDb): Promise<number> {
+  const [id] = await seedUsers(db, [{ email: 'ana@example.com', name: 'Ana', status: 'active' }])
+  return id
 }
 
 function userWithPermission(canReturn: boolean): CurrentUser {
@@ -45,6 +52,7 @@ describe('createArticleAction.execute', () => {
 
   beforeEach(async () => {
     db = await createTestDb()
+    authorId = await seedActiveAuthor(db)
     vi.mocked(revalidatePath).mockClear()
   })
 
@@ -67,7 +75,14 @@ describe('createArticleAction.execute', () => {
     expect(state).toEqual({
       status: 'error',
       fieldErrors: { title: ['Título é obrigatório'] },
-      values: { title: '', slug: 'graca-soberana', author: '', date: '2026-01-02', excerpt: '', content: 'Conteúdo' },
+      values: {
+        title: '',
+        slug: 'graca-soberana',
+        author_id: String(authorId),
+        date: '2026-01-02',
+        excerpt: '',
+        content: 'Conteúdo',
+      },
     })
     expect(await db.select().from(articles).where(isNull(articles.deleted_at))).toEqual([])
   })
@@ -84,7 +99,7 @@ describe('createArticleAction.execute', () => {
       values: {
         title: 'Graça Soberana',
         slug: '---',
-        author: '',
+        author_id: String(authorId),
         date: '2026-01-02',
         excerpt: '',
         content: 'Conteúdo',
@@ -101,7 +116,7 @@ describe('createArticleAction.execute', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
       title: 'Graça Soberana',
-      author: null,
+      author_id: authorId,
       excerpt: null,
       content: 'Conteúdo',
     })
@@ -116,6 +131,7 @@ describe('updateArticleAction.execute', () => {
 
   beforeEach(async () => {
     db = await createTestDb()
+    authorId = await seedActiveAuthor(db)
     vi.mocked(revalidatePath).mockClear()
   })
 
@@ -153,7 +169,7 @@ describe('updateArticleAction.execute', () => {
         oldSlug: 'original',
         title: '',
         slug: 'graca-soberana',
-        author: '',
+        author_id: String(authorId),
         date: '2026-01-02',
         excerpt: '',
         content: 'Conteúdo',

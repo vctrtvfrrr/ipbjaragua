@@ -15,11 +15,7 @@ const requiredSlug = z.string().min(1, 'Slug é obrigatório')
 const articleFieldsSchema = z.object({
   title: z.string().trim().min(1, 'Título é obrigatório'),
   slug: z.string().trim().transform(slugify).pipe(requiredSlug),
-  author: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => value || null),
+  author_id: z.coerce.number().int().positive('Autor é obrigatório'),
   date: z.coerce.date(),
   excerpt: z
     .string()
@@ -58,7 +54,7 @@ export const updateArticleAction = defineEntityAction({
       {
         title: data.title,
         slug: data.slug,
-        author: data.author,
+        author_id: data.author_id,
         date: data.date,
         excerpt: data.excerpt,
         content: data.content,

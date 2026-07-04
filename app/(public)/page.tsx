@@ -5,6 +5,7 @@ import { countArticles, getLatestArticle, listArticles } from '@/db/queries/arti
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
 import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
 import { getNextLiturgy } from '@/db/queries/liturgies'
+import { publicAuthorName } from '@/lib/article'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
 import { currentTimeHHMM, currentWeekWindow, formatISODate, formatLongDatePtBR, today } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
@@ -50,9 +51,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     <div className="relative z-20 p-5 text-center">
                       <span className="inline-block text-xs tracking-wide text-white uppercase">Artigo</span>
                       <h2 className="my-5 font-serif text-xl font-semibold text-white">{latest.title}</h2>
-                      {latest.author ? (
-                        <span className="inline-block font-sans text-xs text-white">{latest.author}</span>
-                      ) : null}
+                      <span className="inline-block font-sans text-xs text-white">{publicAuthorName(latest)}</span>
                     </div>
                   </div>
                 </Link>

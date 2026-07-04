@@ -1,13 +1,42 @@
-import { agenda, announcements, articles, bulletins, liturgies, members } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { agenda, announcements, articles, bulletins, liturgies, members, users } from '@/db/schema'
 import { parseISODate } from '@/lib/date'
 import type { TestDb } from './db'
 
 const toDate = (value: string | null | undefined): Date | null => (value ? parseISODate(value) : null)
 
+export type SeedUser = {
+  email: string
+  name?: string | null
+  status?: 'pending' | 'active' | 'disabled'
+}
+
+export async function seedUsers(db: TestDb, rows: SeedUser[]): Promise<number[]> {
+  const ids: number[] = []
+  for (const row of rows) {
+    const [inserted] = await db
+      .insert(users)
+      .values({ email: row.email, name: row.name ?? null, status: row.status ?? 'active' })
+      .returning({ id: users.id })
+    ids.push(inserted.id)
+  }
+  return ids
+}
+
+const DEFAULT_AUTHOR_EMAIL = 'autor.seed@example.com'
+
+async function ensureDefaultAuthorId(db: TestDb): Promise<number> {
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, DEFAULT_AUTHOR_EMAIL)).limit(1)
+  if (existing) return existing.id
+
+  const [id] = await seedUsers(db, [{ email: DEFAULT_AUTHOR_EMAIL, name: 'Autor Seed', status: 'active' }])
+  return id
+}
+
 export type SeedArticle = {
   slug: string
   title: string
-  author?: string | null
+  author_id?: number
   date: string
   excerpt?: string | null
   content?: string
@@ -16,12 +45,13 @@ export type SeedArticle = {
 export async function seedArticles(db: TestDb, rows: SeedArticle[]): Promise<number[]> {
   const ids: number[] = []
   for (const row of rows) {
+    const author_id = row.author_id ?? (await ensureDefaultAuthorId(db))
     const [inserted] = await db
       .insert(articles)
       .values({
         slug: row.slug,
         title: row.title,
-        author: row.author ?? null,
+        author_id,
         date: parseISODate(row.date),
         excerpt: row.excerpt ?? null,
         content: row.content ?? '',

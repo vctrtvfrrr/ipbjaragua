@@ -1,6 +1,7 @@
 import { and, count, desc, eq, isNull, lte } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { articles, bulletins } from '@/db/schema'
+import { articles, bulletins, users } from '@/db/schema'
+import type { ArticleWithAuthor } from './articles'
 
 export type Bulletin = typeof bulletins.$inferSelect
 
@@ -27,7 +28,7 @@ export async function countBulletins({ today }: { today: Date }, db: Database = 
 
 export type BulletinWithRefs = {
   bulletin: Bulletin
-  article: typeof articles.$inferSelect | null
+  article: ArticleWithAuthor | null
 }
 
 export async function getLatestDominicalBulletin(today: Date, db: Database = defaultDb): Promise<Bulletin | undefined> {
@@ -63,9 +64,11 @@ export async function getBulletinByDate(
     .select({
       bulletin: bulletins,
       article: articles,
+      authorName: users.name,
     })
     .from(bulletins)
     .leftJoin(articles, eq(bulletins.article_id, articles.id))
+    .leftJoin(users, eq(articles.author_id, users.id))
     .where(and(eq(bulletins.date, date), isNull(bulletins.deleted_at)))
     .limit(1)
 
@@ -73,6 +76,6 @@ export async function getBulletinByDate(
 
   return {
     bulletin: row.bulletin,
-    article: row.article,
+    article: row.article ? { ...row.article, authorName: row.authorName } : null,
   }
 }

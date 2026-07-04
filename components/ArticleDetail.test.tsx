@@ -1,13 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { Article } from '@/db/queries/articles'
+import type { ArticleWithAuthor } from '@/db/queries/articles'
 import ArticleDetail from './ArticleDetail'
 
-const baseArticle: Article = {
+const baseArticle: ArticleWithAuthor = {
   id: 1,
   slug: 'graca-soberana',
   title: 'Graça Soberana',
-  author: 'Rev. Jean Carlos Almeida',
+  author_id: 1,
+  authorName: 'Rev. Jean Carlos Almeida',
   date: new Date('2026-06-07T00:00:00Z'),
   excerpt: null,
   content: 'Olá **mundo**',
@@ -29,11 +30,10 @@ describe('ArticleDetail', () => {
     expect(screen.getByText('Rev. Jean Carlos Almeida — 07 de junho de 2026')).toBeInTheDocument()
   })
 
-  it('omits the author from the byline when there is none', () => {
-    render(<ArticleDetail article={{ ...baseArticle, author: null }} />)
+  it('falls back to "Redação" when the author has no name', () => {
+    render(<ArticleDetail article={{ ...baseArticle, authorName: null }} />)
 
-    expect(screen.getByText('07 de junho de 2026')).toBeInTheDocument()
-    expect(screen.queryByText(/—/)).not.toBeInTheDocument()
+    expect(screen.getByText('Redação — 07 de junho de 2026')).toBeInTheDocument()
   })
 
   it('renders the markdown content', () => {

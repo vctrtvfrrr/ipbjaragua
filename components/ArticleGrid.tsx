@@ -1,11 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import Pagination from '@/components/Pagination'
-import type { Article } from '@/db/queries/articles'
+import type { ArticleWithAuthor } from '@/db/queries/articles'
+import { publicAuthorName } from '@/lib/article'
 import { formatLongDatePtBR } from '@/lib/date'
 
 type Props = {
-  articles: Article[]
+  articles: ArticleWithAuthor[]
   page: number
   totalPages: number
   basePath: string
@@ -21,7 +22,7 @@ export default function ArticleGrid({ articles, page, totalPages, basePath }: Pr
       <div className="grid grid-cols-1 gap-x-6 gap-y-10 lg:grid-cols-2 xl:grid-cols-3">
         {articles.map((article) => {
           const date = formatLongDatePtBR(article.date)
-          const byline = article.author ? `${article.author} — ${date}` : date
+          const byline = `${publicAuthorName(article)} — ${date}`
 
           return (
             <div key={article.slug}>

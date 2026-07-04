@@ -1,8 +1,9 @@
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, type TestDb } from '@/tests/db'
-import { seedArticles } from '@/tests/seed'
+import { seedArticles, seedUsers } from '@/tests/seed'
 import {
+  ArticleAuthorNotEligibleError,
   ArticleNotFoundError,
   ArticleSlugCollisionError,
   countArticles,
@@ -17,9 +18,11 @@ import {
 
 describe('createArticle', () => {
   let db: TestDb
+  let authorId: number
 
   beforeEach(async () => {
     db = await createTestDb()
+    ;[authorId] = await seedUsers(db, [{ email: 'joao@example.com', name: 'João', status: 'active' }])
   })
 
   it('inserts an article and returns the created row', async () => {
@@ -27,7 +30,7 @@ describe('createArticle', () => {
       {
         title: 'Graça Soberana',
         slug: 'graca-soberana',
-        author: 'João',
+        author_id: authorId,
         date: new Date('2026-01-01T00:00:00.000Z'),
         excerpt: 'Resumo',
         content: 'Conteúdo',
@@ -39,11 +42,31 @@ describe('createArticle', () => {
       id: 1,
       title: 'Graça Soberana',
       slug: 'graca-soberana',
-      author: 'João',
+      author_id: authorId,
       excerpt: 'Resumo',
       content: 'Conteúdo',
       deleted_at: null,
     })
+  })
+
+  it('rejects an author who is not an active user', async () => {
+    const [disabledId] = await seedUsers(db, [{ email: 'off@example.com', name: 'Off', status: 'disabled' }])
+
+    await expect(
+      createArticle(
+        {
+          title: 'Graça Soberana',
+          slug: 'graca-soberana',
+          author_id: disabledId,
+          date: new Date('2026-01-01T00:00:00.000Z'),
+          excerpt: null,
+          content: 'Conteúdo',
+        },
+        db
+      )
+    ).rejects.toBeInstanceOf(ArticleAuthorNotEligibleError)
+
+    expect(await countArticles(db)).toBe(0)
   })
 
   it('resolves slug collision against an active article', async () => {
@@ -53,7 +76,7 @@ describe('createArticle', () => {
       {
         title: 'Graça Soberana',
         slug: 'graca-soberana',
-        author: null,
+        author_id: authorId,
         date: new Date('2026-01-02T00:00:00.000Z'),
         excerpt: null,
         content: 'Conteúdo',
@@ -72,7 +95,7 @@ describe('createArticle', () => {
       {
         title: 'Removido',
         slug: 'removido',
-        author: null,
+        author_id: authorId,
         date: new Date('2026-01-02T00:00:00.000Z'),
         excerpt: null,
         content: 'Conteúdo',
@@ -98,7 +121,7 @@ describe('createArticle', () => {
         {
           title: 'Lotado',
           slug: 'lotado',
-          author: null,
+          author_id: authorId,
           date: new Date('2026-01-02T00:00:00.000Z'),
           excerpt: null,
           content: 'Conteúdo',
@@ -117,13 +140,14 @@ describe('updateArticle', () => {
   })
 
   it('updates an active article by id and returns the updated row', async () => {
+    const [maria] = await seedUsers(db, [{ email: 'maria@example.com', name: 'Maria', status: 'active' }])
     const [id] = await seedArticles(db, [{ slug: 'original', title: 'Original', date: '2026-01-01' }])
 
     const article = await updateArticle(
       id,
       {
         title: 'Atualizado',
-        author: 'Maria',
+        author_id: maria,
         date: new Date('2026-01-02T00:00:00.000Z'),
         excerpt: 'Novo resumo',
         content: 'Novo conteúdo',
@@ -135,10 +159,28 @@ describe('updateArticle', () => {
       id,
       slug: 'original',
       title: 'Atualizado',
-      author: 'Maria',
+      author_id: maria,
       excerpt: 'Novo resumo',
       content: 'Novo conteúdo',
     })
+  })
+
+  it('rejects reassigning to a non-active author', async () => {
+    const [disabled] = await seedUsers(db, [{ email: 'off@example.com', name: 'Off', status: 'disabled' }])
+    const [id] = await seedArticles(db, [{ slug: 'original', title: 'Original', date: '2026-01-01' }])
+
+    await expect(updateArticle(id, { author_id: disabled }, db)).rejects.toBeInstanceOf(ArticleAuthorNotEligibleError)
+  })
+
+  it('keeps a now-disabled current author on an unrelated update', async () => {
+    const [disabled] = await seedUsers(db, [{ email: 'off@example.com', name: 'Off', status: 'disabled' }])
+    const [id] = await seedArticles(db, [
+      { slug: 'original', title: 'Original', date: '2026-01-01', author_id: disabled },
+    ])
+
+    const article = await updateArticle(id, { title: 'Atualizado', author_id: disabled }, db)
+
+    expect(article).toMatchObject({ id, title: 'Atualizado', author_id: disabled })
   })
 
   it('keeps the current slug when slug is undefined', async () => {
@@ -232,12 +274,16 @@ describe('getArticleBySlug', () => {
     db = await createTestDb()
   })
 
-  it('returns the article matching the slug', async () => {
-    await seedArticles(db, [{ slug: 'graca-soberana', title: 'Graça Soberana', date: '2026-01-01' }])
+  it('returns the article matching the slug with the joined author name', async () => {
+    const [authorId] = await seedUsers(db, [{ email: 'ana@example.com', name: 'Ana', status: 'active' }])
+    await seedArticles(db, [
+      { slug: 'graca-soberana', title: 'Graça Soberana', date: '2026-01-01', author_id: authorId },
+    ])
 
     const article = await getArticleBySlug('graca-soberana', db)
 
     expect(article?.title).toBe('Graça Soberana')
+    expect(article?.authorName).toBe('Ana')
   })
 
   it('returns undefined when no article matches the slug', async () => {

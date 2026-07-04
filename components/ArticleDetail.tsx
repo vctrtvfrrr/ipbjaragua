@@ -1,10 +1,11 @@
-import type { Article } from '@/db/queries/articles'
+import type { ArticleWithAuthor } from '@/db/queries/articles'
+import { publicAuthorName } from '@/lib/article'
 import { formatLongDatePtBR } from '@/lib/date'
 import Markdown from './Markdown'
 
-export default function ArticleDetail({ article }: { article: Article }) {
+export default function ArticleDetail({ article }: { article: ArticleWithAuthor }) {
   const date = formatLongDatePtBR(article.date)
-  const byline = article.author ? `${article.author} — ${date}` : date
+  const byline = `${publicAuthorName(article)} — ${date}`
 
   return (
     <>

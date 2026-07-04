@@ -1,14 +1,15 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { Article } from '@/db/queries/articles'
+import type { ArticleWithAuthor } from '@/db/queries/articles'
 import ArticleGrid from './ArticleGrid'
 
-function makeArticle(overrides: Partial<Article> = {}): Article {
+function makeArticle(overrides: Partial<ArticleWithAuthor> = {}): ArticleWithAuthor {
   return {
     id: 1,
     slug: 'graca-soberana',
     title: 'Graça Soberana',
-    author: 'Rev. Jean Carlos Almeida',
+    author_id: 1,
+    authorName: 'Rev. Jean Carlos Almeida',
     date: new Date('2026-06-07T00:00:00Z'),
     excerpt: 'Resumo do artigo.',
     content: 'corpo',

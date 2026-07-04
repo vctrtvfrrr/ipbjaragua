@@ -1,9 +1,13 @@
-import { and, count, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
+import { and, count, desc, eq, getTableColumns, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { articles } from '@/db/schema'
+import { articles, users } from '@/db/schema'
 import { buildSlugCandidates, writeWithAllocatedSlug } from './slug'
 
 export type Article = typeof articles.$inferSelect
+export type ArticleWithAuthor = Article & { authorName: string | null }
+export type ArticleWithAuthorContact = ArticleWithAuthor & { authorEmail: string }
+
+export type AuthorOption = { id: number; name: string | null; email: string }
 
 export class ArticleNotFoundError extends Error {
   constructor(id: number) {
@@ -19,10 +23,17 @@ export class ArticleSlugCollisionError extends Error {
   }
 }
 
+export class ArticleAuthorNotEligibleError extends Error {
+  constructor(authorId: number) {
+    super(`User ${authorId} is not eligible to author articles`)
+    this.name = 'ArticleAuthorNotEligibleError'
+  }
+}
+
 export type CreateArticleInput = {
   title: string
   slug: string
-  author: string | null
+  author_id: number
   date: Date
   excerpt: string | null
   content: string
@@ -31,7 +42,7 @@ export type CreateArticleInput = {
 export type UpdateArticleInput = {
   title?: string
   slug?: string
-  author?: string | null
+  author_id?: number
   date?: Date
   excerpt?: string | null
   content?: string
@@ -40,6 +51,7 @@ export type UpdateArticleInput = {
 type ArticleWriteValues = Partial<Omit<CreateArticleInput, 'slug'>>
 
 export async function createArticle(input: CreateArticleInput, db: Database = defaultDb): Promise<Article> {
+  await assertEligibleAuthor(input.author_id, db)
   const occupiedSlugs = await listOccupiedArticleSlugs(input.slug, db)
 
   return writeWithAllocatedSlug({
@@ -58,6 +70,11 @@ export async function createArticle(input: CreateArticleInput, db: Database = de
 
 export async function updateArticle(id: number, input: UpdateArticleInput, db: Database = defaultDb): Promise<Article> {
   const current = await getActiveArticleById(id, db)
+
+  if (input.author_id !== undefined && input.author_id !== current.author_id) {
+    await assertEligibleAuthor(input.author_id, db)
+  }
+
   const values = buildArticleUpdateValues(input)
 
   if (input.slug === undefined || input.slug === current.slug) {
@@ -95,10 +112,8 @@ export async function getArticleById(id: number, db: Database = defaultDb): Prom
   return rows[0]
 }
 
-export async function getArticleBySlug(slug: string, db: Database = defaultDb): Promise<Article | undefined> {
-  const rows = await db
-    .select()
-    .from(articles)
+export async function getArticleBySlug(slug: string, db: Database = defaultDb): Promise<ArticleWithAuthor | undefined> {
+  const rows = await selectArticlesWithAuthor(db)
     .where(and(eq(articles.slug, slug), isNull(articles.deleted_at)))
     .limit(1)
   return rows[0]
@@ -107,20 +122,30 @@ export async function getArticleBySlug(slug: string, db: Database = defaultDb): 
 export async function listArticles(
   { page, pageSize }: { page: number; pageSize: number },
   db: Database = defaultDb
-): Promise<Article[]> {
-  return db
-    .select()
-    .from(articles)
+): Promise<ArticleWithAuthor[]> {
+  return selectArticlesWithAuthor(db)
     .where(isNull(articles.deleted_at))
     .orderBy(desc(articles.date), desc(articles.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
 }
 
-export async function getLatestArticle(db: Database = defaultDb): Promise<Article | undefined> {
-  const rows = await db
-    .select()
+export async function listArticlesForAdmin(
+  { page, pageSize }: { page: number; pageSize: number },
+  db: Database = defaultDb
+): Promise<ArticleWithAuthorContact[]> {
+  return db
+    .select({ ...getTableColumns(articles), authorName: users.name, authorEmail: users.email })
     .from(articles)
+    .innerJoin(users, eq(articles.author_id, users.id))
+    .where(isNull(articles.deleted_at))
+    .orderBy(desc(articles.date), desc(articles.id))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize)
+}
+
+export async function getLatestArticle(db: Database = defaultDb): Promise<ArticleWithAuthor | undefined> {
+  const rows = await selectArticlesWithAuthor(db)
     .where(isNull(articles.deleted_at))
     .orderBy(desc(articles.date), desc(articles.id))
     .limit(1)
@@ -130,6 +155,31 @@ export async function getLatestArticle(db: Database = defaultDb): Promise<Articl
 export async function countArticles(db: Database = defaultDb): Promise<number> {
   const [row] = await db.select({ value: count() }).from(articles).where(isNull(articles.deleted_at))
   return row?.value ?? 0
+}
+
+export async function listAuthorOptions(currentAuthorId?: number, db: Database = defaultDb): Promise<AuthorOption[]> {
+  const eligible =
+    currentAuthorId === undefined
+      ? eq(users.status, 'active')
+      : or(eq(users.status, 'active'), eq(users.id, currentAuthorId))
+
+  return db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(eligible)
+    .orderBy(users.name)
+}
+
+function selectArticlesWithAuthor(db: Database) {
+  return db
+    .select({ ...getTableColumns(articles), authorName: users.name })
+    .from(articles)
+    .innerJoin(users, eq(articles.author_id, users.id))
+}
+
+async function assertEligibleAuthor(authorId: number, db: Database): Promise<void> {
+  const [author] = await db.select({ status: users.status }).from(users).where(eq(users.id, authorId)).limit(1)
+  if (!author || author.status !== 'active') throw new ArticleAuthorNotEligibleError(authorId)
 }
 
 async function getActiveArticleById(id: number, db: Database): Promise<Article> {
@@ -175,7 +225,7 @@ function buildArticleUpdateValues(input: UpdateArticleInput): ArticleWriteValues
   const values: ArticleWriteValues = {}
 
   if (input.title !== undefined) values.title = input.title
-  if (input.author !== undefined) values.author = input.author
+  if (input.author_id !== undefined) values.author_id = input.author_id
   if (input.date !== undefined) values.date = input.date
   if (input.excerpt !== undefined) values.excerpt = input.excerpt
   if (input.content !== undefined) values.content = input.content

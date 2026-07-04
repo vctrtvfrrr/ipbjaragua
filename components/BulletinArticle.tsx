@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import type { Article } from '@/db/queries/articles'
+import type { ArticleWithAuthor } from '@/db/queries/articles'
+import { publicAuthorName } from '@/lib/article'
 import Markdown from './Markdown'
 
-export default function BulletinArticle({ article }: { article: Article }) {
+export default function BulletinArticle({ article }: { article: ArticleWithAuthor }) {
   const [expanded, setExpanded] = useState(false)
 
   return (
     <section className="mb-10">
       <h2 className="font-narrow mb-2 text-2xl text-green-900">{article.title}</h2>
-      {article.author ? <p className="mb-3 text-sm text-gray-500">{article.author}</p> : null}
+      <p className="mb-3 text-sm text-gray-500">{publicAuthorName(article)}</p>
 
       <div className="relative">
         <div

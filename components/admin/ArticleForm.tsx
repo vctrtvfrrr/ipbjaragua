@@ -10,16 +10,19 @@ import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { Article } from '@/db/queries/articles'
+import type { Article, AuthorOption } from '@/db/queries/articles'
 import { formatISODate, todayISO } from '@/lib/date'
 import type { ActionState } from '@/lib/entity-action'
+import { AuthorField } from './AuthorField'
 import { MarkdownField } from './MarkdownField'
 import { FieldError, FormError } from './FormFeedback'
 import { SlugField } from './SlugField'
 
 const INITIAL_STATE: ActionState = { status: 'idle' }
 
-type Props = { mode: 'create' } | { mode: 'edit'; article: Article }
+type Props = { users: AuthorOption[]; currentUserId: number } & (
+  { mode: 'create' } | { mode: 'edit'; article: Article }
+)
 
 export function ArticleForm(props: Props) {
   const article = props.mode === 'edit' ? props.article : undefined
@@ -64,11 +67,11 @@ export function ArticleForm(props: Props) {
       <div className="grid gap-4 sm:grid-cols-3">
         <SlugField title={title} defaultValue={article?.slug} errors={fieldErrors?.slug} />
 
-        <FormField>
-          <Label htmlFor="author">Autor</Label>
-          <Input id="author" name="author" defaultValue={values?.author ?? article?.author ?? ''} />
-          <FieldError messages={fieldErrors?.author} />
-        </FormField>
+        <AuthorField
+          users={props.users}
+          defaultUserId={article?.author_id ?? props.currentUserId}
+          errors={fieldErrors?.author_id}
+        />
 
         <FormField>
           <Label htmlFor="date">Data</Label>

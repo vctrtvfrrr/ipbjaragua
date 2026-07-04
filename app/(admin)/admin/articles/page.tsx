@@ -4,7 +4,7 @@ import { DeleteArticleButton } from '@/components/admin/DeleteArticleButton'
 import Pagination from '@/components/Pagination'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { countArticles, listArticles } from '@/db/queries/articles'
+import { countArticles, listArticlesForAdmin } from '@/db/queries/articles'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 import { formatLongDatePtBR } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
@@ -18,7 +18,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<'/ad
   const total = await countArticles()
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
-  const articles = await listArticles({ page, pageSize: PAGE_SIZE })
+  const articles = await listArticlesForAdmin({ page, pageSize: PAGE_SIZE })
 
   const canCreate = user.can('articles', 'create')
   const canUpdate = user.can('articles', 'update')
@@ -60,7 +60,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<'/ad
               {articles.map((article) => (
                 <TableRow key={article.id}>
                   <TableCell className="font-medium whitespace-normal">{article.title}</TableCell>
-                  <TableCell>{article.author ?? '—'}</TableCell>
+                  <TableCell>{article.authorName ?? article.authorEmail}</TableCell>
                   <TableCell>{formatLongDatePtBR(article.date)}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">

@@ -27,7 +27,7 @@ A "idade" de um **Boletim** em anos completos desde a data do primeiro boletim (
 _Avoid_: Volume, temporada.
 
 **Artigo** (`articles`):
-Texto autoral publicado no site, com título, autor, data e conteúdo. Pode ser referenciado por um **Boletim**, mas existe de forma independente.
+Texto autoral publicado no site, com título, autor, data e conteúdo. O **autor** (`author_id`) é uma referência viva a um **Usuário** — não texto livre nem um **Membro** (ver ADR-0013): exibido pelo `name` atual do Usuário, com fallback "Redação" no site público (nunca o e-mail). Pode ser referenciado por um **Boletim**, mas existe de forma independente.
 _Avoid_: Post, notícia, meditação.
 
 ### Culto
@@ -85,7 +85,7 @@ _Avoid_: Anúncio (termo anterior), notificação, comunicado.
 ### Acesso ao painel
 
 **Usuário** (`users`):
-Pessoa autenticada que opera o painel administrativo, cadastrando e editando o conteúdo do site. Não tem relação com **Membro** — a membresia eclesiástica não concede acesso ao painel. Autentica-se via Google (OAuth), mas só consegue entrar se o seu e-mail estiver na lista de autorizados, formada por **Convite**. Cada Usuário carrega uma lista de **Permissões** que delimita o que pode fazer. O primeiro Usuário é cadastrado manualmente no banco.
+Pessoa autenticada que opera o painel administrativo, cadastrando e editando o conteúdo do site. Não tem relação com **Membro** — a membresia eclesiástica não concede acesso ao painel. Autentica-se via Google (OAuth), mas só consegue entrar se o seu e-mail estiver na lista de autorizados, formada por **Convite**. Cada Usuário carrega uma lista de **Permissões** que delimita o que pode fazer. Um Usuário **assina Artigos** (é o autor referenciado em `articles.author_id`); só Usuários `active` são ofertados como autor, e um Usuário com artigos não pode ser apagado (`ON DELETE RESTRICT`) — a revogação é sempre via _Desabilitado_. O primeiro Usuário é cadastrado manualmente no banco.
 _Avoid_: Membro, administrador (todo Usuário do painel é administrativo; a alçada se distingue por Permissão, não por um papel à parte), conta.
 
 **Convite**:

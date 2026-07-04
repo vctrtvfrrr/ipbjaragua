@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
-import { agenda, announcements, articles, bulletins, liturgies, members } from '../../db/schema'
+import { agenda, announcements, articles, bulletins, liturgies, members, users } from '../../db/schema'
 import { parseISODate } from '../../lib/date'
 
 export const E2E_DATABASE_URL =
@@ -79,14 +79,24 @@ export async function seedE2eDatabase() {
   await client.unsafe('DROP SCHEMA IF EXISTS drizzle CASCADE')
   await client.unsafe('CREATE SCHEMA public')
 
-  const db = drizzle(client, { schema: { articles, bulletins, liturgies, agenda, announcements, members } })
+  const db = drizzle(client, { schema: { articles, bulletins, liturgies, agenda, announcements, members, users } })
   await migrate(db, { migrationsFolder: './db/migrations' })
 
+  const authorIds = new Map<string, number>()
+  const authorNames = [...new Set(E2E_ARTICLES.map((article) => article.author))]
+  for (const [index, name] of authorNames.entries()) {
+    const [user] = await db
+      .insert(users)
+      .values({ email: `autor-${index + 1}@example.com`, name, status: 'active' })
+      .returning({ id: users.id })
+    authorIds.set(name, user.id)
+  }
+
   let featuredArticleId: number | undefined
-  for (const article of E2E_ARTICLES) {
+  for (const { author, ...article } of E2E_ARTICLES) {
     const [inserted] = await db
       .insert(articles)
-      .values({ ...article, date: parseISODate(article.date) })
+      .values({ ...article, author_id: authorIds.get(author)!, date: parseISODate(article.date) })
       .returning({ id: articles.id })
     if (article.slug === FEATURED.slug) {
       featuredArticleId = inserted.id
