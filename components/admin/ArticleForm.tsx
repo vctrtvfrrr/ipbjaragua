@@ -31,6 +31,7 @@ export function ArticleForm(props: Props) {
 
   const fieldErrors = state.status === 'error' ? state.fieldErrors : undefined
   const formError = state.status === 'error' ? state.formError : undefined
+  const values = state.status === 'error' ? state.values : undefined
 
   useEffect(() => {
     if (state.status !== 'success') return
@@ -54,33 +55,40 @@ export function ArticleForm(props: Props) {
         <Input
           id="title"
           name="title"
-          defaultValue={article?.title}
+          defaultValue={values?.title ?? article?.title}
           onChange={(event) => setTitle(event.target.value)}
         />
         <FieldError messages={fieldErrors?.title} />
       </FormField>
 
-      <SlugField mode={props.mode} title={title} defaultValue={article?.slug} errors={fieldErrors?.slug} />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <SlugField title={title} defaultValue={article?.slug} errors={fieldErrors?.slug} />
 
-      <FormField>
-        <Label htmlFor="author">Autor</Label>
-        <Input id="author" name="author" defaultValue={article?.author ?? ''} />
-        <FieldError messages={fieldErrors?.author} />
-      </FormField>
+        <FormField>
+          <Label htmlFor="author">Autor</Label>
+          <Input id="author" name="author" defaultValue={values?.author ?? article?.author ?? ''} />
+          <FieldError messages={fieldErrors?.author} />
+        </FormField>
 
-      <FormField>
-        <Label htmlFor="date">Data</Label>
-        <Input id="date" name="date" type="date" defaultValue={article ? formatISODate(article.date) : todayISO()} />
-        <FieldError messages={fieldErrors?.date} />
-      </FormField>
+        <FormField>
+          <Label htmlFor="date">Data</Label>
+          <Input
+            id="date"
+            name="date"
+            type="date"
+            defaultValue={values?.date ?? (article ? formatISODate(article.date) : todayISO())}
+          />
+          <FieldError messages={fieldErrors?.date} />
+        </FormField>
+      </div>
+
+      <MarkdownField defaultValue={article?.content} errors={fieldErrors?.content} />
 
       <FormField>
         <Label htmlFor="excerpt">Resumo</Label>
-        <Textarea id="excerpt" name="excerpt" defaultValue={article?.excerpt ?? ''} />
+        <Textarea id="excerpt" name="excerpt" defaultValue={values?.excerpt ?? article?.excerpt ?? ''} />
         <FieldError messages={fieldErrors?.excerpt} />
       </FormField>
-
-      <MarkdownField defaultValue={article?.content} errors={fieldErrors?.content} />
 
       <FormActions>
         <Button variant="outline" render={<Link href="/admin/articles" />}>

@@ -14,7 +14,7 @@ export default async function EditArticlePage({ params }: PageProps<'/admin/arti
   }
 
   return (
-    <section className="grid max-w-2xl gap-6">
+    <section className="grid gap-6">
       <h2 className="text-xl font-semibold tracking-normal">Editar artigo</h2>
       <ArticleForm mode="edit" article={article} />
     </section>

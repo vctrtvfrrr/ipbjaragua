@@ -131,6 +131,7 @@ describe('defineEntityAction', () => {
     expect(state).toEqual({
       status: 'error',
       fieldErrors: { title: ['Título é obrigatório'] },
+      values: { title: '' },
     })
     expect(write).not.toHaveBeenCalled()
   })

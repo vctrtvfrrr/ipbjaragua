@@ -26,7 +26,6 @@ export function MarkdownField({ defaultValue = '', errors }: Props) {
     <div className="group/field grid gap-2">
       <Label>Conteúdo</Label>
       <MdxEditor markdown={defaultValue} onChange={setContent} />
-      <p className="text-muted-foreground text-xs">Para imagens, cole uma URL começando com https://.</p>
       <input type="hidden" name="content" value={content} />
       <FieldError messages={errors} />
     </div>

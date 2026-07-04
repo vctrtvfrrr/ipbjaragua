@@ -67,6 +67,7 @@ describe('createArticleAction.execute', () => {
     expect(state).toEqual({
       status: 'error',
       fieldErrors: { title: ['Título é obrigatório'] },
+      values: { title: '', slug: 'graca-soberana', author: '', date: '2026-01-02', excerpt: '', content: 'Conteúdo' },
     })
     expect(await db.select().from(articles).where(isNull(articles.deleted_at))).toEqual([])
   })
@@ -80,6 +81,14 @@ describe('createArticleAction.execute', () => {
     expect(state).toEqual({
       status: 'error',
       fieldErrors: { slug: ['Slug é obrigatório'] },
+      values: {
+        title: 'Graça Soberana',
+        slug: '---',
+        author: '',
+        date: '2026-01-02',
+        excerpt: '',
+        content: 'Conteúdo',
+      },
     })
     expect(await db.select().from(articles).where(isNull(articles.deleted_at))).toEqual([])
   })
@@ -139,6 +148,16 @@ describe('updateArticleAction.execute', () => {
     expect(state).toEqual({
       status: 'error',
       fieldErrors: { title: ['Título é obrigatório'] },
+      values: {
+        id: String(id),
+        oldSlug: 'original',
+        title: '',
+        slug: 'graca-soberana',
+        author: '',
+        date: '2026-01-02',
+        excerpt: '',
+        content: 'Conteúdo',
+      },
     })
     const rows = await db.select().from(articles).where(eq(articles.id, id))
     expect(rows[0]?.title).toBe('Original')

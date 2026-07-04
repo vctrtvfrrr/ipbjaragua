@@ -46,8 +46,12 @@ export default async function AdminLayout({
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-muted-foreground text-sm">Painel administrativo</p>
-              <h1 className="text-lg font-semibold tracking-normal">IPB de Jaraguá do Sul</h1>
+              <Link href="/admin" className="text-muted-foreground text-sm">
+                Painel administrativo
+              </Link>
+              <h1 className="text-lg font-semibold tracking-normal">
+                <Link href="/">IPB de Jaraguá do Sul</Link>
+              </h1>
             </div>
             <form action={logout}>
               <Button type="submit" variant="outline" size="sm">

@@ -7,18 +7,16 @@ import { slugify } from '@/lib/slug'
 import { FieldError } from './FormFeedback'
 
 type Props = {
-  mode: 'create' | 'edit'
   title: string
   defaultValue?: string
   errors?: string[]
 }
 
-export function SlugField({ mode, title, defaultValue = '', errors }: Props) {
+export function SlugField({ title, defaultValue = '', errors }: Props) {
   const [slug, setSlug] = useState(defaultValue)
   const [dirty, setDirty] = useState(defaultValue !== '')
 
-  const autoFill = mode === 'create' && !dirty
-  const value = autoFill ? slugify(title) : slug
+  const value = dirty ? slug : slugify(title)
 
   function handleChange(next: string) {
     setSlug(next)

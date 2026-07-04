@@ -9,7 +9,7 @@ const GENERIC_ERROR = 'Não foi possível concluir a ação.'
 
 export type ActionState =
   | { status: 'idle' }
-  | { status: 'error'; fieldErrors?: Record<string, string[]>; formError?: string }
+  | { status: 'error'; fieldErrors?: Record<string, string[]>; formError?: string; values?: Record<string, string> }
   | { status: 'success' }
 
 export type EntityActionContext = {
@@ -74,7 +74,12 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
       const parsedData = options.schema.safeParse(parsedForm)
 
       if (!parsedData.success) {
-        return { status: 'error', fieldErrors: fieldErrorsFrom(parsedData.error.flatten().fieldErrors) }
+        const fieldErrors = fieldErrorsFrom(parsedData.error.flatten().fieldErrors)
+        // React 19 resets uncontrolled form fields after the action, so echo the
+        // submitted values back for the form to restore them on validation failure.
+        return options.parse
+          ? { status: 'error', fieldErrors }
+          : { status: 'error', fieldErrors, values: parsedForm as Record<string, string> }
       }
 
       const writeContext: WriteContext<Schema> = { user, db: context.db, data: parsedData.data }
