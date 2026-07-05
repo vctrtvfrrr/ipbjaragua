@@ -14,5 +14,5 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { entity: 'songs', label: 'Músicas' },
   { entity: 'members', label: 'Membros' },
   { entity: 'agenda', label: 'Agenda' },
-  { entity: 'users', label: 'Usuários' },
+  { entity: 'users', label: 'Usuários', href: '/admin/users' },
 ]

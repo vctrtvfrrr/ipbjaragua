@@ -32,6 +32,7 @@ type EntityActionOptions<Schema extends z.ZodType, WriteResult> = {
   parse?: (formData: FormData) => unknown
   write: (context: WriteContext<Schema>) => WriteResult | Promise<WriteResult>
   revalidate?: (result: Awaited<WriteResult>, context: WriteContext<Schema>) => void | Promise<void>
+  errorMessage?: (error: unknown) => string | undefined
 }
 
 export function parseForm(formData: FormData): Record<string, string> {
@@ -87,8 +88,8 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
       await options.revalidate?.(result as Awaited<WriteResult>, writeContext)
 
       return { status: 'success' }
-    } catch {
-      return { status: 'error', formError: GENERIC_ERROR }
+    } catch (error) {
+      return { status: 'error', formError: options.errorMessage?.(error) ?? GENERIC_ERROR }
     }
   }
 

@@ -85,7 +85,7 @@ _Avoid_: Anúncio (termo anterior), notificação, comunicado.
 ### Acesso ao painel
 
 **Usuário** (`users`):
-Pessoa autenticada que opera o painel administrativo, cadastrando e editando o conteúdo do site. Não tem relação com **Membro** — a membresia eclesiástica não concede acesso ao painel. Autentica-se via Google (OAuth), mas só consegue entrar se o seu e-mail estiver na lista de autorizados, formada por **Convite**. Cada Usuário carrega uma lista de **Permissões** que delimita o que pode fazer. Um Usuário **assina Artigos** (é o autor referenciado em `articles.author_id`); só Usuários `active` são ofertados como autor, e um Usuário com artigos não pode ser apagado (`ON DELETE RESTRICT`) — a revogação é sempre via _Desabilitado_. O primeiro Usuário é cadastrado manualmente no banco.
+Pessoa autenticada que opera o painel administrativo, cadastrando e editando o conteúdo do site. Não tem relação com **Membro** — a membresia eclesiástica não concede acesso ao painel. Autentica-se via Google (OAuth), mas só consegue entrar se o seu e-mail estiver na lista de autorizados, formada por **Convite**. Cada Usuário carrega uma lista de **Permissões** que delimita o que pode fazer. O nome de exibição (`name`) é opcional no **Convite** e, quando vazio, é preenchido a partir do Google no primeiro login (sem nunca sobrescrever um nome já definido). Um Usuário **assina Artigos** (é o autor referenciado em `articles.author_id`); só Usuários `active` são ofertados como autor, e um Usuário com artigos não pode ser apagado (`ON DELETE RESTRICT`) — a revogação é sempre via _Desabilitado_. O primeiro Usuário é cadastrado manualmente no banco.
 _Avoid_: Membro, administrador (todo Usuário do painel é administrativo; a alçada se distingue por Permissão, não por um papel à parte), conta.
 
 **Convite**:
@@ -93,7 +93,7 @@ A autorização de acesso de um novo **Usuário**: um Usuário com permissão en
 _Avoid_: Cadastro (não há auto-cadastro; o acesso nasce de um Convite), registro.
 
 **Convidado / Ativo / Desabilitado** (`users.status`):
-Os três estados de um **Usuário**. _Convidado_ (`pending`): tem Convite mas nunca logou. _Ativo_ (`active`): logou ao menos uma vez e tem acesso. _Desabilitado_ (`disabled`): acesso revogado sem apagar o registro. A transição Convidado→Ativo acontece no primeiro login com e-mail correspondente; a revogação leva a Desabilitado e o login **não** ressuscita um Usuário Desabilitado (o e-mail segue na allowlist, mas barrado). Apagar o registro é a revogação definitiva.
+Os três estados de um **Usuário**. _Convidado_ (`pending`): tem Convite mas nunca logou. _Ativo_ (`active`): logou ao menos uma vez e tem acesso. _Desabilitado_ (`disabled`): acesso revogado sem apagar o registro. A transição Convidado→Ativo acontece no primeiro login com e-mail correspondente; a revogação leva a Desabilitado. O **login não ressuscita** um Desabilitado (o e-mail segue na allowlist, mas barrado); só uma **reativação explícita pelo admin** (Desabilitado→Ativo, Permissões preservadas) restaura o acesso — Desabilitado é terminal para o login, não para o admin. Desabilitado→Convidado é proibido (reintroduziria a ressurreição por login). Apagar o registro é a revogação definitiva.
 _Avoid_: Suspenso, inativo, bloqueado (nomes de código: `pending`/`active`/`disabled`).
 
 **Visitante** (`guest`):
