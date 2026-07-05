@@ -8,7 +8,7 @@ import { createTestDb, type TestDb } from '@/tests/db'
 async function seedAct(db: TestDb): Promise<number> {
   const [liturgy] = await db
     .insert(liturgies)
-    .values({ date: parseISODate('2026-06-07'), theme: 'Culto Solene' })
+    .values({ date: parseISODate('2026-06-07'), theme: 'Culto Solene', time: '09:00' })
     .returning({ id: liturgies.id })
   const [act] = await db
     .insert(liturgyActs)

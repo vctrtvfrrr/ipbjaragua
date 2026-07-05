@@ -106,7 +106,7 @@ export type SeedBulletin = {
 export type SeedLiturgy = {
   date: string
   theme: string
-  time?: string | null
+  time?: string
 }
 
 export async function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): Promise<number[]> {
@@ -114,7 +114,7 @@ export async function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): Promise<nu
   for (const row of rows) {
     const [inserted] = await db
       .insert(liturgies)
-      .values({ date: parseISODate(row.date), theme: row.theme, time: row.time ?? null })
+      .values({ date: parseISODate(row.date), theme: row.theme, time: row.time ?? '09:00' })
       .returning({ id: liturgies.id })
     ids.push(inserted.id)
   }

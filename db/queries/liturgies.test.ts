@@ -135,14 +135,14 @@ describe('getLiturgyBySlug', () => {
   it('returns liturgy matching the slug', async () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
+    const result = await getLiturgyBySlug('2026-06-07-0900-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(formatISODate(result!.date)).toBe('2026-06-07')
     expect(result?.theme).toBe('Culto Solene')
   })
 
   it('returns undefined for unknown slug', async () => {
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
+    const result = await getLiturgyBySlug('2026-06-07-0900-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(result).toBeUndefined()
   })
@@ -150,7 +150,7 @@ describe('getLiturgyBySlug', () => {
   it('returns undefined for future-dated liturgy', async () => {
     await seedLiturgies(db, [{ date: '2026-06-15', theme: 'Culto Solene' }])
 
-    const result = await getLiturgyBySlug('2026-06-15-culto-solene', parseISODate('2026-06-12'), db)
+    const result = await getLiturgyBySlug('2026-06-15-0900-culto-solene', parseISODate('2026-06-12'), db)
 
     expect(result).toBeUndefined()
   })
@@ -159,7 +159,7 @@ describe('getLiturgyBySlug', () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
     await db.execute(sql`UPDATE liturgies SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
 
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
+    const result = await getLiturgyBySlug('2026-06-07-0900-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(result).toBeUndefined()
   })
@@ -186,7 +186,7 @@ describe('getLiturgyBySlug', () => {
       .returning({ id: liturgyActs.id })
     await db.insert(liturgyMoments).values({ act_id: act.id, position: 1, type: 'prayer' })
 
-    const result = await getLiturgyBySlug('2026-06-07-culto-solene', parseISODate('2026-12-31'), db)
+    const result = await getLiturgyBySlug('2026-06-07-0900-culto-solene', parseISODate('2026-12-31'), db)
 
     expect(result?.acts[0].name).toBe('Introdução')
     expect(result?.acts[1].name).toBe('Adoração')

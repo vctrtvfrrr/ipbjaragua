@@ -1,8 +1,9 @@
-import { and, asc, count, desc, eq, isNull, lte } from 'drizzle-orm'
+import { and, asc, count, desc, eq, getTableColumns, isNull, lte, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { liturgyActs, liturgyMoments, liturgies, type ScripturePassage, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
 import { parseISODate } from '@/lib/date'
+import { normalizeMomentForType, type LiturgyTreeInput } from '@/lib/liturgy'
 import { type LyricsBlock, songReference } from '@/lib/song'
 
 export type Liturgy = typeof liturgies.$inferSelect
@@ -40,6 +41,50 @@ export type LiturgyDetail = {
       song: { title: string; songReference: string | null; lyrics: LyricsBlock[] | null } | null
     }>
   }>
+}
+
+export type LiturgyForAdmin = {
+  id: number
+  date: Date
+  theme: string
+  time: string
+  actsCount: number
+}
+
+export type LiturgyEditorData = {
+  id: number
+  date: Date
+  theme: string
+  time: string
+  acts: Array<{
+    id: number
+    name: string
+    moments: Array<{
+      id: number
+      type: LiturgyDetail['acts'][number]['moments'][number]['type']
+      description: string | null
+      song_id: number | null
+      scripture_passages: ScripturePassage[] | null
+      sermon_speaker: string | null
+      sacrament_type: 'baptism' | 'eucharist' | null
+    }>
+  }>
+}
+
+export type SongPickerOption = { id: number; title: string; songReference: string | null }
+
+export class LiturgyNotFoundError extends Error {
+  constructor(id: number) {
+    super(`Liturgy ${id} was not found`)
+    this.name = 'LiturgyNotFoundError'
+  }
+}
+
+export class LiturgyTreeScopeError extends Error {
+  constructor() {
+    super('Liturgy tree contains ids outside the edited liturgy')
+    this.name = 'LiturgyTreeScopeError'
+  }
 }
 
 export async function countLiturgies({ today }: { today: Date }, db: Database = defaultDb): Promise<number> {
@@ -98,6 +143,131 @@ export async function listLiturgiesByDate(
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date)))
   return rows.map((r) => ({ ...r, time: hhmm(r.time) }))
+}
+
+export async function countLiturgiesForAdmin(db: Database = defaultDb): Promise<number> {
+  const [row] = await db.select({ value: count() }).from(liturgies).where(isNull(liturgies.deleted_at))
+  return row?.value ?? 0
+}
+
+export async function listLiturgiesForAdmin(
+  { page, pageSize }: { page: number; pageSize: number },
+  db: Database = defaultDb
+): Promise<LiturgyForAdmin[]> {
+  const rows = await db
+    .select({
+      ...getTableColumns(liturgies),
+      actsCount: count(liturgyActs.id),
+    })
+    .from(liturgies)
+    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
+    .where(isNull(liturgies.deleted_at))
+    .groupBy(liturgies.id)
+    .orderBy(desc(liturgies.date), asc(liturgies.time), desc(liturgies.id))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize)
+
+  return rows.map((row) => ({ ...row, time: hhmm(row.time)! }))
+}
+
+export async function getLiturgyForEditor(
+  id: number,
+  db: Database = defaultDb
+): Promise<LiturgyEditorData | undefined> {
+  const [liturgy] = await db
+    .select()
+    .from(liturgies)
+    .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
+    .limit(1)
+  if (!liturgy) return undefined
+
+  const rows = await db
+    .select({ act: liturgyActs, moment: liturgyMoments })
+    .from(liturgyActs)
+    .leftJoin(liturgyMoments, eq(liturgyMoments.act_id, liturgyActs.id))
+    .where(eq(liturgyActs.liturgy_id, id))
+    .orderBy(asc(liturgyActs.position), asc(liturgyMoments.position))
+
+  const acts = new Map<number, LiturgyEditorData['acts'][number]>()
+  for (const row of rows) {
+    if (!acts.has(row.act.id)) {
+      acts.set(row.act.id, { id: row.act.id, name: row.act.name, moments: [] })
+    }
+
+    if (row.moment) {
+      acts.get(row.act.id)!.moments.push({
+        id: row.moment.id,
+        type: row.moment.type,
+        description: row.moment.description ?? null,
+        song_id: row.moment.song_id ?? null,
+        scripture_passages: row.moment.scripture_passages ?? null,
+        sermon_speaker: row.moment.sermon_speaker ?? null,
+        sacrament_type: row.moment.sacrament_type ?? null,
+      })
+    }
+  }
+
+  return {
+    id: liturgy.id,
+    date: liturgy.date,
+    theme: liturgy.theme,
+    time: hhmm(liturgy.time)!,
+    acts: Array.from(acts.values()),
+  }
+}
+
+export async function listSongPickerOptions(db: Database = defaultDb): Promise<SongPickerOption[]> {
+  const rows = await db
+    .select(getTableColumns(songs))
+    .from(songs)
+    .where(isNull(songs.deleted_at))
+    .orderBy(asc(songs.title), asc(songs.id))
+
+  return rows.map((song) => ({ id: song.id, title: song.title, songReference: songReference(song) }))
+}
+
+export async function createLiturgyTree(input: LiturgyTreeInput, db: Database = defaultDb): Promise<Liturgy> {
+  return db.transaction(async (tx) => {
+    const [liturgy] = await tx
+      .insert(liturgies)
+      .values({ date: input.date, theme: input.theme, time: input.time })
+      .returning()
+
+    await writeActsAndMoments(liturgy.id, input.acts, tx as Database)
+    return liturgy
+  })
+}
+
+export async function updateLiturgyTree(
+  id: number,
+  input: LiturgyTreeInput,
+  db: Database = defaultDb
+): Promise<Liturgy> {
+  return db.transaction(async (tx) => {
+    await assertActiveLiturgy(id, tx as Database)
+    await assertTreeScope(id, input, tx as Database)
+
+    const [liturgy] = await tx
+      .update(liturgies)
+      .set({ date: input.date, theme: input.theme, time: input.time })
+      .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
+      .returning()
+    if (!liturgy) throw new LiturgyNotFoundError(id)
+
+    await reconcileActsAndMoments(id, input.acts, tx as Database)
+    return liturgy
+  })
+}
+
+export async function softDeleteLiturgy(id: number, db: Database = defaultDb): Promise<Liturgy> {
+  const [liturgy] = await db
+    .update(liturgies)
+    .set({ deleted_at: sql`CURRENT_TIMESTAMP` })
+    .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
+    .returning()
+
+  if (!liturgy) throw new LiturgyNotFoundError(id)
+  return liturgy
 }
 
 export async function getLiturgyBySlug(
@@ -175,6 +345,116 @@ export async function getLiturgyBySlug(
     theme: liturgy.theme,
     time: hhmm(liturgy.time),
     acts: Array.from(actsMap.values()),
+  }
+}
+
+async function assertActiveLiturgy(id: number, db: Database): Promise<Liturgy> {
+  const [liturgy] = await db
+    .select()
+    .from(liturgies)
+    .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
+    .limit(1)
+  if (!liturgy) throw new LiturgyNotFoundError(id)
+  return liturgy
+}
+
+async function assertTreeScope(id: number, input: LiturgyTreeInput, db: Database): Promise<void> {
+  const actRows = await db.select({ id: liturgyActs.id }).from(liturgyActs).where(eq(liturgyActs.liturgy_id, id))
+  const allowedActIds = new Set(actRows.map((row) => row.id))
+  const submittedActIds = input.acts.flatMap((act) => (act.id ? [act.id] : []))
+  if (submittedActIds.some((actId) => !allowedActIds.has(actId))) throw new LiturgyTreeScopeError()
+
+  const momentRows = await db
+    .select({ id: liturgyMoments.id, actId: liturgyMoments.act_id })
+    .from(liturgyMoments)
+    .innerJoin(liturgyActs, eq(liturgyActs.id, liturgyMoments.act_id))
+    .where(eq(liturgyActs.liturgy_id, id))
+  const allowedMomentActIds = new Map(momentRows.map((row) => [row.id, row.actId]))
+  for (const act of input.acts) {
+    for (const moment of act.moments) {
+      if (!moment.id) continue
+      const actId = allowedMomentActIds.get(moment.id)
+      if (actId === undefined || actId !== act.id) throw new LiturgyTreeScopeError()
+    }
+  }
+}
+
+async function writeActsAndMoments(liturgyId: number, acts: LiturgyTreeInput['acts'], db: Database): Promise<void> {
+  for (const [position, act] of acts.entries()) {
+    const [insertedAct] = await db
+      .insert(liturgyActs)
+      .values({ liturgy_id: liturgyId, name: act.name, position })
+      .returning({ id: liturgyActs.id })
+
+    await writeMoments(insertedAct.id, act.moments, db)
+  }
+}
+
+async function reconcileActsAndMoments(liturgyId: number, acts: LiturgyTreeInput['acts'], db: Database): Promise<void> {
+  const existingActs = await db
+    .select({ id: liturgyActs.id })
+    .from(liturgyActs)
+    .where(eq(liturgyActs.liturgy_id, liturgyId))
+  const submittedActIds = new Set(acts.flatMap((act) => (act.id ? [act.id] : [])))
+
+  for (const act of existingActs) {
+    if (!submittedActIds.has(act.id)) {
+      await db.delete(liturgyMoments).where(eq(liturgyMoments.act_id, act.id))
+      await db.delete(liturgyActs).where(eq(liturgyActs.id, act.id))
+    }
+  }
+
+  for (const [position, act] of acts.entries()) {
+    const actId = act.id
+    if (actId) {
+      await db.update(liturgyActs).set({ name: act.name, position }).where(eq(liturgyActs.id, actId))
+      await reconcileMoments(actId, act.moments, db)
+      continue
+    }
+
+    const [insertedAct] = await db
+      .insert(liturgyActs)
+      .values({ liturgy_id: liturgyId, name: act.name, position })
+      .returning({ id: liturgyActs.id })
+    await writeMoments(insertedAct.id, act.moments, db)
+  }
+}
+
+async function writeMoments(
+  actId: number,
+  moments: LiturgyTreeInput['acts'][number]['moments'],
+  db: Database
+): Promise<void> {
+  for (const [position, moment] of moments.entries()) {
+    await db.insert(liturgyMoments).values({ act_id: actId, position, ...normalizeMomentForType(moment) })
+  }
+}
+
+async function reconcileMoments(
+  actId: number,
+  moments: LiturgyTreeInput['acts'][number]['moments'],
+  db: Database
+): Promise<void> {
+  const existingMoments = await db
+    .select({ id: liturgyMoments.id })
+    .from(liturgyMoments)
+    .where(eq(liturgyMoments.act_id, actId))
+  const submittedMomentIds = new Set(moments.flatMap((moment) => (moment.id ? [moment.id] : [])))
+
+  for (const moment of existingMoments) {
+    if (!submittedMomentIds.has(moment.id)) {
+      await db.delete(liturgyMoments).where(eq(liturgyMoments.id, moment.id))
+    }
+  }
+
+  for (const [position, moment] of moments.entries()) {
+    const values = { position, ...normalizeMomentForType(moment) }
+    if (moment.id) {
+      await db.update(liturgyMoments).set(values).where(eq(liturgyMoments.id, moment.id))
+      continue
+    }
+
+    await db.insert(liturgyMoments).values({ act_id: actId, ...values })
   }
 }
 

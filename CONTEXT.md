@@ -33,7 +33,7 @@ _Avoid_: Post, notícia, meditação.
 ### Culto
 
 **Liturgia** (`liturgies`):
-A ordem de um culto numa data específica. É estruturada em **Atos**, que por sua vez contêm **Momentos**.
+A ordem de um culto numa data específica. É estruturada em **Atos**, que por sua vez contêm **Momentos**. Segue **publicação-por-data** como o **Boletim**: com data até hoje (inclusive) está publicada e aparece no site; com data futura é rascunho e não aparece em lugar nenhum (índice, busca ou URL direta). Não há coluna de status — a data é o único critério.
 _Avoid_: Culto (o culto é o evento; a Liturgia é sua ordem documentada), ordem de serviço.
 
 **Tipo de Culto**:
@@ -41,7 +41,7 @@ A designação do culto — "Culto Solene", "Culto de Ações de Graças" etc. H
 _Avoid_: Tema (não é o assunto/tema do sermão).
 
 **Ato** (`liturgy_acts`):
-Uma divisão ordenada de uma **Liturgia** ("Adoração ao Rei", "Confissão ao Rei"...). Contém **Momentos** em ordem.
+Uma divisão ordenada de uma **Liturgia** ("Adoração ao Rei", "Confissão ao Rei"...). Contém **zero ou mais Momentos** em ordem; um Ato sem Momentos é um marcador estrutural válido (ex.: "Pausa" ou "Interlúdio"), exibido só pelo nome.
 _Avoid_: Parte, seção.
 
 **Momento** (`liturgy_moments`):

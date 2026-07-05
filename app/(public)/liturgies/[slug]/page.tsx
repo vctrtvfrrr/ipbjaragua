@@ -121,7 +121,12 @@ function MomentView({ moment }: { moment: Moment }) {
 
   if (moment.type === 'sacrament') {
     const label = moment.sacrament_type === 'baptism' ? 'Batismo' : 'Santa Ceia'
-    return <p className="font-narrow text-xl font-bold">{label}</p>
+    return (
+      <>
+        <p className="font-narrow text-xl font-bold">{label}</p>
+        {moment.description ? <p className="mt-1 whitespace-pre-line">{moment.description}</p> : null}
+      </>
+    )
   }
 
   return (

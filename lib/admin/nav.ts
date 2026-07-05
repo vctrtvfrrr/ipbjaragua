@@ -9,7 +9,7 @@ export type AdminNavItem = {
 export const ADMIN_NAV: AdminNavItem[] = [
   { entity: 'bulletins', label: 'Boletins' },
   { entity: 'articles', label: 'Artigos', href: '/admin/articles' },
-  { entity: 'liturgies', label: 'Liturgias' },
+  { entity: 'liturgies', label: 'Liturgias', href: '/admin/liturgies' },
   { entity: 'announcements', label: 'Avisos' },
   { entity: 'songs', label: 'Músicas' },
   { entity: 'members', label: 'Membros' },

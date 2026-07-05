@@ -40,6 +40,7 @@ export const E2E_ARTICLES = [FEATURED, ...OLDER]
 export const E2E_LITURGY = {
   date: '2026-06-07',
   theme: 'Culto Solene',
+  time: '09:00',
 }
 
 export const E2E_AGENDA = [

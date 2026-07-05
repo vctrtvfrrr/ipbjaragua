@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, date, integer, jsonb, pgEnum, pgTable, text, time } from 'drizzle-orm/pg-core'
+import { check, date, integer, jsonb, pgEnum, pgTable, text, time, unique } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 import { songs } from './songs.schema'
 
@@ -17,14 +17,18 @@ export const momentType = pgEnum('moment_type', [
 
 export const sacramentType = pgEnum('sacrament_type', ['baptism', 'eucharist'])
 
-export const liturgies = pgTable('liturgies', {
-  id: id(),
-  date: date('date', { mode: 'date' }).notNull(),
-  theme: text('theme').notNull(),
-  time: time('time'),
-  ...timestamps(),
-  ...deletedAt(),
-})
+export const liturgies = pgTable(
+  'liturgies',
+  {
+    id: id(),
+    date: date('date', { mode: 'date' }).notNull(),
+    theme: text('theme').notNull(),
+    time: time('time').notNull(),
+    ...timestamps(),
+    ...deletedAt(),
+  },
+  (t) => [unique('liturgies_date_theme_time_unique').on(t.date, t.theme, t.time)]
+)
 
 export const liturgyActs = pgTable('liturgy_acts', {
   id: id(),
