@@ -12,4 +12,4 @@ export function songReference(song: SongFields): string | null {
   return null
 }
 
-export type LyricsBlock = { type: 'verse' | 'chorus' | string; number: number | null; content: string }
+export type LyricsBlock = { type: 'verse' | 'chorus'; number: number | null; content: string }

@@ -83,18 +83,17 @@ function MomentView({ moment }: { moment: Moment }) {
             {moment.song.lyrics.map((block, i) => {
               if (block.type === 'verse')
                 return (
-                  <p key={i}>
+                  <p key={i} className="whitespace-pre-line">
                     {block.number ? <strong>{block.number}. </strong> : null}
                     {block.content}
                   </p>
                 )
               if (block.type === 'chorus')
                 return (
-                  <p key={i} className="pl-4 italic">
+                  <p key={i} className="pl-4 whitespace-pre-line italic">
                     {block.content}
                   </p>
                 )
-              return <p key={i}>{block.content}</p>
             })}
           </div>
         ) : null}

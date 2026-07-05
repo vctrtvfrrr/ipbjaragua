@@ -32,6 +32,7 @@ type EntityActionOptions<Schema extends z.ZodType, WriteResult> = {
   parse?: (formData: FormData) => unknown
   write: (context: WriteContext<Schema>) => WriteResult | Promise<WriteResult>
   revalidate?: (result: Awaited<WriteResult>, context: WriteContext<Schema>) => void | Promise<void>
+  validationErrorMessage?: (fieldErrors: Record<string, string[]>) => string | undefined
   errorMessage?: (error: unknown) => string | undefined
 }
 
@@ -76,11 +77,12 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
 
       if (!parsedData.success) {
         const fieldErrors = fieldErrorsFrom(parsedData.error.flatten().fieldErrors)
+        const formError = options.validationErrorMessage?.(fieldErrors)
         // React 19 resets uncontrolled form fields after the action, so echo the
         // submitted values back for the form to restore them on validation failure.
         return options.parse
-          ? { status: 'error', fieldErrors }
-          : { status: 'error', fieldErrors, values: parsedForm as Record<string, string> }
+          ? { status: 'error', fieldErrors, formError }
+          : { status: 'error', fieldErrors, formError, values: parsedForm as Record<string, string> }
       }
 
       const writeContext: WriteContext<Schema> = { user, db: context.db, data: parsedData.data }

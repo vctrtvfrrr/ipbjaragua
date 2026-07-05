@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { agenda, announcements, articles, bulletins, liturgies, members, users } from '@/db/schema'
+import { agenda, announcements, articles, bulletins, liturgies, members, songs, users } from '@/db/schema'
+import type { LyricsBlock } from '@/lib/song'
 import { parseISODate } from '@/lib/date'
 import type { TestDb } from './db'
 
@@ -57,6 +58,36 @@ export async function seedArticles(db: TestDb, rows: SeedArticle[]): Promise<num
         content: row.content ?? '',
       })
       .returning({ id: articles.id })
+    ids.push(inserted.id)
+  }
+  return ids
+}
+
+export type SeedSong = {
+  slug: string
+  title: string
+  songwriter?: string | null
+  performer?: string | null
+  album?: string | null
+  track?: number | null
+  lyrics?: LyricsBlock[] | null
+}
+
+export async function seedSongs(db: TestDb, rows: SeedSong[]): Promise<number[]> {
+  const ids: number[] = []
+  for (const row of rows) {
+    const [inserted] = await db
+      .insert(songs)
+      .values({
+        slug: row.slug,
+        title: row.title,
+        songwriter: row.songwriter ?? null,
+        performer: row.performer ?? null,
+        album: row.album ?? null,
+        track: row.track ?? null,
+        lyrics: row.lyrics ?? [{ type: 'verse', number: 1, content: 'Letra' }],
+      })
+      .returning({ id: songs.id })
     ids.push(inserted.id)
   }
   return ids

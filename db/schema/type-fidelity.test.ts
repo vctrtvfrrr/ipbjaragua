@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { liturgies, liturgyActs, liturgyMoments, members, songs } from '@/db/schema'
 import { parseISODate } from '@/lib/date'
+import type { LyricsBlock } from '@/lib/song'
 import { createTestDb, type TestDb } from '@/tests/db'
 
 async function seedAct(db: TestDb): Promise<number> {
@@ -93,7 +94,7 @@ describe('jsonb round-trip', () => {
   })
 
   it('preserves the lyric block structure of a song', async () => {
-    const lyrics = [
+    const lyrics: LyricsBlock[] = [
       { type: 'verse', number: 1, content: 'Sublime graça' },
       { type: 'chorus', number: null, content: 'Quão doce a voz' },
     ]
