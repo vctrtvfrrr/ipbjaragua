@@ -66,11 +66,16 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
                       <li key={item.id}>
                         {item.time ? (
                           <>
-                            <time>{item.time}</time> – {item.title}
+                            <time>{item.time}</time> –{' '}
                           </>
-                        ) : (
-                          item.title
-                        )}
+                        ) : null}
+                        {item.title}
+                        {item.description ? (
+                          <>
+                            {' '}
+                            – <em className="text-muted-foreground">{item.description}</em>
+                          </>
+                        ) : null}
                       </li>
                     ))}
                   </ul>

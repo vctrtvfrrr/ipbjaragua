@@ -72,6 +72,17 @@ export function currentWeekWindow(reference: Date): { from: Date; to: Date } {
   return { from: monday, to: sunday }
 }
 
+export function nextWeekDateForWeekday(reference: Date, weekday: number): Date {
+  const { from } = currentWeekWindow(reference)
+  const nextWeekStart = new Date(from)
+  nextWeekStart.setUTCDate(from.getUTCDate() + 7)
+
+  const result = new Date(nextWeekStart)
+  const offset = weekday === 0 ? 6 : weekday - 1
+  result.setUTCDate(nextWeekStart.getUTCDate() + offset)
+  return result
+}
+
 export type DateWindow = { from: Date; to: Date }
 
 export function bulletinSectionWindows(date: Date): { agenda: DateWindow; birthdays: DateWindow } {

@@ -1,4 +1,4 @@
-import { and, asc, gte, isNull } from 'drizzle-orm'
+import { and, asc, between, gte, isNull } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { formatCoupleLabel } from '@/lib/bulletin'
 import { formatWeekdayPtBR, parseISODate } from '@/lib/date'
@@ -7,24 +7,16 @@ import { agenda, announcements, members } from '@/db/schema'
 export type AgendaEntry = typeof agenda.$inferSelect & { resolvedDate: Date }
 
 export async function listAgendaInWindow(from: Date, to: Date, db: Database = defaultDb): Promise<AgendaEntry[]> {
-  const rows = await db.select().from(agenda).where(isNull(agenda.deleted_at))
+  const rows = await db
+    .select()
+    .from(agenda)
+    .where(and(isNull(agenda.deleted_at), between(agenda.event_date, from, to)))
 
-  const window = datesInRange(from, to)
-
-  const entries: AgendaEntry[] = []
-  for (const row of rows) {
-    const time = row.time ? row.time.slice(0, 5) : null
-    if (row.is_recurring) {
-      const match = window.find((d) => d.getUTCDay() === row.weekday)
-      if (match !== undefined) {
-        entries.push({ ...row, time, resolvedDate: match })
-      }
-    } else {
-      if (row.event_date && row.event_date >= from && row.event_date <= to) {
-        entries.push({ ...row, time, resolvedDate: row.event_date })
-      }
-    }
-  }
+  const entries = rows.map((row) => ({
+    ...row,
+    time: row.time ? row.time.slice(0, 5) : null,
+    resolvedDate: row.event_date,
+  }))
 
   entries.sort((a, b) => {
     const dateCmp = a.resolvedDate.getTime() - b.resolvedDate.getTime()
@@ -133,14 +125,4 @@ function formatMD(mmdd: string): string {
 
 function normalizeName(name: string): string {
   return name.trim().replace(/\s+/g, ' ')
-}
-
-function datesInRange(from: Date, to: Date): Date[] {
-  const dates: Date[] = []
-  const cur = new Date(from)
-  while (cur <= to) {
-    dates.push(new Date(cur))
-    cur.setUTCDate(cur.getUTCDate() + 1)
-  }
-  return dates
 }

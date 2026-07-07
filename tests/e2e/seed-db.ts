@@ -44,8 +44,8 @@ export const E2E_LITURGY = {
 }
 
 export const E2E_AGENDA = [
-  { title: 'Culto Dominical', is_recurring: true, weekday: 0, time: '10:00' },
-  { title: 'Reunião de Células', is_recurring: false, event_date: '2026-06-10' },
+  { title: 'Culto Dominical', event_date: '2026-06-07', time: '10:00' },
+  { title: 'Reunião de Células', event_date: '2026-06-10' },
 ]
 
 export const E2E_ANNOUNCEMENT = {
@@ -146,7 +146,7 @@ export async function seedE2eDatabase() {
   for (const item of E2E_AGENDA) {
     await db.insert(agenda).values({
       ...item,
-      event_date: 'event_date' in item && item.event_date ? parseISODate(item.event_date) : null,
+      event_date: parseISODate(item.event_date),
     })
   }
 

@@ -7,7 +7,14 @@ import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bu
 import { getNextLiturgy } from '@/db/queries/liturgies'
 import { publicAuthorName } from '@/lib/article'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
-import { currentTimeHHMM, currentWeekWindow, formatISODate, formatLongDatePtBR, today } from '@/lib/date'
+import {
+  currentTimeHHMM,
+  currentWeekWindow,
+  formatISODate,
+  formatLongDatePtBR,
+  formatShortDatePtBR,
+  today,
+} from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 12
@@ -208,7 +215,10 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
 
               {agendaDays.length > 0 ? (
                 <div>
-                  <h2 className="font-narrow mb-5 text-center text-3xl text-green-900 uppercase">Agenda da Semana</h2>
+                  <h2 className="font-narrow mb-1 text-center text-3xl text-green-900 uppercase">Agenda da Semana</h2>
+                  <p className="text-muted-foreground mb-5 text-center">
+                    {formatShortDatePtBR(weekWindow.from)} a {formatShortDatePtBR(weekWindow.to)}
+                  </p>
                   <ol className="space-y-6">
                     {agendaDays.map((day) => (
                       <li key={day.weekday}>
@@ -220,11 +230,16 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                             <li key={item.id}>
                               {item.time ? (
                                 <>
-                                  <time>{item.time}</time> – {item.title}
+                                  <time>{item.time}</time> –{' '}
                                 </>
-                              ) : (
-                                item.title
-                              )}
+                              ) : null}
+                              {item.title}
+                              {item.description ? (
+                                <>
+                                  {' '}
+                                  – <em className="text-muted-foreground">{item.description}</em>
+                                </>
+                              ) : null}
                             </li>
                           ))}
                         </ul>

@@ -137,10 +137,8 @@ export async function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
 
 export type SeedAgendaItem = {
   title: string
-  is_recurring: boolean
-  weekday?: number | null
   time?: string | null
-  event_date?: string | null
+  event_date: string
   description?: string | null
 }
 
@@ -148,10 +146,8 @@ export async function seedAgenda(db: TestDb, rows: SeedAgendaItem[]) {
   for (const row of rows) {
     await db.insert(agenda).values({
       title: row.title,
-      is_recurring: row.is_recurring,
-      weekday: row.weekday ?? null,
       time: row.time ?? null,
-      event_date: toDate(row.event_date),
+      event_date: toDate(row.event_date)!,
       description: row.description ?? null,
     })
   }

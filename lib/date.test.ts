@@ -6,6 +6,7 @@ import {
   formatLongDatePtBR,
   formatShortDatePtBR,
   formatWeekdayPtBR,
+  nextWeekDateForWeekday,
   parseISODate,
   todayISO,
 } from './date'
@@ -50,6 +51,26 @@ describe('currentWeekWindow', () => {
 
   it('handles a week that spans month boundary', () => {
     expect(window('2026-06-30')).toEqual({ from: '2026-06-29', to: '2026-07-05' })
+  })
+})
+
+describe('nextWeekDateForWeekday', () => {
+  it('suggests Thursday in the week after 2026-07-07', () => {
+    const result = nextWeekDateForWeekday(parseISODate('2026-07-07'), 4)
+
+    expect(formatISODate(result)).toBe('2026-07-16')
+  })
+
+  it('handles Sunday as the last day of the next week window', () => {
+    const result = nextWeekDateForWeekday(parseISODate('2026-07-07'), 0)
+
+    expect(formatISODate(result)).toBe('2026-07-19')
+  })
+
+  it('crosses month boundaries', () => {
+    const result = nextWeekDateForWeekday(parseISODate('2026-07-30'), 1)
+
+    expect(formatISODate(result)).toBe('2026-08-03')
   })
 })
 

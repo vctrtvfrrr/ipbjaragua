@@ -12,34 +12,16 @@ describe('listAgendaInWindow', () => {
     db = await createTestDb()
   })
 
-  it('includes a recurring event when its weekday falls in the window', async () => {
-    await seedAgenda(db, [{ title: 'Culto', is_recurring: true, weekday: 0, time: '10:00' }])
-
-    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].title).toBe('Culto')
-    expect(formatISODate(result[0].resolvedDate)).toBe('2026-06-07')
-  })
-
-  it('excludes a recurring event whose weekday is outside the window', async () => {
-    await seedAgenda(db, [{ title: 'Evento Sábado', is_recurring: true, weekday: 6, time: '09:00' }])
-
-    const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-12'), db)
-
-    expect(result).toHaveLength(0)
-  })
-
-  it('includes a one-off event whose date falls in the window', async () => {
-    await seedAgenda(db, [{ title: 'Reunião', is_recurring: false, event_date: '2026-06-10' }])
+  it('includes an event whose date falls in the window', async () => {
+    await seedAgenda(db, [{ title: 'Reunião', event_date: '2026-06-10' }])
 
     const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
     expect(formatISODate(result[0].resolvedDate)).toBe('2026-06-10')
   })
 
-  it('excludes a one-off event outside the window', async () => {
-    await seedAgenda(db, [{ title: 'Fora', is_recurring: false, event_date: '2026-06-20' }])
+  it('excludes an event outside the window', async () => {
+    await seedAgenda(db, [{ title: 'Fora', event_date: '2026-06-20' }])
 
     const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
 
@@ -48,8 +30,8 @@ describe('listAgendaInWindow', () => {
 
   it('returns events ordered by resolved date then time', async () => {
     await seedAgenda(db, [
-      { title: 'Quarta', is_recurring: true, weekday: 3, time: '19:30' },
-      { title: 'Domingo', is_recurring: true, weekday: 0, time: '10:00' },
+      { title: 'Quarta', event_date: '2026-06-10', time: '19:30' },
+      { title: 'Domingo', event_date: '2026-06-07', time: '10:00' },
     ])
 
     const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
@@ -58,7 +40,7 @@ describe('listAgendaInWindow', () => {
   })
 
   it('excludes soft-deleted events', async () => {
-    await seedAgenda(db, [{ title: 'Deletado', is_recurring: true, weekday: 0, time: '10:00' }])
+    await seedAgenda(db, [{ title: 'Deletado', event_date: '2026-06-07', time: '10:00' }])
     await db.execute(sql`UPDATE agenda SET deleted_at = CURRENT_TIMESTAMP WHERE title = 'Deletado'`)
 
     const result = await listAgendaInWindow(parseISODate('2026-06-07'), parseISODate('2026-06-13'), db)
