@@ -75,11 +75,15 @@ A data de núpcias de um casal em que **ambos** os cônjuges são **Membros** at
 _Avoid_: Bodas, aniversário de núpcias.
 
 **Agenda / Evento** (`agenda`):
-Um compromisso da igreja. Recorrente (dia da semana + horário) ou pontual (data específica). Uma janela da Agenda é exibida no **Boletim**.
-_Avoid_: Calendário (a Agenda é a coleção; o Evento é a entrada).
+Um compromisso da igreja, sempre **datado** (`event_date`) — não há recorrência armazenada. O `time` (horário) é opcional; vazio significa evento de dia inteiro. Uma data no passado é permitida (Boletins antigos ainda renderizam seus Eventos). Uma janela da Agenda é exibida no **Boletim** e na home. Ver [ADR-0014](./docs/adr/0014-events-always-dated-recurrence-via-repeat.md).
+_Avoid_: Calendário (a Agenda é a coleção; o Evento é a entrada), Evento recorrente (não existe mais; repetição é feita via **Repetir Evento**).
+
+**Repetir Evento**:
+A ação de duplicar um **Evento** como um novo, sem recorrência armazenada. Abre o formulário de criação pré-preenchido a partir de um Evento existente (título, descrição e horário copiados), com a data **sugerida** para a semana seguinte à de hoje, no mesmo dia da semana do Evento original — o operador pode alterá-la antes de salvar. É a forma de "repetir" um compromisso: o operador planeja a agenda semana a semana, e cada semana tem seus próprios Eventos explícitos.
+_Avoid_: Recorrência, agendamento (não há regra automática; cada Evento é uma entrada avulsa).
 
 **Aviso** (`announcements`):
-Mensagem com prazo de validade (`expires_at`), opcionalmente com link. Exibida no **Boletim** e na home (seção "Avisos Gerais").
+Mensagem com prazo de validade (`expires_at`, o último dia em que ainda é exibida), opcionalmente com link. Exibida no **Boletim** e na home (seção "Avisos Gerais"). É uma mensagem **viva, não um instantâneo**: cada Boletim mostra os Avisos vigentes na _sua_ data (não na data de hoje), e o vínculo é derivado da data, não uma referência guardada — por isso editar ou excluir um Aviso altera retroativamente o que Boletins passados exibem. Essa retroatividade é conhecida e aceita.
 _Avoid_: Anúncio (termo anterior), notificação, comunicado.
 
 ### Acesso ao painel
