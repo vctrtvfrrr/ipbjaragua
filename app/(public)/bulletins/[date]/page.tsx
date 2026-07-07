@@ -8,17 +8,23 @@ import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
 import { bulletinSectionWindows, formatLongDatePtBR, formatShortDatePtBR, parseISODate, today } from '@/lib/date'
 
-export async function generateMetadata({ params }: PageProps<'/bulletins/[date]'>) {
+export async function generateMetadata({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
-  const result = await getBulletinByDate(parseISODate(date), today())
-  return { title: result?.bulletin.title ?? formatLongDatePtBR(parseISODate(date)) }
+  const { preview } = await searchParams
+  const isPreview = preview === '1'
+  const result = await getBulletinByDate(parseISODate(date), today(), undefined, { preview: isPreview })
+  return {
+    title: result?.bulletin.title ?? formatLongDatePtBR(parseISODate(date)),
+    robots: isPreview ? { index: false, follow: false } : undefined,
+  }
 }
 
 const sectionCard = 'mb-8 break-inside-avoid rounded border border-gray-200 bg-gray-50 p-5'
 
-export default async function BulletinDetailPage({ params }: PageProps<'/bulletins/[date]'>) {
+export default async function BulletinDetailPage({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
-  const result = await getBulletinByDate(parseISODate(date), today())
+  const { preview } = await searchParams
+  const result = await getBulletinByDate(parseISODate(date), today(), undefined, { preview: preview === '1' })
 
   if (!result) notFound()
 
@@ -39,9 +45,7 @@ export default async function BulletinDetailPage({ params }: PageProps<'/bulleti
   return (
     <main className="container mx-auto px-4 py-10 xl:px-0">
       <header className="mb-10">
-        <h1 className="font-narrow mb-1 text-4xl text-green-900">
-          {bulletin.title ?? formatLongDatePtBR(bulletin.date)}
-        </h1>
+        <h1 className="font-narrow mb-1 text-4xl text-green-900">{bulletin.title}</h1>
         <p className="text-gray-500">{formatLongDatePtBR(bulletin.date)}</p>
         <p className="text-gray-500">{formatBulletinSubtitle(bulletin.edition, bulletin.date)}</p>
       </header>

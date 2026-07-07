@@ -96,11 +96,12 @@ export async function seedSongs(db: TestDb, rows: SeedSong[]): Promise<number[]>
 export type SeedBulletin = {
   date: string
   edition: number
-  title?: string | null
+  title?: string
   article_id?: number | null
   show_announcements?: boolean
   show_agenda?: boolean
   show_birthdays?: boolean
+  created_at?: string
 }
 
 export type SeedLiturgy = {
@@ -126,11 +127,12 @@ export async function seedBulletins(db: TestDb, rows: SeedBulletin[]) {
     await db.insert(bulletins).values({
       date: parseISODate(row.date),
       edition: row.edition,
-      title: row.title ?? null,
+      title: row.title ?? 'Boletim Dominical',
       article_id: row.article_id ?? null,
       show_announcements: row.show_announcements ?? true,
       show_agenda: row.show_agenda ?? true,
       show_birthdays: row.show_birthdays ?? true,
+      created_at: row.created_at,
     })
   }
 }

@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { formatISODate, parseISODate } from '@/lib/date'
 import { createTestDb, type TestDb } from '@/tests/db'
@@ -28,18 +27,6 @@ describe('listBulletins', () => {
     const result = await listBulletins({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
 
     expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-03-01', '2026-02-01', '2026-01-01'])
-  })
-
-  it('excludes soft-deleted bulletins', async () => {
-    await seedBulletins(db, [
-      { date: '2026-01-01', edition: 1 },
-      { date: '2026-02-01', edition: 2 },
-    ])
-    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
-
-    const result = await listBulletins({ page: 1, pageSize: 10, today: parseISODate('2026-12-31') }, db)
-
-    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-01-01'])
   })
 
   it('excludes future-dated bulletins', async () => {
@@ -83,15 +70,14 @@ describe('countBulletins', () => {
     db = await createTestDb()
   })
 
-  it('counts only non-deleted bulletins', async () => {
+  it('counts published bulletins', async () => {
     await seedBulletins(db, [
       { date: '2026-01-01', edition: 1 },
       { date: '2026-02-01', edition: 2 },
       { date: '2026-03-01', edition: 3 },
     ])
-    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-03-01'`)
 
-    expect(await countBulletins({ today: parseISODate('2026-12-31') }, db)).toBe(2)
+    expect(await countBulletins({ today: parseISODate('2026-12-31') }, db)).toBe(3)
   })
 
   it('excludes future-dated bulletins', async () => {
@@ -190,18 +176,6 @@ describe('listRecentBulletins', () => {
     expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-01-01'])
   })
 
-  it('excludes soft-deleted bulletins', async () => {
-    await seedBulletins(db, [
-      { date: '2026-01-01', edition: 1 },
-      { date: '2026-02-01', edition: 2 },
-    ])
-    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-02-01'`)
-
-    const result = await listRecentBulletins({ today: parseISODate('2026-12-31'), limit: 5 }, db)
-
-    expect(result.map((b) => formatISODate(b.date))).toEqual(['2026-01-01'])
-  })
-
   it('returns empty array when no bulletins are published', async () => {
     const result = await listRecentBulletins({ today: parseISODate('2026-06-12'), limit: 5 }, db)
 
@@ -245,15 +219,6 @@ describe('getBulletinByDate', () => {
     const result = await getBulletinByDate(parseISODate('2026-06-12'), parseISODate('2026-06-12'), db)
 
     expect(formatISODate(result!.bulletin.date)).toBe('2026-06-12')
-  })
-
-  it('returns undefined for soft-deleted bulletin', async () => {
-    await seedBulletins(db, [{ date: '2026-06-07', edition: 70 }])
-    await db.execute(sql`UPDATE bulletins SET deleted_at = CURRENT_TIMESTAMP WHERE date = '2026-06-07'`)
-
-    const result = await getBulletinByDate(parseISODate('2026-06-07'), parseISODate('2026-12-31'), db)
-
-    expect(result).toBeUndefined()
   })
 
   it('includes the associated article when present', async () => {

@@ -50,6 +50,13 @@
       "when": 1783537200000,
       "tag": "0006_agenda_always_dated",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783459233838,
+      "tag": "0007_daily_blob",
+      "breakpoints": true
     }
   ]
 }

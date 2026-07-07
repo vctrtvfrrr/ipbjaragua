@@ -1,10 +1,10 @@
 import { boolean, date, integer, pgTable, text } from 'drizzle-orm/pg-core'
-import { deletedAt, id, timestamps } from './common-fields'
+import { id, timestamps } from './common-fields'
 import { articles } from './articles.schema'
 
 export const bulletins = pgTable('bulletins', {
   id: id(),
-  title: text('title'),
+  title: text('title').notNull(),
   date: date('date', { mode: 'date' }).notNull().unique(),
   edition: integer('edition').notNull().unique(),
   article_id: integer('article_id').references(() => articles.id),
@@ -12,5 +12,4 @@ export const bulletins = pgTable('bulletins', {
   show_agenda: boolean('show_agenda').notNull().default(true),
   show_birthdays: boolean('show_birthdays').notNull().default(true),
   ...timestamps(),
-  ...deletedAt(),
 })
