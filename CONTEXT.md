@@ -15,8 +15,16 @@ Um **Boletim** cuja data cai num domingo é Dominical, o caso regular: traz semp
 _Avoid_: Boletim especial, edição extra.
 
 **Publicado / Rascunho**:
-Um **Boletim** com data até hoje (inclusive) está publicado e aparece no site. Com data futura é rascunho de uma edição ainda não publicada e não aparece em nenhum lugar do site (índice, busca ou URL direta). Não há coluna de status: a data é o único critério de publicação.
+Um **Boletim** com data até hoje (inclusive) está publicado e aparece no site. Com data futura é rascunho de uma edição ainda não publicada e não aparece em nenhum lugar do site (índice, busca ou URL direta) — salvo pelo **Preview**. Não há coluna de status: a data é o único critério de publicação.
 _Avoid_: Agendado, oculto, despublicado.
+
+**Preview** (do Boletim):
+A pré-visualização de um **Boletim** ainda em Rascunho: a própria página pública, renderizada via um query param que dispensa a trava de data futura. É **aberto** — não exige autenticação, pois o conteúdo não é sigiloso —, mas emite `noindex` e não é linkado de nenhuma página pública, de modo que buscadores não o indexam e a URL sem o param segue invisível. O preview de um Rascunho renderiza também as **Liturgias** daquela data futura (igualmente rascunhos), exposição transitiva conhecida e aceita.
+_Avoid_: prévia, rascunho compartilhável.
+
+**Janela de Correção** (derivada de `date` e `created_at`):
+O período em que um **Boletim** ainda pode ter sua **data** alterada ou ser **excluído**: enquanto é Rascunho (data futura) **ou** foi criado há menos de 7 dias (`created_at >= now() - 7 dias`). Fora dela, o Boletim é um **registro fechado** — data e existência imutáveis; título, Edição, Artigo e flags de seção seguem editáveis. Derivada, não uma coluna. A exclusão é sempre hard-delete (o Boletim é mero agregador, nada o referencia por FK).
+_Avoid_: bloqueio, trava, lock.
 
 **Edição** (`bulletins.edition`):
 O número sequencial de um **Boletim** desde o primeiro, que é a Edição 1, publicada em 2025-02-09. Valor armazenado, não derivado da cadência semanal (que pode ter falhas).
@@ -67,8 +75,24 @@ _Avoid_: Autor, intérprete (são campos individuais; Referência é o campo cal
 ### Comunidade
 
 **Membro** (`members`):
-Uma pessoa no rol da igreja, com dados de membresia e um status (ativo, etc.). Fonte dos aniversariantes exibidos no **Boletim**. Não tem nenhuma relação com **Usuário**: a membresia é eclesiástica, não dá acesso ao painel.
+Uma pessoa no rol da igreja, com dados de membresia e um **Status de Membro**. Fonte dos aniversariantes exibidos no **Boletim**. Não tem nenhuma relação com **Usuário**: a membresia é eclesiástica, não dá acesso ao painel.
 _Avoid_: Usuário (é outro conceito — quem opera o painel), fiel, congregado.
+
+**Status de Membro** (`members.status`) vs. **Exclusão** (`members.deleted_at`):
+Dois eixos independentes e não redundantes. O **Status** tem cinco valores em dois grupos. Quatro são a **situação eclesiástica** da pessoa no rol — `active`, `transferred`, `deceased`, `removed` (transferida, falecida, removida por disciplina/rol) — registro histórico legítimo: o Membro **permanece no rol**, apenas sai dos aniversariantes (só `active` entra, ver ADR-0004). O quinto, `pending`, é um estado de **moderação**: a submissão do **Cadastro Público** entra como `pending`, fora do rol operacional, até um Usuário revisar e promover para `active`. A **Exclusão** (soft-delete) é **correção de cadastro** — duplicata, engano ou spam: o registro **some do rol**. "Excluir" nunca é o caminho para registrar que alguém saiu da igreja — isso é Status.
+_Avoid_: tratar `status = 'removed'` e Exclusão como sinônimos; tratar `pending` como situação eclesiástica.
+
+**Comungante / Não-Comungante** (derivado de `members.prof_faith_year`):
+Distinção presbiteriana dentro do rol ativo. **Comungante**: **Membro** `active` que já fez profissão de fé (`prof_faith_year` preenchido) — admitido à Ceia. **Não-Comungante**: **Membro** `active` ainda sem profissão de fé (`prof_faith_year` nulo) — tipicamente o batizado que não professou. É **derivado**, não uma coluna: a presença de `prof_faith_year` é o único critério.
+_Avoid_: coluna/flag de comungante (é derivado), catecúmeno.
+
+**Ex-Membro** (derivado de `members.status`):
+**Membro** cujo Status não é `active` nem `pending` — transferido, falecido ou removido. Continua no rol como registro histórico; é agrupado à parte da membresia vigente. Termo de agrupamento, não uma coluna.
+_Avoid_: membro inativo, desligado.
+
+**Cadastro Público** (formulário público de membro):
+Formulário no site público, sem autenticação, pelo qual um **Visitante** (na prática, um membro existente ainda fora do sistema) submete seus dados para entrar no rol. A submissão cria um **Membro** `pending` (nunca `active`) — nunca aparece no site nem nos aniversariantes até um **Usuário** revisá-la e promovê-la (ver [ADR-0015](./docs/adr/0015-public-member-registration-lands-as-pending.md)). É a única origem de Membros `pending`; o cadastro pelo painel nasce já com situação eclesiástica definida.
+_Avoid_: autocadastro (o acesso ao rol depende de revisão), inscrição.
 
 **Aniversário de Casamento**:
 A data de núpcias de um casal em que **ambos** os cônjuges são **Membros** ativos. Exibido na seção Aniversariantes do **Boletim** ao lado dos aniversários de nascimento, como o casal unido por um coração ("Mulher ♥ Homem"). Não há vínculo formal entre cônjuges no rol — o casal é reconstruído pelo cruzamento de nome e data de casamento (ver ADR-0004).

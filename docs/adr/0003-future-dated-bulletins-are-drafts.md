@@ -8,6 +8,8 @@ status: accepted
 
 > **Atualização (ADR-0012):** onde este ADR menciona as "janelas fixas" (`agenda_from/to`, `birthdays_from/to`) como colunas, leia-se "janela derivada da data". A decisão deste ADR (data futura = rascunho; a data é o único critério de publicação) não muda.
 
+> **Atualização (#17 — Preview):** o "404 por URL direta" para data futura ganha uma exceção: a página pública aceita um query param de **Preview** que dispensa a trava de data e renderiza o Rascunho. O preview é **aberto** (sem autenticação — o conteúdo não é sigiloso), mas emite `noindex` e não é linkado de nenhuma página pública; a URL **sem** o param segue resultando em 404. A regra "data futura = rascunho, invisível por descoberta normal" permanece; só se abre uma porta explícita para pré-visualização.
+
 ## Contexto
 
 Os **Boletins** são publicados semanalmente, em geral aos domingos. Para preparar uma edição com antecedência, é útil criar a linha no banco antes do dia em que ela deve ir ao ar. Surgiu então a pergunta: o que distingue um boletim "no ar" de um que ainda está sendo montado?
