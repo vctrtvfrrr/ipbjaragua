@@ -15,18 +15,20 @@ const MdxEditor = dynamic(() => import('./MdxEditor'), {
 })
 
 type Props = {
+  label?: string
+  name?: string
   defaultValue?: string
   errors?: string[]
 }
 
-export function MarkdownField({ defaultValue = '', errors }: Props) {
+export function MarkdownField({ label = 'Conteúdo', name = 'content', defaultValue = '', errors }: Props) {
   const [content, setContent] = useState(defaultValue)
 
   return (
     <div className="group/field grid gap-2">
-      <Label>Conteúdo</Label>
+      <Label>{label}</Label>
       <MdxEditor markdown={defaultValue} onChange={setContent} />
-      <input type="hidden" name="content" value={content} />
+      <input type="hidden" name={name} value={content} />
       <FieldError messages={errors} />
     </div>
   )

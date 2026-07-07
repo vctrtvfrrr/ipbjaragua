@@ -1,0 +1,1 @@
+ALTER TABLE "announcements" ALTER COLUMN "description" SET NOT NULL;

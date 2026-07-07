@@ -160,7 +160,7 @@ export async function seedAgenda(db: TestDb, rows: SeedAgendaItem[]) {
 export type SeedAnnouncement = {
   title: string
   expires_at: string
-  description?: string | null
+  description?: string
   url?: string | null
 }
 
@@ -169,7 +169,7 @@ export async function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
     await db.insert(announcements).values({
       title: row.title,
       expires_at: parseISODate(row.expires_at),
-      description: row.description ?? null,
+      description: row.description ?? 'Descrição do aviso',
       url: row.url ?? null,
     })
   }
