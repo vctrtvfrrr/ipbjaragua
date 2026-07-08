@@ -39,7 +39,7 @@ export async function sendMemberPromotionEmail(
       subject: 'Seu cadastro de membro foi revisado',
       text: `Olá, ${input.full_name}.
 
-Seu cadastro de membro na IPB Jaraguá foi revisado e incluído no rol.
+Seu cadastro de membro na IPB Jaraguá foi revisado e incluído no rol de membros.
 
 Atenciosamente,
 IPJS`,
