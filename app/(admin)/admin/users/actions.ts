@@ -1,4 +1,5 @@
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { z } from 'zod'
 import {
   createInvite,
@@ -9,6 +10,8 @@ import {
 } from '@/db/queries/users'
 import { defineEntityAction } from '@/lib/entity-action'
 import { PERMISSION_ACTIONS, PERMISSION_ENTITIES, USER_MANAGEMENT_PERMISSIONS, type Permission } from '@/lib/authz'
+import { INVITE_EMAIL_WARNING, sendInviteEmail, type EmailEnv, type SendMail } from '@/lib/email/invite'
+import { getPublicOriginFromHeaders } from '@/lib/http/request-origin'
 import { permissionFormValue } from '@/lib/permission-form'
 
 const permissionSchema = z.object({
@@ -42,15 +45,27 @@ const userIdSchema = z.object({
   id: z.coerce.number().int().positive('ID é obrigatório'),
 })
 
-export const createInviteAction = defineEntityAction({
-  entity: 'users',
-  action: 'create',
-  schema: createInviteSchema,
-  parse: parseUserForm,
-  write: ({ data, db }) => createInvite(data, db),
-  revalidate: revalidateUsers,
-  errorMessage: inviteErrorMessage,
-})
+type CreateInviteActionDeps = {
+  env?: EmailEnv
+  panelUrl?: URL
+  sendMail?: SendMail
+}
+
+export const createInviteAction = defineCreateInviteAction()
+
+export function defineCreateInviteAction(deps: CreateInviteActionDeps = {}) {
+  return defineEntityAction({
+    entity: 'users',
+    action: 'create',
+    schema: createInviteSchema,
+    parse: parseUserForm,
+    write: ({ data, db }) => createInvite(data, db),
+    revalidate: revalidateUsers,
+    notify: (user) => notifyInvite(user, deps),
+    notifyErrorMessage: () => INVITE_EMAIL_WARNING,
+    errorMessage: inviteErrorMessage,
+  })
+}
 
 export const updateUserAction = defineEntityAction({
   entity: 'users',
@@ -144,6 +159,21 @@ function keepsOwnUserManagement(permissions: Permission[]): boolean {
 
 function revalidateUsers() {
   revalidatePath('/admin/users')
+}
+
+async function notifyInvite(
+  user: Awaited<ReturnType<typeof createInvite>>,
+  deps: CreateInviteActionDeps
+): Promise<string | undefined> {
+  const panelUrl = deps.panelUrl ?? (await adminPanelUrl())
+  if (!panelUrl) return INVITE_EMAIL_WARNING
+
+  return sendInviteEmail({ to: user.email, name: user.name, panelUrl }, { env: deps.env, sendMail: deps.sendMail })
+}
+
+async function adminPanelUrl(): Promise<URL | null> {
+  const origin = getPublicOriginFromHeaders(await headers())
+  return origin ? new URL('/admin', origin) : null
 }
 
 function inviteErrorMessage(error: unknown): string | undefined {

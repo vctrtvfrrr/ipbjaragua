@@ -10,7 +10,7 @@ const GENERIC_ERROR = 'Não foi possível concluir a ação.'
 export type ActionState =
   | { status: 'idle' }
   | { status: 'error'; fieldErrors?: Record<string, string[]>; formError?: string; values?: Record<string, string> }
-  | { status: 'success' }
+  | { status: 'success'; warning?: string }
 
 export type EntityActionContext = {
   user: CurrentUser | null
@@ -32,6 +32,11 @@ type EntityActionOptions<Schema extends z.ZodType, WriteResult> = {
   parse?: (formData: FormData) => unknown
   write: (context: WriteContext<Schema>) => WriteResult | Promise<WriteResult>
   revalidate?: (result: Awaited<WriteResult>, context: WriteContext<Schema>) => void | Promise<void>
+  notify?: (
+    result: Awaited<WriteResult>,
+    context: WriteContext<Schema>
+  ) => string | undefined | Promise<string | undefined>
+  notifyErrorMessage?: (error: unknown) => string | undefined
   validationErrorMessage?: (fieldErrors: Record<string, string[]>) => string | undefined
   errorMessage?: (error: unknown) => string | undefined
 }
@@ -88,8 +93,9 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
       const writeContext: WriteContext<Schema> = { user, db: context.db, data: parsedData.data }
       const result = await options.write(writeContext)
       await options.revalidate?.(result as Awaited<WriteResult>, writeContext)
+      const warning = await notifyWarning(options, result as Awaited<WriteResult>, writeContext)
 
-      return { status: 'success' }
+      return warning ? { status: 'success', warning } : { status: 'success' }
     } catch (error) {
       return { status: 'error', formError: options.errorMessage?.(error) ?? GENERIC_ERROR }
     }
@@ -102,6 +108,18 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
   }
 
   return { action, execute }
+}
+
+async function notifyWarning<Schema extends z.ZodType, WriteResult>(
+  options: EntityActionOptions<Schema, WriteResult>,
+  result: Awaited<WriteResult>,
+  context: WriteContext<Schema>
+): Promise<string | undefined> {
+  try {
+    return await options.notify?.(result, context)
+  } catch (error) {
+    return options.notifyErrorMessage?.(error) ?? GENERIC_ERROR
+  }
 }
 
 function fieldErrorsFrom(fieldErrors: Record<string, string[] | undefined>): Record<string, string[]> {

@@ -33,8 +33,9 @@ export function UserForm(props: Props) {
   useEffect(() => {
     if (state.status !== 'success') return
     toast.success(props.mode === 'edit' ? 'Usuário atualizado' : 'Convite criado')
+    if (state.warning) toast.warning(state.warning)
     router.push('/admin/users')
-  }, [state.status, props.mode, router])
+  }, [state, props.mode, router])
 
   return (
     <Form action={formAction}>

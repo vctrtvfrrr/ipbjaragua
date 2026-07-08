@@ -8,6 +8,7 @@ import { seedUsers } from '@/tests/seed'
 import {
   cancelInviteAction,
   createInviteAction,
+  defineCreateInviteAction,
   disableUserAction,
   reactivateUserAction,
   updateUserAction,
@@ -62,6 +63,10 @@ async function permissionsFor(db: TestDb, userId: number) {
 
 describe('createInviteAction.execute', () => {
   let db: TestDb
+  const resendEnv = {
+    RESEND_API_KEY: 're_test_key',
+    EMAIL_FROM: 'IPB Jaraguá <no-reply@example.com>',
+  }
 
   beforeEach(async () => {
     db = await createTestDb()
@@ -82,7 +87,14 @@ describe('createInviteAction.execute', () => {
   })
 
   it('creates a pending invite with normalized email and read implied by write permissions', async () => {
-    const state = await createInviteAction.execute({ user: currentUser(1, true), db }, inviteForm())
+    const sendMail = vi.fn().mockResolvedValue(undefined)
+    const action = defineCreateInviteAction({
+      env: resendEnv,
+      panelUrl: new URL('https://ipbjaragua.org.br/admin'),
+      sendMail,
+    })
+
+    const state = await action.execute({ user: currentUser(1, true), db }, inviteForm())
 
     expect(state).toEqual({ status: 'success' })
     const [row] = await db.select().from(users).where(eq(users.email, 'novo@example.com'))
@@ -92,6 +104,49 @@ describe('createInviteAction.execute', () => {
       { entity: 'articles', action: 'create' },
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/admin/users')
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'novo@example.com',
+        subject: 'Seu acesso ao painel da IPB Jaraguá foi habilitado',
+        text: expect.stringContaining('https://ipbjaragua.org.br/admin'),
+      }),
+      expect.objectContaining({ apiKey: 're_test_key' })
+    )
+  })
+
+  it('keeps the pending invite and returns a warning when the mailer throws', async () => {
+    const sendMail = vi.fn().mockRejectedValue(new Error('Resend down'))
+    const action = defineCreateInviteAction({
+      env: resendEnv,
+      panelUrl: new URL('https://ipbjaragua.org.br/admin'),
+      sendMail,
+    })
+
+    const state = await action.execute({ user: currentUser(1, true), db }, inviteForm())
+
+    expect(state).toEqual({
+      status: 'success',
+      warning: 'Convite criado, mas o e-mail de aviso não pôde ser enviado.',
+    })
+    expect(await db.select().from(users).where(eq(users.email, 'novo@example.com'))).toHaveLength(1)
+  })
+
+  it('keeps the pending invite and returns a warning when Resend is not configured', async () => {
+    const sendMail = vi.fn()
+    const action = defineCreateInviteAction({
+      env: {},
+      panelUrl: new URL('https://ipbjaragua.org.br/admin'),
+      sendMail,
+    })
+
+    const state = await action.execute({ user: currentUser(1, true), db }, inviteForm())
+
+    expect(state).toEqual({
+      status: 'success',
+      warning: 'Convite criado, mas o e-mail de aviso não pôde ser enviado.',
+    })
+    expect(sendMail).not.toHaveBeenCalled()
+    expect(await db.select().from(users).where(eq(users.email, 'novo@example.com'))).toHaveLength(1)
   })
 
   it('requires at least one permission', async () => {
@@ -170,6 +225,14 @@ describe('updateUserAction.execute', () => {
       { entity: 'songs', action: 'read' },
       { entity: 'songs', action: 'delete' },
     ])
+  })
+
+  it('does not send invite email when editing users', async () => {
+    const [target] = await seedUsers(db, [{ email: 'target@example.com', name: 'Antigo' }])
+
+    const state = await updateUserAction.execute({ user: currentUser(999, true), db }, userForm(target, ['songs:read']))
+
+    expect(state).toEqual({ status: 'success' })
   })
 
   it('blocks removing own users read/update permissions', async () => {
