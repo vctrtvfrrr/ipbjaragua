@@ -1,7 +1,7 @@
 import { date, integer, pgEnum, pgTable, text } from 'drizzle-orm/pg-core'
 import { deletedAt, id, timestamps } from './common-fields'
 
-export const memberStatus = pgEnum('member_status', ['active', 'transferred', 'deceased', 'removed'])
+export const memberStatus = pgEnum('member_status', ['active', 'transferred', 'deceased', 'removed', 'pending'])
 
 export const members = pgTable('members', {
   id: id(),

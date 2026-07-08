@@ -18,6 +18,11 @@ export default function MainNav() {
           Liturgias
         </Link>
       </li>
+      <li className="inline-block">
+        <Link className="block px-3 font-semibold" href="/members/register">
+          Cadastro
+        </Link>
+      </li>
       <li className="hidden">
         <Link className="block px-3 font-semibold" href="/about">
           Sobre Nós

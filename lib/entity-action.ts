@@ -122,7 +122,7 @@ async function notifyWarning<Schema extends z.ZodType, WriteResult>(
   }
 }
 
-function fieldErrorsFrom(fieldErrors: Record<string, string[] | undefined>): Record<string, string[]> {
+export function fieldErrorsFrom(fieldErrors: Record<string, string[] | undefined>): Record<string, string[]> {
   return Object.fromEntries(
     Object.entries(fieldErrors).filter((entry): entry is [string, string[]] => Boolean(entry[1]))
   )

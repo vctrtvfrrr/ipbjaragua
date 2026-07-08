@@ -175,11 +175,14 @@ export async function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
 
 export type SeedMember = {
   full_name: string
-  status: 'active' | 'transferred' | 'deceased' | 'removed'
+  status: 'active' | 'transferred' | 'deceased' | 'removed' | 'pending'
   birth_date?: string | null
   sex?: string | null
   wedding_date?: string | null
   spouse?: string | null
+  marital_status?: string | null
+  prof_faith_year?: number | null
+  email?: string | null
 }
 
 export async function seedMembers(db: TestDb, rows: SeedMember[]) {
@@ -191,6 +194,9 @@ export async function seedMembers(db: TestDb, rows: SeedMember[]) {
       sex: row.sex ?? null,
       wedding_date: toDate(row.wedding_date),
       spouse: row.spouse ?? null,
+      marital_status: row.marital_status ?? null,
+      prof_faith_year: row.prof_faith_year ?? null,
+      email: row.email ?? null,
     })
   }
 }

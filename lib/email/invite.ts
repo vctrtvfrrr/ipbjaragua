@@ -1,28 +1,19 @@
-import { Resend } from 'resend'
+import {
+  getResendConfig,
+  sendEmail,
+  type EmailEnv,
+  type EmailMessage,
+  type ResendConfig,
+  type SendMail,
+} from './mailer'
 
 export const INVITE_EMAIL_WARNING = 'Convite criado, mas o e-mail de aviso não pôde ser enviado.'
-
-export type ResendConfig = {
-  apiKey: string
-  from: string
-}
 
 export type SendInviteEmailInput = {
   to: string
   name: string | null
   panelUrl: URL
 }
-
-export type EmailEnv = Record<string, string | undefined>
-
-export type EmailMessage = {
-  from: string
-  to: string
-  subject: string
-  text: string
-}
-
-export type SendMail = (message: EmailMessage, config: ResendConfig) => Promise<void>
 
 type SendInviteEmailDeps = {
   env?: EmailEnv
@@ -33,27 +24,16 @@ export async function sendInviteEmail(
   input: SendInviteEmailInput,
   deps: SendInviteEmailDeps = {}
 ): Promise<string | undefined> {
-  const config = getResendConfig(deps.env)
-  if (!config) return INVITE_EMAIL_WARNING
-
-  await (deps.sendMail ?? realSendMail)(
+  const sent = await sendEmail(
     {
-      from: config.from,
       to: input.to,
       subject: 'Seu acesso ao painel da IPB Jaraguá foi habilitado',
       text: inviteEmailText(input.name, input.panelUrl),
     },
-    config
+    deps
   )
-}
 
-export function getResendConfig(env: EmailEnv = process.env): ResendConfig | null {
-  const apiKey = env.RESEND_API_KEY?.trim()
-  const from = env.EMAIL_FROM?.trim()
-
-  if (!apiKey || !from) return null
-
-  return { apiKey, from }
+  if (!sent) return INVITE_EMAIL_WARNING
 }
 
 function inviteEmailText(name: string | null, panelUrl: URL): string {
@@ -70,7 +50,4 @@ Atenciosamente,
 IPJS`
 }
 
-async function realSendMail(message: EmailMessage, config: ResendConfig): Promise<void> {
-  const { error } = await new Resend(config.apiKey).emails.send(message)
-  if (error) throw error
-}
+export { getResendConfig, type EmailEnv, type EmailMessage, type ResendConfig, type SendMail }
