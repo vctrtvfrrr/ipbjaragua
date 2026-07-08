@@ -67,8 +67,16 @@ export async function executePublicMemberRegistration(
 }
 
 async function requestIp(): Promise<string> {
-  const headerList = await headers()
-  return headerList.get('x-forwarded-for')?.split(',')[0]?.trim() || headerList.get('x-real-ip')?.trim() || 'unknown'
+  return clientIpFrom(await headers())
+}
+
+export function clientIpFrom(headerList: Headers): string {
+  return (
+    headerList.get('cf-connecting-ip')?.trim() ||
+    headerList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    headerList.get('x-real-ip')?.trim() ||
+    'unknown'
+  )
 }
 
 const defaultRateLimit: PublicMemberRateLimit = {

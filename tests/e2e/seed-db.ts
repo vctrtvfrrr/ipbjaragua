@@ -1,11 +1,13 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
-import { agenda, announcements, articles, bulletins, liturgies, members, users } from '../../db/schema'
+import { agenda, announcements, articles, bulletins, liturgies, members, userPermissions, users } from '../../db/schema'
 import { parseISODate } from '../../lib/date'
 
 export const E2E_DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://ipbjaragua:ipbjaragua@localhost:5432/ipbjaragua_e2e'
+
+export const E2E_SESSION_SECRET = process.env.E2E_SESSION_SECRET ?? 'e2e-test-session-secret-0123456789abcdef'
 
 const ADMIN_DATABASE_URL =
   process.env.E2E_ADMIN_DATABASE_URL ?? 'postgres://ipbjaragua:ipbjaragua@localhost:5432/postgres'
@@ -44,7 +46,7 @@ export const E2E_LITURGY = {
 }
 
 export const E2E_AGENDA = [
-  { title: 'Culto Dominical', event_date: '2026-06-07', time: '10:00' },
+  { title: 'Culto Dominical', event_date: '2026-06-14', time: '10:00' },
   { title: 'Reunião de Células', event_date: '2026-06-10' },
 ]
 
@@ -59,6 +61,19 @@ export const E2E_MEMBER = {
   birth_date: '1990-06-10',
   status: 'active' as const,
 }
+
+export const E2E_ADMIN_USER = {
+  email: 'admin-e2e@example.com',
+  name: 'Admin E2E',
+  status: 'active' as const,
+}
+
+export const E2E_ADMIN_PERMISSIONS = [
+  { entity: 'articles', action: 'read' },
+  { entity: 'articles', action: 'create' },
+  { entity: 'articles', action: 'update' },
+  { entity: 'articles', action: 'delete' },
+] as const
 
 async function ensureE2eDatabase() {
   const admin = postgres(ADMIN_DATABASE_URL, { max: 1 })
@@ -80,7 +95,9 @@ export async function seedE2eDatabase() {
   await client.unsafe('DROP SCHEMA IF EXISTS drizzle CASCADE')
   await client.unsafe('CREATE SCHEMA public')
 
-  const db = drizzle(client, { schema: { articles, bulletins, liturgies, agenda, announcements, members, users } })
+  const db = drizzle(client, {
+    schema: { articles, bulletins, liturgies, agenda, announcements, members, users, userPermissions },
+  })
   await migrate(db, { migrationsFolder: './db/migrations' })
 
   const authorIds = new Map<string, number>()
@@ -153,7 +170,24 @@ export async function seedE2eDatabase() {
   await db.insert(announcements).values({ ...E2E_ANNOUNCEMENT, expires_at: parseISODate(E2E_ANNOUNCEMENT.expires_at) })
   await db.insert(members).values({ ...E2E_MEMBER, birth_date: parseISODate(E2E_MEMBER.birth_date) })
 
+  const [adminUser] = await db.insert(users).values(E2E_ADMIN_USER).returning({ id: users.id })
+  await db
+    .insert(userPermissions)
+    .values(E2E_ADMIN_PERMISSIONS.map((permission) => ({ user_id: adminUser.id, ...permission })))
+
   await client.end()
+
+  return { adminUserId: adminUser.id }
 }
 
 export const E2E_BULLETINS_COUNT = 3
+
+export async function getE2eAdminUserId(): Promise<number> {
+  const client = postgres(E2E_DATABASE_URL, { max: 1 })
+  try {
+    const [row] = await client`SELECT id FROM users WHERE email = ${E2E_ADMIN_USER.email}`
+    return row.id
+  } finally {
+    await client.end()
+  }
+}

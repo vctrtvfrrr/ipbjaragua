@@ -8,6 +8,22 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ipbjaragua
+          POSTGRES_PASSWORD: ipbjaragua
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ipbjaragua"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -33,3 +49,12 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E test
+        run: pnpm test:e2e
+        env:
+          E2E_ADMIN_DATABASE_URL: postgres://ipbjaragua:ipbjaragua@localhost:5432/postgres
+          E2E_DATABASE_URL: postgres://ipbjaragua:ipbjaragua@localhost:5432/ipbjaragua_e2e

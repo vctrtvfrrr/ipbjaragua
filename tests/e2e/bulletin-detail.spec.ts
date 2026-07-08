@@ -25,7 +25,7 @@ test('shows liturgy link pointing to correct slug', async ({ page }) => {
 
   await expect(page.getByRole('link', { name: E2E_LITURGY.theme })).toHaveAttribute(
     'href',
-    `/liturgies/${BULLETIN_DATE}-culto-solene`
+    `/liturgies/${BULLETIN_DATE}-0900-culto-solene`
   )
 })
 
