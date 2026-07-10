@@ -1,9 +1,12 @@
+import { forbidden } from 'next/navigation'
 import { BulletinForm } from '@/components/admin/BulletinForm'
 import { listBulletinArticleOptions, nextBulletinEdition } from '@/db/queries/bulletins-write'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 
 export default async function NewBulletinPage() {
-  await requirePageRead('bulletins')
+  const user = await requirePageRead('bulletins')
+  if (!user.can('bulletins', 'create')) forbidden()
+
   const [articles, suggestedEdition] = await Promise.all([listBulletinArticleOptions(), nextBulletinEdition()])
 
   return (

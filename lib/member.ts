@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { parseISODate } from './date'
+import { nullableTrimmedString, requiredTrimmedString } from './validation'
 
 export const MEMBER_STATUSES = ['active', 'transferred', 'deceased', 'removed', 'pending'] as const
 export const ECCLESIASTICAL_MEMBER_STATUSES = ['active', 'transferred', 'deceased', 'removed'] as const
@@ -19,14 +20,6 @@ export const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
-
-export const optionalTrimmedString = z
-  .string()
-  .trim()
-  .optional()
-  .transform((value) => (value ? value : null))
-
-export const requiredTrimmedString = (message: string) => z.string().trim().min(1, message)
 
 export const optionalYear = z
   .string()
@@ -90,24 +83,24 @@ export const baseMemberFieldsSchema = z
     email: z.string().trim().toLowerCase().pipe(z.email('E-mail inválido')),
     full_name: requiredTrimmedString('Nome completo é obrigatório'),
     birth_date: requiredISODate('Data de nascimento é obrigatória'),
-    birth_place: optionalTrimmedString,
-    nationality: optionalTrimmedString,
-    mother: optionalTrimmedString,
-    father: optionalTrimmedString,
-    profession: optionalTrimmedString,
-    education: optionalTrimmedString,
+    birth_place: nullableTrimmedString,
+    nationality: nullableTrimmedString,
+    mother: nullableTrimmedString,
+    father: nullableTrimmedString,
+    profession: nullableTrimmedString,
+    education: nullableTrimmedString,
     marital_status: z.enum(MARITAL_STATUSES, 'Estado civil é obrigatório'),
-    spouse: optionalTrimmedString,
+    spouse: nullableTrimmedString,
     wedding_date: optionalISODate,
     address_street: requiredTrimmedString('Endereço é obrigatório'),
     address_number: requiredTrimmedString('Número é obrigatório'),
-    address_complement: optionalTrimmedString,
+    address_complement: nullableTrimmedString,
     phone: requiredTrimmedString('Celular/Telefone é obrigatório'),
     home_church: requiredTrimmedString('Igreja de origem é obrigatória'),
     baptism_year: optionalYear,
-    baptism_place: optionalTrimmedString,
+    baptism_place: nullableTrimmedString,
     prof_faith_year: optionalYear,
-    prof_faith_place: optionalTrimmedString,
+    prof_faith_place: nullableTrimmedString,
   })
   .superRefine(validateMarriageFields)
 

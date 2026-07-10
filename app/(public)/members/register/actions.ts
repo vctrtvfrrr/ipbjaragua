@@ -8,6 +8,7 @@ import { baseMemberFieldsSchema } from '@/lib/member'
 import { fieldErrorsFrom, parseForm, type ActionState } from '@/lib/entity-action'
 import { MEMBER_CONFIRMATION_EMAIL_WARNING, sendPublicMemberConfirmationEmail } from '@/lib/email/member'
 import type { EmailEnv, SendMail } from '@/lib/email/mailer'
+import { clientIpFrom } from '@/lib/http/client-ip'
 import { publicMemberInputFrom } from '@/lib/member-input'
 
 const publicMemberSchema = baseMemberFieldsSchema.extend({
@@ -68,15 +69,6 @@ export async function executePublicMemberRegistration(
 
 async function requestIp(): Promise<string> {
   return clientIpFrom(await headers())
-}
-
-export function clientIpFrom(headerList: Headers): string {
-  return (
-    headerList.get('cf-connecting-ip')?.trim() ||
-    headerList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    headerList.get('x-real-ip')?.trim() ||
-    'unknown'
-  )
 }
 
 const defaultRateLimit: PublicMemberRateLimit = {

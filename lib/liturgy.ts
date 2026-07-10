@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { parseISODate } from '@/lib/date'
+import { nullableTrimmedString, requiredTrimmedString } from '@/lib/validation'
 
 export const MOMENT_TYPES = ['bible_reading', 'song', 'prayer', 'sermon', 'sacrament', 'pastoral_act', 'other'] as const
 
@@ -23,22 +24,15 @@ export const SACRAMENT_TYPE_LABELS: Record<SacramentType, string> = {
   eucharist: 'Santa Ceia',
 }
 
-const requiredTrimmedString = z.string().trim().min(1, 'Campo obrigatório')
-const nullableTrimmedString = z
-  .string()
-  .trim()
-  .optional()
-  .transform((value) => value || null)
-
 const optionalId = z
   .union([z.number().int().positive(), z.null()])
   .optional()
   .transform((value) => value ?? null)
 
 export const scripturePassageSchema = z.object({
-  reference: requiredTrimmedString,
-  text: requiredTrimmedString,
-  version: requiredTrimmedString,
+  reference: requiredTrimmedString('Campo obrigatório'),
+  text: requiredTrimmedString('Campo obrigatório'),
+  version: requiredTrimmedString('Campo obrigatório'),
 })
 
 export const liturgyMomentSchema = z
@@ -79,7 +73,7 @@ export const liturgyMomentSchema = z
 
 export const liturgyActSchema = z.object({
   id: z.number().int().positive().optional(),
-  name: requiredTrimmedString,
+  name: requiredTrimmedString('Campo obrigatório'),
   moments: z.array(liturgyMomentSchema),
 })
 
@@ -88,7 +82,7 @@ export const liturgyTreeSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
-  theme: requiredTrimmedString,
+  theme: requiredTrimmedString('Campo obrigatório'),
   time: z
     .string()
     .trim()

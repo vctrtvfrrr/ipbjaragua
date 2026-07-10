@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { describe, expect, it, vi } from 'vitest'
 import { members } from '@/db/schema'
 import { createTestDb } from '@/tests/db'
-import { clientIpFrom, executePublicMemberRegistration } from './actions'
+import { executePublicMemberRegistration } from './actions'
 
 function formData(entries: [string, string][]) {
   const data = new FormData()
@@ -39,19 +39,6 @@ function publicForm(overrides: Partial<Record<string, string>> = {}) {
     })
   )
 }
-
-describe('clientIpFrom', () => {
-  it('prioritizes CF-Connecting-IP over X-Forwarded-For', () => {
-    const headers = new Headers({ 'cf-connecting-ip': '203.0.113.1', 'x-forwarded-for': '198.51.100.1' })
-    expect(clientIpFrom(headers)).toBe('203.0.113.1')
-  })
-
-  it('falls back to X-Forwarded-For then X-Real-Ip without Cloudflare', () => {
-    expect(clientIpFrom(new Headers({ 'x-forwarded-for': '198.51.100.1, 10.0.0.1' }))).toBe('198.51.100.1')
-    expect(clientIpFrom(new Headers({ 'x-real-ip': '198.51.100.2' }))).toBe('198.51.100.2')
-    expect(clientIpFrom(new Headers())).toBe('unknown')
-  })
-})
 
 describe('public member registration', () => {
   it('creates a pending member and sends the summary email', async () => {

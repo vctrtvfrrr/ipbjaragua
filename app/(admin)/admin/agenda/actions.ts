@@ -8,6 +8,7 @@ import {
 } from '@/db/queries/agenda'
 import { defineEntityAction } from '@/lib/entity-action'
 import { parseISODate } from '@/lib/date'
+import { nullableTrimmedString } from '@/lib/validation'
 
 const isoDateFromInput = z
   .string()
@@ -29,17 +30,11 @@ const isoDateFromInput = z
     return date
   })
 
-const optionalTrimmedString = z
-  .string()
-  .trim()
-  .optional()
-  .transform((value) => (value ? value : null))
-
 const agendaFieldsSchema = z.object({
   title: z.string().trim().min(1, 'Título é obrigatório'),
-  description: optionalTrimmedString,
+  description: nullableTrimmedString,
   event_date: isoDateFromInput,
-  time: optionalTrimmedString,
+  time: nullableTrimmedString,
 })
 
 const updateAgendaSchema = agendaFieldsSchema.extend({

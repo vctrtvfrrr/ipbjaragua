@@ -14,7 +14,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<'/bul
   const isPreview = preview === '1'
   const result = await getBulletinByDate(parseISODate(date), today(), undefined, { preview: isPreview })
   return {
-    title: result?.bulletin.title ?? formatLongDatePtBR(parseISODate(date)),
+    title: result?.bulletin.title,
     robots: isPreview ? { index: false, follow: false } : undefined,
   }
 }

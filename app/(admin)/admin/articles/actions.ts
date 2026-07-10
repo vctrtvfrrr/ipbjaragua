@@ -9,6 +9,7 @@ import {
 } from '@/db/queries/articles'
 import { defineEntityAction } from '@/lib/entity-action'
 import { slugify } from '@/lib/slug'
+import { nullableTrimmedString } from '@/lib/validation'
 
 const requiredSlug = z.string().min(1, 'Slug é obrigatório')
 
@@ -17,11 +18,7 @@ const articleFieldsSchema = z.object({
   slug: z.string().trim().transform(slugify).pipe(requiredSlug),
   author_id: z.coerce.number().int().positive('Autor é obrigatório'),
   date: z.coerce.date(),
-  excerpt: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => value || null),
+  excerpt: nullableTrimmedString,
   content: z.string().trim().min(1, 'Conteúdo é obrigatório'),
 })
 

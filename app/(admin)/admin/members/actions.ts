@@ -6,9 +6,7 @@ import {
   MARITAL_STATUSES,
   MEMBER_STATUSES,
   optionalISODate,
-  optionalTrimmedString,
   optionalYear,
-  requiredTrimmedString,
   SEXES,
   validateMarriageFields,
 } from '@/lib/member'
@@ -16,6 +14,7 @@ import { defineEntityAction, parseForm } from '@/lib/entity-action'
 import { MEMBER_PROMOTION_EMAIL_WARNING, sendMemberPromotionEmail } from '@/lib/email/member'
 import type { EmailEnv, SendMail } from '@/lib/email/mailer'
 import { memberInputFrom } from '@/lib/member-input'
+import { nullableTrimmedString as optionalTrimmedString, requiredTrimmedString } from '@/lib/validation'
 
 const optionalEmail = z
   .string()

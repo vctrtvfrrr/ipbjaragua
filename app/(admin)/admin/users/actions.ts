@@ -13,6 +13,7 @@ import { PERMISSION_ACTIONS, PERMISSION_ENTITIES, USER_MANAGEMENT_PERMISSIONS, t
 import { INVITE_EMAIL_WARNING, sendInviteEmail, type EmailEnv, type SendMail } from '@/lib/email/invite'
 import { getPublicOriginFromHeaders } from '@/lib/http/request-origin'
 import { permissionFormValue } from '@/lib/permission-form'
+import { nullableTrimmedString } from '@/lib/validation'
 
 const permissionSchema = z.object({
   entity: z.enum(PERMISSION_ENTITIES),
@@ -23,21 +24,13 @@ const permissionsSchema = z.array(permissionSchema).min(1, 'Escolha ao menos uma
 
 const createInviteSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email('E-mail inválido')),
-  name: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => value || null),
+  name: nullableTrimmedString,
   permissions: permissionsSchema,
 })
 
 const updateUserSchema = z.object({
   id: z.coerce.number().int().positive('ID é obrigatório'),
-  name: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => value || null),
+  name: nullableTrimmedString,
   permissions: permissionsSchema,
 })
 

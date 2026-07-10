@@ -4,12 +4,7 @@ import { createSong, softDeleteSong, updateSong, type CreateSongInput } from '@/
 import { defineEntityAction } from '@/lib/entity-action'
 import { serializedLyricsSchema } from '@/lib/lyrics'
 import { slugify } from '@/lib/slug'
-
-const nullableTrimmedString = z
-  .string()
-  .trim()
-  .optional()
-  .transform((value) => value || null)
+import { nullableTrimmedString } from '@/lib/validation'
 
 const optionalPositiveInteger = z
   .string()

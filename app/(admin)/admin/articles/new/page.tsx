@@ -1,9 +1,12 @@
+import { forbidden } from 'next/navigation'
 import { ArticleForm } from '@/components/admin/ArticleForm'
 import { listAuthorOptions } from '@/db/queries/articles'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 
 export default async function NewArticlePage() {
   const user = await requirePageRead('articles')
+  if (!user.can('articles', 'create')) forbidden()
+
   const authors = await listAuthorOptions()
 
   return (
