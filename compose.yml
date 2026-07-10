@@ -29,7 +29,7 @@ services:
       - 'traefik.http.routers.ipbjaragua.tls.certresolver=letsencrypt'
       - 'traefik.http.routers.ipbjaragua.tls.domains[0].main=ipbjaragua.org.br'
       - 'traefik.http.routers.ipbjaragua.tls.domains[0].sans=www.ipbjaragua.org.br'
-      - 'traefik.http.routers.ipbjaragua.middlewares=ipbjaragua-www-to-apex'
+      - 'traefik.http.routers.ipbjaragua.middlewares=cf-only@file,ipbjaragua-www-to-apex'
       - 'traefik.http.services.ipbjaragua.loadbalancer.server.port=3000'
       - "traefik.http.middlewares.ipbjaragua-www-to-apex.redirectregex.regex=^https?://www\\.ipbjaragua\\.org\\.br/(.*)"
       - 'traefik.http.middlewares.ipbjaragua-www-to-apex.redirectregex.replacement=https://ipbjaragua.org.br/$${1}'
