@@ -29,7 +29,7 @@ export default function ArticleGrid({ articles, page, totalPages, basePath }: Pr
               <Link href={`/articles/${article.slug}`}>
                 <Image
                   className="h-auto w-full rounded"
-                  src="/images/featured-image.png"
+                  src="/images/article-fallback.jpg"
                   width={340}
                   height={100}
                   alt={article.title}

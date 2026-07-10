@@ -51,10 +51,10 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
                     style={{
                       height: '260px',
-                      backgroundImage: 'url(/images/featured-image.png)',
+                      backgroundImage: 'url(/images/article-fallback.jpg)',
                     }}
                   >
-                    <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                    <div className="absolute z-10 h-full w-full bg-black opacity-70"></div>
                     <div className="relative z-20 p-5 text-center">
                       <span className="inline-block text-xs tracking-wide text-white uppercase">Artigo</span>
                       <h2 className="my-5 font-serif text-xl font-semibold text-white">{latest.title}</h2>
@@ -73,10 +73,10 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
                     style={{
                       height: '260px',
-                      backgroundImage: 'url(/images/featured-image.png)',
+                      backgroundImage: 'url(/images/article-fallback.jpg)',
                     }}
                   >
-                    <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                    <div className="absolute z-10 h-full w-full bg-black opacity-70"></div>
                     <div className="relative z-20 p-5 text-center">
                       <span className="inline-block text-xs tracking-wide text-white uppercase">
                         {nextLiturgy.label}
@@ -99,10 +99,10 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
                     style={{
                       height: '260px',
-                      backgroundImage: 'url(/images/featured-image.png)',
+                      backgroundImage: 'url(/images/article-fallback.jpg)',
                     }}
                   >
-                    <div className="absolute z-10 h-full w-full bg-black opacity-50"></div>
+                    <div className="absolute z-10 h-full w-full bg-black opacity-70"></div>
                     <div className="relative z-20 p-5 text-center">
                       <span className="inline-block text-xs tracking-wide text-white uppercase">Boletim Semanal</span>
                       <h2 className="my-5 font-serif text-xl font-semibold text-white">
