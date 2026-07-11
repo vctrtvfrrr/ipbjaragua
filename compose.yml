@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - ${DATA_DIR:-/opt/data/ipbjaragua}:/app/data
     networks:
       - web
       - postgres

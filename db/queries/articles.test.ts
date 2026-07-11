@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import { featuredImages } from '@/db/schema'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestDb, type TestDb } from '@/tests/db'
 import { seedArticles, seedUsers } from '@/tests/seed'
@@ -47,6 +48,24 @@ describe('createArticle', () => {
       content: 'Conteúdo',
       deleted_at: null,
     })
+  })
+
+  it('assigns an available featured image only when creating', async () => {
+    const [image] = await db.insert(featuredImages).values({ path: 'opaque.webp' }).returning()
+    const article = await createArticle(
+      {
+        title: 'Imagem',
+        slug: 'imagem',
+        author_id: authorId,
+        date: new Date('2026-01-01T00:00:00Z'),
+        excerpt: null,
+        content: 'Conteúdo',
+      },
+      db
+    )
+    expect(article.featured_image_id).toBe(image.id)
+    await db.insert(featuredImages).values({ path: 'outra.webp' })
+    expect((await updateArticle(article.id, { title: 'Editado' }, db)).featured_image_id).toBe(image.id)
   })
 
   it('rejects an author who is not an active user', async () => {

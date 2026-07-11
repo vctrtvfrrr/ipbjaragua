@@ -7,6 +7,7 @@ export const PERMISSION_ENTITIES = [
   'members',
   'agenda',
   'users',
+  'featured_images',
 ] as const
 
 export const PERMISSION_ACTIONS = ['read', 'create', 'update', 'delete'] as const

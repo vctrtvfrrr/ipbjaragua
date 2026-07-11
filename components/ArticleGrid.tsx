@@ -4,6 +4,7 @@ import Pagination from '@/components/Pagination'
 import type { ArticleWithAuthor } from '@/db/queries/articles'
 import { publicAuthorName } from '@/lib/article'
 import { formatLongDatePtBR } from '@/lib/date'
+import { featuredImageUrl } from '@/lib/featured-image'
 
 type Props = {
   articles: ArticleWithAuthor[]
@@ -29,7 +30,7 @@ export default function ArticleGrid({ articles, page, totalPages, basePath }: Pr
               <Link href={`/articles/${article.slug}`}>
                 <Image
                   className="h-auto w-full rounded"
-                  src="/images/article-fallback.webp"
+                  src={featuredImageUrl(article.featuredImagePath)}
                   width={340}
                   height={100}
                   alt={article.title}

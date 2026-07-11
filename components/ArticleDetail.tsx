@@ -1,6 +1,7 @@
 import type { ArticleWithAuthor } from '@/db/queries/articles'
 import { publicAuthorName } from '@/lib/article'
 import { formatLongDatePtBR } from '@/lib/date'
+import { featuredImageUrl } from '@/lib/featured-image'
 import Markdown from './Markdown'
 
 export default function ArticleDetail({ article }: { article: ArticleWithAuthor }) {
@@ -13,7 +14,7 @@ export default function ArticleDetail({ article }: { article: ArticleWithAuthor 
         className="overflow-hidden bg-gray-300 bg-cover bg-center inset-shadow-sm"
         style={{
           height: '420px',
-          backgroundImage: 'url(/images/article-fallback.webp)',
+          backgroundImage: `url(${featuredImageUrl(article.featuredImagePath)})`,
         }}
       />
 

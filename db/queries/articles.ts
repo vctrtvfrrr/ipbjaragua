@@ -1,10 +1,11 @@
 import { and, count, desc, eq, getTableColumns, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { articles, users } from '@/db/schema'
+import { articles, featuredImages, users } from '@/db/schema'
+import { pickRandomFeaturedImageId } from './featured-images'
 import { buildSlugCandidates, writeWithAllocatedSlug } from './slug'
 
 export type Article = typeof articles.$inferSelect
-export type ArticleWithAuthor = Article & { authorName: string | null }
+export type ArticleWithAuthor = Article & { authorName: string | null; featuredImagePath: string | null }
 export type ArticleWithAuthorContact = ArticleWithAuthor & { authorEmail: string }
 
 export type AuthorOption = { id: number; name: string | null; email: string }
@@ -53,6 +54,7 @@ type ArticleWriteValues = Partial<Omit<CreateArticleInput, 'slug'>>
 export async function createArticle(input: CreateArticleInput, db: Database = defaultDb): Promise<Article> {
   await assertEligibleAuthor(input.author_id, db)
   const occupiedSlugs = await listOccupiedArticleSlugs(input.slug, db)
+  const featuredImageId = await pickRandomFeaturedImageId(db)
 
   return writeWithAllocatedSlug({
     baseSlug: input.slug,
@@ -61,7 +63,7 @@ export async function createArticle(input: CreateArticleInput, db: Database = de
     tryWrite: async (slug) => {
       const [article] = await db
         .insert(articles)
-        .values({ ...input, slug })
+        .values({ ...input, slug, featured_image_id: featuredImageId })
         .returning()
       return article
     },
@@ -135,9 +137,15 @@ export async function listArticlesForAdmin(
   db: Database = defaultDb
 ): Promise<ArticleWithAuthorContact[]> {
   return db
-    .select({ ...getTableColumns(articles), authorName: users.name, authorEmail: users.email })
+    .select({
+      ...getTableColumns(articles),
+      authorName: users.name,
+      authorEmail: users.email,
+      featuredImagePath: featuredImages.path,
+    })
     .from(articles)
     .innerJoin(users, eq(articles.author_id, users.id))
+    .leftJoin(featuredImages, eq(articles.featured_image_id, featuredImages.id))
     .where(isNull(articles.deleted_at))
     .orderBy(desc(articles.date), desc(articles.id))
     .limit(pageSize)
@@ -172,9 +180,10 @@ export async function listAuthorOptions(currentAuthorId?: number, db: Database =
 
 function selectArticlesWithAuthor(db: Database) {
   return db
-    .select({ ...getTableColumns(articles), authorName: users.name })
+    .select({ ...getTableColumns(articles), authorName: users.name, featuredImagePath: featuredImages.path })
     .from(articles)
     .innerJoin(users, eq(articles.author_id, users.id))
+    .leftJoin(featuredImages, eq(articles.featured_image_id, featuredImages.id))
 }
 
 async function assertEligibleAuthor(authorId: number, db: Database): Promise<void> {

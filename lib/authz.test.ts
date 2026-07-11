@@ -3,9 +3,10 @@ import { can, PERMISSION_ACTIONS, PERMISSION_CATALOG, PERMISSION_ENTITIES, type 
 
 describe('PERMISSION_CATALOG', () => {
   it('enumerates every entity/action pair exactly once', () => {
-    expect(PERMISSION_CATALOG).toHaveLength(32)
+    const catalogSize = PERMISSION_ENTITIES.length * PERMISSION_ACTIONS.length
+    expect(PERMISSION_CATALOG).toHaveLength(catalogSize)
     expect(new Set(PERMISSION_CATALOG.map((permission) => `${permission.entity}:${permission.action}`))).toHaveLength(
-      32
+      catalogSize
     )
 
     for (const entity of PERMISSION_ENTITIES) {

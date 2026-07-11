@@ -35,10 +35,10 @@ A "idade" de um **Boletim** em anos completos desde a data do primeiro boletim (
 _Avoid_: Volume, temporada.
 
 **Artigo** (`articles`):
-Texto autoral publicado no site, com título, autor, data e conteúdo. O **autor** (`author_id`) é uma referência viva a um **Usuário** — não texto livre nem um **Membro** (ver ADR-0013): exibido pelo `name` atual do Usuário, com fallback "Redação" no site público (nunca o e-mail). Pode ser referenciado por um **Boletim**, mas existe de forma independente. Na criação, recebe aleatoriamente uma **Imagem em Destaque** do banco (`featured_image_id`).
+Texto autoral publicado no site, com título, autor, data e conteúdo. O **autor** (`author_id`) é uma referência viva a um **Usuário** — não texto livre nem um **Membro** (ver ADR-0013): exibido pelo `name` atual do Usuário, com fallback "Redação" no site público (nunca o e-mail). Pode ser referenciado por um **Boletim**, mas existe de forma independente. Na criação, recebe aleatoriamente uma **Imagem Destacada** do banco (`featured_image_id`).
 _Avoid_: Post, notícia, meditação.
 
-**Imagem em Destaque** (`featured_images`):
+**Imagem Destacada** (`featured_images`):
 Imagem **decorativa** de um banco compartilhado, exibida no topo de um recurso do site. O operador a envia pelo painel e ela é normalizada (WEBP, máx. 1600px de largura); os bytes vivem em disco, a linha guarda só o `id` e um `path` opaco (token aleatório). O vínculo com um recurso é **sorteado uma vez na criação** e depois **estável** — editar o recurso não re-sorteia; excluir a Imagem desfaz o vínculo (`ON DELETE SET NULL`). Sem imagem vinculada — banco vazio na criação, ou imagem excluída/arquivo ausente — o recurso cai numa **imagem de fallback** estática. O banco é **genérico por design**; hoje só o **Artigo** o consome.
 _Avoid_: Thumbnail, capa, banner, imagem de artigo (o banco não pertence a um recurso específico), imagem informativa (é decorativa — o `alt` vem do contexto do recurso, não da imagem).
 

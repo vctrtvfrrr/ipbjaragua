@@ -2,6 +2,7 @@ export { permissionAction, permissionEntity, userPermissions, users, userStatus 
 export { agenda } from './agenda.schema'
 export { announcements } from './announcements.schema'
 export { articles } from './articles.schema'
+export { featuredImages } from './featured-images.schema'
 export { bulletins } from './bulletins.schema'
 export { liturgies, liturgyActs, liturgyMoments, type ScripturePassage } from './liturgies.schema'
 export { members, memberStatus } from './members.schema'

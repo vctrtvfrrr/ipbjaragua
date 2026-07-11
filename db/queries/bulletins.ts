@@ -1,6 +1,6 @@
 import { count, desc, eq, lte } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { articles, bulletins, users } from '@/db/schema'
+import { articles, bulletins, featuredImages, users } from '@/db/schema'
 import type { ArticleWithAuthor } from './articles'
 
 export type Bulletin = typeof bulletins.$inferSelect
@@ -54,10 +54,12 @@ export async function getBulletinByDate(
       bulletin: bulletins,
       article: articles,
       authorName: users.name,
+      featuredImagePath: featuredImages.path,
     })
     .from(bulletins)
     .leftJoin(articles, eq(bulletins.article_id, articles.id))
     .leftJoin(users, eq(articles.author_id, users.id))
+    .leftJoin(featuredImages, eq(articles.featured_image_id, featuredImages.id))
     .where(eq(bulletins.date, date))
     .limit(1)
 
@@ -65,6 +67,8 @@ export async function getBulletinByDate(
 
   return {
     bulletin: row.bulletin,
-    article: row.article ? { ...row.article, authorName: row.authorName } : null,
+    article: row.article
+      ? { ...row.article, authorName: row.authorName, featuredImagePath: row.featuredImagePath }
+      : null,
   }
 }

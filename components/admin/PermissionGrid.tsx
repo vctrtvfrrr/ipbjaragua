@@ -15,6 +15,7 @@ const ENTITY_LABELS: Record<Entity, string> = {
   members: 'Membros',
   agenda: 'Agenda',
   users: 'Usuários',
+  featured_images: 'Imagens Destacadas',
 }
 
 const ACTION_LABELS: Record<Action, string> = {

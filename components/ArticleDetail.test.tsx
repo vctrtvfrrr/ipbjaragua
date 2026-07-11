@@ -9,6 +9,8 @@ const baseArticle: ArticleWithAuthor = {
   title: 'Graça Soberana',
   author_id: 1,
   authorName: 'Rev. Jean Carlos Almeida',
+  featured_image_id: null,
+  featuredImagePath: null,
   date: new Date('2026-06-07T00:00:00Z'),
   excerpt: null,
   content: 'Olá **mundo**',
