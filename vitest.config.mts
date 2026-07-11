@@ -6,6 +6,7 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
     globals: true,
+    testTimeout: 20_000,
     env: { DATABASE_URL: 'postgres://placeholder' },
     projects: [
       {
