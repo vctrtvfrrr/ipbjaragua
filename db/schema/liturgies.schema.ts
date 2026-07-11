@@ -24,6 +24,7 @@ export const liturgies = pgTable(
     date: date('date', { mode: 'date' }).notNull(),
     theme: text('theme').notNull(),
     time: time('time').notNull(),
+    description: text('description'),
     ...timestamps(),
     ...deletedAt(),
   },

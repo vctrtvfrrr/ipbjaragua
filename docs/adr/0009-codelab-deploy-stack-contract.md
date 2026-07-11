@@ -8,6 +8,8 @@ status: accepted
 
 > **Emenda (2026-06-27, redação corrigida em 2026-06-29):** com a migração para Postgres ([ADR-0010](0010-postgres-shared-vps.md)), a `DATABASE_URL` vira **segredo** e o stack **deixa de ser compose-only**. O `.env` de produção é **renderizado pela `deploy-stack`** a partir dos **Gitea Actions secrets deste repo**. O mecanismo concreto pertence ao contrato da plataforma — ver **infra ADR-0003**: o `deploy.yml` declara cada chave no `env:` do step com o prefixo `APPENV_` (p.ex. `APPENV_DATABASE_URL: ${{ secrets.DATABASE_URL }}`), e a action colhe as `APPENV_*` e escreve o `.env`. O **`.env.example`** sobrevive apenas como documentação das chaves esperadas (consumido pelo `compose.dev.yml`, não pela `deploy-stack`). O `compose.yml` perde o bind-mount `./data:/app/data` e o label `backup.sqlite=...`; o backup passa a ser `pg_dump` da database dedicada, responsabilidade da infra. As menções a "compose-only" e ao backup do arquivo SQLite abaixo ficam como registro histórico.
 
+> **Emenda (2026-07-11):** a integração de IA do [ADR-0019](0019-openai-for-meta-description-generation.md) acrescenta `OPENAI_API_KEY` (secret obrigatório) e `OPENAI_MODEL` (variável opcional) ao contrato renderizado pela `deploy-stack`.
+
 ## Contexto
 
 A [ADR-0008](0008-container-standalone-in-process-migration.md) definiu como a aplicação é containerizada, mas deixou em aberto _como_ a imagem chega ao servidor e sobe. O ambiente de produção é o VPS do CodeLab, que padroniza o deploy de todo stack pela composite action `codelab/deploy-stack`: ela faz `rsync` apenas do `compose.yml` para `/opt/compose/<service>/`, opcionalmente renderiza um `.env` a partir de um Vault (Bitwarden), e roda `docker compose up -d` contra o daemon do host.

@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FormEvent, useActionState, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useActionState, useEffect, useMemo, useState, useTransition } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLiturgyFormAction, updateLiturgyFormAction } from '@/app/(admin)/admin/liturgies/form-actions'
+import { generateLiturgyDescriptionAction } from '@/app/(admin)/admin/liturgies/form-actions'
 import type { LiturgyEditorData, SongPickerOption } from '@/db/queries/liturgies'
 import { formatISODate } from '@/lib/date'
 import {
@@ -55,6 +56,8 @@ export function LiturgyForm(props: Props) {
   const [theme, setTheme] = useState(liturgy?.theme ?? '')
   const [time, setTime] = useState(liturgy?.time ?? '')
   const [acts, setActs] = useState<ActDraft[]>(() => (liturgy ? fromEditorData(liturgy) : [emptyAct()]))
+  const [description, setDescription] = useState(liturgy?.description ?? '')
+  const [isGenerating, startGeneration] = useTransition()
   const [clientErrors, setClientErrors] = useState<FormErrors>({})
 
   const formError = state.status === 'error' ? state.formError : undefined
@@ -65,6 +68,7 @@ export function LiturgyForm(props: Props) {
         date,
         theme,
         time,
+        description,
         acts: acts.map((act) => ({
           ...(act.id ? { id: act.id } : {}),
           name: act.name,
@@ -79,7 +83,7 @@ export function LiturgyForm(props: Props) {
           })),
         })),
       }),
-    [acts, date, liturgy, theme, time]
+    [acts, date, description, liturgy, theme, time]
   )
 
   useEffect(() => {
@@ -194,6 +198,35 @@ export function LiturgyForm(props: Props) {
           ))}
         </div>
       </section>
+
+      <FormField>
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="description">Descrição</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isGenerating}
+            onClick={() =>
+              startGeneration(async () => {
+                const generationActs = acts.map((act) => ({
+                  ...act,
+                  moments: act.moments.map((moment) => ({
+                    ...moment,
+                    song_title: props.songs.find((song) => song.id === moment.song_id)?.title,
+                  })),
+                }))
+                const result = await generateLiturgyDescriptionAction({ mode: props.mode, acts: generationActs })
+                if (result.error) toast.error(result.error)
+                else if (result.description) setDescription(result.description)
+              })
+            }
+          >
+            {isGenerating ? 'Gerando…' : 'Gerar descrição'}
+          </Button>
+        </div>
+        <Textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} />
+      </FormField>
 
       <FormActions>
         <Button variant="outline" render={<Link href="/admin/liturgies" />}>

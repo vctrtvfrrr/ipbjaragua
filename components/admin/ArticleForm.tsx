@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { createArticleFormAction, updateArticleFormAction } from '@/app/(admin)/admin/articles/form-actions'
+import { generateArticleDescriptionAction } from '@/app/(admin)/admin/articles/form-actions'
 import { Button } from '@/components/ui/button'
 import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,9 @@ export function ArticleForm(props: Props) {
 
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE)
   const [title, setTitle] = useState(article?.title ?? '')
+  const [content, setContent] = useState(article?.content ?? '')
+  const [excerpt, setExcerpt] = useState(article?.excerpt ?? '')
+  const [isGenerating, startGeneration] = useTransition()
   const router = useRouter()
 
   const fieldErrors = state.status === 'error' ? state.fieldErrors : undefined
@@ -85,11 +89,28 @@ export function ArticleForm(props: Props) {
         </FormField>
       </div>
 
-      <MarkdownField defaultValue={article?.content} errors={fieldErrors?.content} />
+      <MarkdownField defaultValue={article?.content} errors={fieldErrors?.content} onChange={setContent} />
 
       <FormField>
-        <Label htmlFor="excerpt">Resumo</Label>
-        <Textarea id="excerpt" name="excerpt" defaultValue={values?.excerpt ?? article?.excerpt ?? ''} />
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="excerpt">Resumo</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isGenerating}
+            onClick={() =>
+              startGeneration(async () => {
+                const result = await generateArticleDescriptionAction({ mode: props.mode, title, content })
+                if (result.error) toast.error(result.error)
+                else if (result.description) setExcerpt(result.description)
+              })
+            }
+          >
+            {isGenerating ? 'Gerando…' : 'Gerar resumo'}
+          </Button>
+        </div>
+        <Textarea id="excerpt" name="excerpt" value={excerpt} onChange={(event) => setExcerpt(event.target.value)} />
         <FieldError messages={fieldErrors?.excerpt} />
       </FormField>
 

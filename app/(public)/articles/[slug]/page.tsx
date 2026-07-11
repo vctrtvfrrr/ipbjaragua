@@ -5,7 +5,7 @@ import { getArticleBySlug } from '@/db/queries/articles'
 export async function generateMetadata({ params }: PageProps<'/articles/[slug]'>) {
   const { slug } = await params
   const article = await getArticleBySlug(slug)
-  return { title: article?.title }
+  return { title: article?.title, ...(article?.excerpt ? { description: article.excerpt } : {}) }
 }
 
 export default async function ArticleDetailsPage({ params }: PageProps<'/articles/[slug]'>) {

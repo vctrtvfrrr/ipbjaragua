@@ -19,15 +19,22 @@ type Props = {
   name?: string
   defaultValue?: string
   errors?: string[]
+  onChange?: (value: string) => void
 }
 
-export function MarkdownField({ label = 'Conteúdo', name = 'content', defaultValue = '', errors }: Props) {
+export function MarkdownField({ label = 'Conteúdo', name = 'content', defaultValue = '', errors, onChange }: Props) {
   const [content, setContent] = useState(defaultValue)
 
   return (
     <div className="group/field grid gap-2">
       <Label>{label}</Label>
-      <MdxEditor markdown={defaultValue} onChange={setContent} />
+      <MdxEditor
+        markdown={defaultValue}
+        onChange={(value) => {
+          setContent(value)
+          onChange?.(value)
+        }}
+      />
       <input type="hidden" name={name} value={content} />
       <FieldError messages={errors} />
     </div>

@@ -1,0 +1,1 @@
+ALTER TABLE "liturgies" ADD COLUMN "description" text;

@@ -24,7 +24,7 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
           <>
             <div className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-3 xl:grid-cols-4">
               {liturgiesList.map((liturgy) => {
-                const subtitle = liturgy.sermonDescription ?? liturgy.sermonSpeaker
+                const subtitle = liturgy.description ?? liturgy.sermonDescription ?? liturgy.sermonSpeaker
                 return (
                   <div key={liturgy.id}>
                     <Link href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}>

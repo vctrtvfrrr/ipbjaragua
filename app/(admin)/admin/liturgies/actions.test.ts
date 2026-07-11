@@ -31,6 +31,7 @@ function payload(overrides: Record<string, unknown> = {}) {
     date: '2026-06-07',
     theme: 'Culto Solene',
     time: '09:00',
+    description: '',
     acts: [
       {
         name: 'Ato inicial',
@@ -122,6 +123,7 @@ describe('createLiturgyAction.execute', () => {
       { user: userWithPermission(true), db },
       formData(
         payload({
+          description: 'Somos chamados a adorar juntos.',
           acts: [
             { name: 'Pausa', moments: [] },
             {
@@ -144,6 +146,7 @@ describe('createLiturgyAction.execute', () => {
 
     expect(state).toEqual({ status: 'success' })
     const acts = await db.select().from(liturgyActs).orderBy(liturgyActs.position)
+    expect((await db.select().from(liturgies))[0].description).toBe('Somos chamados a adorar juntos.')
     expect(acts.map((act) => ({ name: act.name, position: act.position }))).toEqual([
       { name: 'Pausa', position: 0 },
       { name: 'Louvor', position: 1 },

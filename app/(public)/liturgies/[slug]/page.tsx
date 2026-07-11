@@ -2,6 +2,16 @@ import { notFound } from 'next/navigation'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
 import { formatLongDatePtBR, today } from '@/lib/date'
 
+export async function generateMetadata({ params }: PageProps<'/liturgies/[slug]'>) {
+  const { slug } = await params
+  const liturgy = await getLiturgyBySlug(slug, today())
+  if (!liturgy) return {}
+  return {
+    title: `${liturgy.theme} — ${formatLongDatePtBR(liturgy.date)} — ${liturgy.time}`,
+    ...(liturgy.description ? { description: liturgy.description } : {}),
+  }
+}
+
 export default async function LiturgyDetailPage({ params }: PageProps<'/liturgies/[slug]'>) {
   const { slug } = await params
   const liturgy = await getLiturgyBySlug(slug, today())

@@ -17,6 +17,7 @@ export type LiturgyListItem = {
   date: Date
   theme: string
   time: string | null
+  description: string | null
   sermonDescription: string | null
   sermonSpeaker: string | null
 }
@@ -26,6 +27,7 @@ export type LiturgyDetail = {
   date: Date
   theme: string
   time: string | null
+  description: string | null
   acts: Array<{
     id: number
     position: number
@@ -56,6 +58,7 @@ export type LiturgyEditorData = {
   date: Date
   theme: string
   time: string
+  description: string | null
   acts: Array<{
     id: number
     name: string
@@ -105,6 +108,7 @@ export async function listLiturgies(
       date: liturgies.date,
       theme: liturgies.theme,
       time: liturgies.time,
+      description: liturgies.description,
       sermonDescription: liturgyMoments.description,
       sermonSpeaker: liturgyMoments.sermon_speaker,
     })
@@ -126,6 +130,7 @@ export async function listLiturgies(
         date: row.date,
         theme: row.theme,
         time: hhmm(row.time),
+        description: row.description ?? null,
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
       })
@@ -212,6 +217,7 @@ export async function getLiturgyForEditor(
     date: liturgy.date,
     theme: liturgy.theme,
     time: hhmm(liturgy.time)!,
+    description: liturgy.description ?? null,
     acts: Array.from(acts.values()),
   }
 }
@@ -230,7 +236,7 @@ export async function createLiturgyTree(input: LiturgyTreeInput, db: Database = 
   return db.transaction(async (tx) => {
     const [liturgy] = await tx
       .insert(liturgies)
-      .values({ date: input.date, theme: input.theme, time: input.time })
+      .values({ date: input.date, theme: input.theme, time: input.time, description: input.description })
       .returning()
 
     await writeActsAndMoments(liturgy.id, input.acts, tx as Database)
@@ -249,7 +255,7 @@ export async function updateLiturgyTree(
 
     const [liturgy] = await tx
       .update(liturgies)
-      .set({ date: input.date, theme: input.theme, time: input.time })
+      .set({ date: input.date, theme: input.theme, time: input.time, description: input.description })
       .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
       .returning()
     if (!liturgy) throw new LiturgyNotFoundError(id)
@@ -344,6 +350,7 @@ export async function getLiturgyBySlug(
     date: liturgy.date,
     theme: liturgy.theme,
     time: hhmm(liturgy.time),
+    description: liturgy.description ?? null,
     acts: Array.from(actsMap.values()),
   }
 }
@@ -470,6 +477,7 @@ function deduplicateByLiturgyId(
     date: Date
     theme: string
     time: string | null
+    description: string | null
     sermonDescription: string | null
     sermonSpeaker: string | null
   }>
@@ -484,6 +492,7 @@ function deduplicateByLiturgyId(
         date: row.date,
         theme: row.theme,
         time: hhmm(row.time),
+        description: row.description ?? null,
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
       })
@@ -497,6 +506,7 @@ const liturgyCardFields = {
   date: liturgies.date,
   theme: liturgies.theme,
   time: liturgies.time,
+  description: liturgies.description,
   sermonDescription: liturgyMoments.description,
   sermonSpeaker: liturgyMoments.sermon_speaker,
 } as const

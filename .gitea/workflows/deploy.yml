@@ -53,3 +53,5 @@ jobs:
           APPENV_SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           APPENV_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           APPENV_EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          APPENV_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          APPENV_OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}

@@ -87,6 +87,7 @@ export const liturgyTreeSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{2}:\d{2}$/, 'Horário obrigatório'),
+  description: nullableTrimmedString,
   acts: z.array(liturgyActSchema).min(1, 'Liturgia exige ao menos um Ato'),
 })
 
