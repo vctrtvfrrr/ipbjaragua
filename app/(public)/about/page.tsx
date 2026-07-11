@@ -5,7 +5,7 @@ export default function About() {
         className="overflow-hidden bg-gray-300 bg-cover bg-center inset-shadow-sm"
         style={{
           height: '420px',
-          backgroundImage: 'url(/images/article-fallback.jpg)',
+          backgroundImage: 'url(/images/article-fallback.webp)',
         }}
       />
 

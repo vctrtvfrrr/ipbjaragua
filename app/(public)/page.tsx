@@ -51,7 +51,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
                     style={{
                       height: '260px',
-                      backgroundImage: 'url(/images/article-fallback.jpg)',
+                      backgroundImage: 'url(/images/article-fallback.webp)',
                     }}
                   >
                     <div className="absolute z-10 h-full w-full bg-black opacity-70"></div>
@@ -73,7 +73,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
                     style={{
                       height: '260px',
-                      backgroundImage: 'url(/images/article-fallback.jpg)',
+                      backgroundImage: 'url(/images/article-fallback.webp)',
                     }}
                   >
                     <div className="absolute z-10 h-full w-full bg-black opacity-70"></div>
@@ -99,7 +99,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                     className="relative mx-2 flex items-center justify-center overflow-hidden rounded bg-gray-300 bg-cover bg-center"
                     style={{
                       height: '260px',
-                      backgroundImage: 'url(/images/article-fallback.jpg)',
+                      backgroundImage: 'url(/images/article-fallback.webp)',
                     }}
                   >
                     <div className="absolute z-10 h-full w-full bg-black opacity-70"></div>
