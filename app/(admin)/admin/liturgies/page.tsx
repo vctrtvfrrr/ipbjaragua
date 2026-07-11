@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Copy, Plus } from 'lucide-react'
 import { DeleteLiturgyButton } from '@/components/admin/DeleteLiturgyButton'
 import Pagination from '@/components/Pagination'
 import { Button } from '@/components/ui/button'
@@ -77,6 +77,21 @@ export default async function AdminLiturgiesPage({ searchParams }: AdminLiturgie
                           render={<Link href={`/admin/liturgies/${liturgy.id}/edit`} />}
                         >
                           Editar
+                        </Button>
+                      ) : null}
+                      {canCreate ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          render={
+                            <Link
+                              href={`/admin/liturgies/new?from=${liturgy.id}`}
+                              title="Repetir conteúdo desta liturgia num formulário de criação"
+                            />
+                          }
+                        >
+                          <Copy data-icon="inline-start" />
+                          Duplicar
                         </Button>
                       ) : null}
                       {canDelete ? <DeleteLiturgyButton liturgy={liturgy} /> : null}

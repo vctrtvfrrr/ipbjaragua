@@ -133,3 +133,65 @@ export function parseSerializedLiturgyPayload(formData: FormData): unknown {
   if (typeof payload !== 'string') throw new Error('payload is required')
   return JSON.parse(payload)
 }
+
+type LiturgyDuplicationSource = {
+  theme: string
+  time: string
+  description: string | null
+  acts: Array<{
+    name: string
+    moments: Array<{
+      type: MomentType
+      description: string | null
+      song_id: number | null
+      scripture_passages: Array<{ reference: string; text: string; version: string }> | null
+      sermon_speaker: string | null
+      sacrament_type: SacramentType | null
+    }>
+  }>
+}
+
+export type LiturgyFormDefaults = {
+  date: string
+  theme: string
+  time: string
+  description: string
+  acts: Array<{
+    name: string
+    moments: Array<{
+      type: MomentType
+      description: string
+      song_id: number | null
+      scripture_passages: Array<{ reference: string; text: string; version: string }>
+      sermon_speaker: string
+      sacrament_type: SacramentType | null
+    }>
+  }>
+}
+
+export function buildLiturgyDuplicationDefaults(
+  source: LiturgyDuplicationSource,
+  { suggestedDate, activeSongIds }: { suggestedDate: string; activeSongIds: ReadonlySet<number> }
+): LiturgyFormDefaults {
+  return {
+    date: suggestedDate,
+    theme: source.theme,
+    time: source.time,
+    description: source.description ?? '',
+    acts: source.acts.map((act) => ({
+      name: act.name,
+      moments: act.moments.map((moment) => ({
+        type: moment.type,
+        description: moment.description ?? '',
+        song_id: moment.song_id !== null && activeSongIds.has(moment.song_id) ? moment.song_id : null,
+        scripture_passages: (moment.scripture_passages ?? []).map((passage) => ({
+          reference: passage.reference,
+          text: passage.text,
+          version: passage.version,
+        })),
+        sermon_speaker: moment.sermon_speaker ?? '',
+        sacrament_type: moment.sacrament_type,
+      })),
+    })),
+  }
+}

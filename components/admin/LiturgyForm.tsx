@@ -14,6 +14,7 @@ import {
   MOMENT_TYPES,
   SACRAMENT_TYPE_LABELS,
   liturgyTreeSchema,
+  type LiturgyFormDefaults,
   type MomentType,
   type SacramentType,
 } from '@/lib/liturgy'
@@ -43,20 +44,23 @@ type ActDraft = { key: string; id?: number; name: string; moments: MomentDraft[]
 type FormErrors = Record<string, string[]>
 
 type Props =
-  | { mode: 'create'; songs: SongPickerOption[] }
+  | { mode: 'create'; songs: SongPickerOption[]; defaults?: LiturgyFormDefaults }
   | { mode: 'edit'; liturgy: LiturgyEditorData; songs: SongPickerOption[] }
 
 export function LiturgyForm(props: Props) {
   const action = props.mode === 'edit' ? updateLiturgyFormAction : createLiturgyFormAction
   const liturgy = props.mode === 'edit' ? props.liturgy : undefined
+  const defaults = props.mode === 'create' ? props.defaults : undefined
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE)
   const router = useRouter()
 
-  const [date, setDate] = useState(liturgy ? formatISODate(liturgy.date) : '')
-  const [theme, setTheme] = useState(liturgy?.theme ?? '')
-  const [time, setTime] = useState(liturgy?.time ?? '')
-  const [acts, setActs] = useState<ActDraft[]>(() => (liturgy ? fromEditorData(liturgy) : [emptyAct()]))
-  const [description, setDescription] = useState(liturgy?.description ?? '')
+  const [date, setDate] = useState(liturgy ? formatISODate(liturgy.date) : (defaults?.date ?? ''))
+  const [theme, setTheme] = useState(liturgy?.theme ?? defaults?.theme ?? '')
+  const [time, setTime] = useState(liturgy?.time ?? defaults?.time ?? '')
+  const [acts, setActs] = useState<ActDraft[]>(() =>
+    liturgy ? fromEditorData(liturgy) : defaults ? fromDefaults(defaults) : [emptyAct()]
+  )
+  const [description, setDescription] = useState(liturgy?.description ?? defaults?.description ?? '')
   const [isGenerating, startGeneration] = useTransition()
   const [clientErrors, setClientErrors] = useState<FormErrors>({})
 
@@ -561,6 +565,22 @@ function fromEditorData(liturgy: LiturgyEditorData): ActDraft[] {
       song_id: moment.song_id,
       scripture_passages: moment.scripture_passages ?? [],
       sermon_speaker: moment.sermon_speaker ?? '',
+      sacrament_type: moment.sacrament_type,
+    })),
+  }))
+}
+
+function fromDefaults(defaults: LiturgyFormDefaults): ActDraft[] {
+  return defaults.acts.map((act) => ({
+    key: key(),
+    name: act.name,
+    moments: act.moments.map((moment) => ({
+      key: key(),
+      type: moment.type,
+      description: moment.description,
+      song_id: moment.song_id,
+      scripture_passages: moment.scripture_passages,
+      sermon_speaker: moment.sermon_speaker,
       sacrament_type: moment.sacrament_type,
     })),
   }))
