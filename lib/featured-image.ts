@@ -6,7 +6,7 @@ import { Readable } from 'node:stream'
 import sharp from 'sharp'
 
 export const ARTICLE_FALLBACK_IMAGE = '/images/article-fallback.webp'
-export const MAX_FEATURED_IMAGE_BYTES = 5 * 1024 * 1024
+export const MAX_FEATURED_IMAGE_BYTES = 15 * 1024 * 1024
 const ACCEPTED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
 
 export function featuredImageUrl(imagePath: string | null): string {
@@ -20,7 +20,7 @@ export function featuredImagesDirectory(): string {
 export async function normalizeAndStoreFeaturedImage(file: File): Promise<string> {
   if (!ACCEPTED_TYPES.has(file.type)) throw new Error('Envie uma imagem PNG, JPEG ou WEBP.')
   if (file.size === 0) throw new Error('Selecione uma imagem.')
-  if (file.size > MAX_FEATURED_IMAGE_BYTES) throw new Error('A imagem deve ter no máximo 5 MB.')
+  if (file.size > MAX_FEATURED_IMAGE_BYTES) throw new Error('A imagem deve ter no máximo 15 MB.')
 
   const filename = `${randomBytes(24).toString('hex')}.webp`
   const directory = featuredImagesDirectory()

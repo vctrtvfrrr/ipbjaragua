@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     authInterrupts: true,
+    proxyClientMaxBodySize: '16mb',
+    serverActions: {
+      bodySizeLimit: '16mb',
+    },
   },
 }
 
