@@ -1,13 +1,16 @@
-import { count, desc, eq, sql } from 'drizzle-orm'
+import { desc, eq, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { featuredImages } from '@/db/schema'
 
 export type FeaturedImage = typeof featuredImages.$inferSelect
 
-export class FeaturedImageNotFoundError extends Error {}
-
 export async function listFeaturedImages(db: Database = defaultDb): Promise<FeaturedImage[]> {
   return db.select().from(featuredImages).orderBy(desc(featuredImages.id))
+}
+
+export async function getFeaturedImageById(id: number, db: Database = defaultDb): Promise<FeaturedImage | undefined> {
+  const [image] = await db.select().from(featuredImages).where(eq(featuredImages.id, id)).limit(1)
+  return image
 }
 
 export async function createFeaturedImage(path: string, db: Database = defaultDb): Promise<FeaturedImage> {
@@ -17,7 +20,7 @@ export async function createFeaturedImage(path: string, db: Database = defaultDb
 
 export async function deleteFeaturedImage(id: number, db: Database = defaultDb): Promise<FeaturedImage> {
   const [image] = await db.delete(featuredImages).where(eq(featuredImages.id, id)).returning()
-  if (!image) throw new FeaturedImageNotFoundError()
+  if (!image) throw new Error('Featured image not found')
   return image
 }
 
@@ -28,9 +31,4 @@ export async function pickRandomFeaturedImageId(db: Database = defaultDb): Promi
     .orderBy(sql`random()`)
     .limit(1)
   return image?.id ?? null
-}
-
-export async function countFeaturedImages(db: Database = defaultDb): Promise<number> {
-  const [row] = await db.select({ value: count() }).from(featuredImages)
-  return row?.value ?? 0
 }

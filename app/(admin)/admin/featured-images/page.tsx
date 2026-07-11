@@ -22,13 +22,7 @@ export default async function FeaturedImagesPage() {
             const url = featuredImageUrl(image.path)
             return (
               <article key={image.id} className="grid gap-3 rounded-lg border p-3">
-                <Image
-                  className="aspect-video w-full rounded object-cover"
-                  src={url}
-                  alt="Imagem decorativa"
-                  width={480}
-                  height={270}
-                />
+                <Image className="aspect-video w-full rounded object-cover" src={url} alt="" width={480} height={270} />
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" size="sm" render={<a href={url} target="_blank" rel="noreferrer" />}>
                     <ExternalLink data-icon="inline-start" />

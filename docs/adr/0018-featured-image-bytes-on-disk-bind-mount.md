@@ -1,6 +1,6 @@
 ---
 number: 18
-title: Bytes das Imagens em Destaque em disco (bind-mount), fora do pg_dump
+title: Bytes das Imagens Destacadas em disco (bind-mount), fora do pg_dump
 date: 2026-07-10
 author: Victor Otávio Ferreira
 status: accepted
@@ -8,7 +8,7 @@ status: accepted
 
 ## Contexto
 
-O CRUD de **Imagem em Destaque** (issue #30) precisa persistir os bytes de imagens enviadas pelo operador. É a primeira vez que o app guarda um artefato binário — até aqui, todo o estado vive no Postgres compartilhado ([ADR-0010](0010-postgres-shared-vps.md)), e o container é stateless: a [ADR-0009](0009-codelab-deploy-stack-contract.md) **removeu** o bind-mount `./data:/app/data` quando o SQLite saiu, e o backup passou a ser exclusivamente `pg_dump` da database dedicada, responsabilidade da infra.
+O CRUD de **Imagem Destacada** (issue #30) precisa persistir os bytes de imagens enviadas pelo operador. É a primeira vez que o app guarda um artefato binário — até aqui, todo o estado vive no Postgres compartilhado ([ADR-0010](0010-postgres-shared-vps.md)), e o container é stateless: a [ADR-0009](0009-codelab-deploy-stack-contract.md) **removeu** o bind-mount `./data:/app/data` quando o SQLite saiu, e o backup passou a ser exclusivamente `pg_dump` da database dedicada, responsabilidade da infra.
 
 Três forças em jogo:
 
@@ -18,7 +18,7 @@ Três forças em jogo:
 
 ## Decisão
 
-Guardar os bytes das Imagens em Destaque **em disco**, num bind-mount de volume persistente, reintroduzindo `/opt/data/ipbjaragua` no container. O Postgres guarda apenas a linha de metadados (`id` + `path` opaco); o arquivo físico vive em `<data-dir>/featured-images/<path>`. Servir os bytes por um route handler que faz stream do disco.
+Guardar os bytes das Imagens Destacadas **em disco**, num bind-mount de volume persistente, reintroduzindo `/opt/data/ipbjaragua` no container. O Postgres guarda apenas a linha de metadados (`id` + `path` opaco); o arquivo físico vive em `<data-dir>/featured-images/<path>`. Servir os bytes por um route handler que faz stream do disco.
 
 Consequência assumida explicitamente: **as imagens ficam fora do `pg_dump`**. Não haverá rotina de backup dedicada para o volume — as imagens são tratadas como **re-enviáveis**. Num restore do banco sobre um volume vazio, os Artigos com vínculo pendente caem no fallback estático, e o route handler devolve `302` para o fallback quando o arquivo não existe.
 

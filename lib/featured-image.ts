@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto'
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
+import { access, mkdir, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { Readable } from 'node:stream'
 import sharp from 'sharp'
 
 export const ARTICLE_FALLBACK_IMAGE = '/images/article-fallback.webp'
@@ -32,10 +34,12 @@ export async function normalizeAndStoreFeaturedImage(file: File): Promise<string
   return filename
 }
 
-export async function readFeaturedImage(imagePath: string): Promise<Buffer | null> {
+export async function streamFeaturedImage(imagePath: string): Promise<ReadableStream | null> {
   if (!/^[a-f0-9]{48}\.webp$/.test(imagePath)) return null
   try {
-    return await readFile(path.join(featuredImagesDirectory(), imagePath))
+    const filePath = path.join(featuredImagesDirectory(), imagePath)
+    await access(filePath)
+    return Readable.toWeb(createReadStream(filePath)) as ReadableStream
   } catch {
     return null
   }

@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { db as defaultDb, type Database } from '@/db'
-import { createFeaturedImage, deleteFeaturedImage } from '@/db/queries/featured-images'
+import { createFeaturedImage, deleteFeaturedImage, getFeaturedImageById } from '@/db/queries/featured-images'
 import { getCurrentUser, type CurrentUser } from '@/lib/auth/current-user'
 import { type ActionState, requirePermission } from '@/lib/entity-action'
 import { normalizeAndStoreFeaturedImage, removeFeaturedImageFile } from '@/lib/featured-image'
 
 type Context = { user: CurrentUser | null; db: Database }
 
-export async function executeUploadFeaturedImage(context: Context, formData: FormData): Promise<ActionState> {
+async function executeUploadFeaturedImage(context: Context, formData: FormData): Promise<ActionState> {
   const denied = requirePermission(context.user, 'featured_images', 'create')
   if (denied) return denied
   const file = formData.get('image')
@@ -27,14 +27,16 @@ export async function executeUploadFeaturedImage(context: Context, formData: For
   }
 }
 
-export async function executeDeleteFeaturedImage(context: Context, formData: FormData): Promise<ActionState> {
+async function executeDeleteFeaturedImage(context: Context, formData: FormData): Promise<ActionState> {
   const denied = requirePermission(context.user, 'featured_images', 'delete')
   if (denied) return denied
   const id = Number(formData.get('id'))
   if (!Number.isInteger(id) || id <= 0) return { status: 'error', formError: 'Imagem inválida.' }
   try {
-    const image = await deleteFeaturedImage(id, context.db)
+    const image = await getFeaturedImageById(id, context.db)
+    if (!image) throw new Error('Imagem não encontrada')
     await removeFeaturedImageFile(image.path)
+    await deleteFeaturedImage(id, context.db)
     revalidatePath('/admin/featured-images')
     revalidatePath('/')
     revalidatePath('/articles')
