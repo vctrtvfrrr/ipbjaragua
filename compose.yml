@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ${DATA_DIR:-/opt/data/ipbjaragua}:/app/data
+      - /opt/codelab/apps/ipbjaragua/data:/app/data
     networks:
       - web
       - postgres

@@ -14,7 +14,7 @@ export function featuredImageUrl(imagePath: string | null): string {
 }
 
 export function featuredImagesDirectory(): string {
-  return path.join(process.env.DATA_DIR ?? '/app/data', 'featured-images')
+  return path.join('/app/data', 'featured-images')
 }
 
 export async function normalizeAndStoreFeaturedImage(file: File): Promise<string> {
