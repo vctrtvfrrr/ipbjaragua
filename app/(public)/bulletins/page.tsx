@@ -1,7 +1,10 @@
 import BulletinGrid from '@/components/BulletinGrid'
 import { countBulletins, listBulletins } from '@/db/queries/bulletins'
 import { today } from '@/lib/date'
+import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
+
+export const metadata = institutionalMetadata('bulletins')
 
 const PAGE_SIZE = 50
 

@@ -1,6 +1,9 @@
 import ArticleGrid from '@/components/ArticleGrid'
 import { countArticles, listArticles } from '@/db/queries/articles'
+import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
+
+export const metadata = institutionalMetadata('articles')
 
 const PAGE_SIZE = 50
 

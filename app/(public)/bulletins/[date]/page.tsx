@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import BulletinArticle from '@/components/BulletinArticle'
 import Markdown from '@/components/Markdown'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from '@/db/queries/bulletin-sections'
@@ -7,16 +8,22 @@ import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
 import { bulletinSectionWindows, formatLongDatePtBR, formatShortDatePtBR, parseISODate, today } from '@/lib/date'
+import { bulletinMetadata } from '@/lib/og/metadata'
+
+const loadBulletin = cache((date: string, preview: boolean) =>
+  getBulletinByDate(parseISODate(date), today(), undefined, { preview })
+)
 
 export async function generateMetadata({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
   const { preview } = await searchParams
   const isPreview = preview === '1'
-  const result = await getBulletinByDate(parseISODate(date), today(), undefined, { preview: isPreview })
-  return {
-    title: result?.bulletin.title,
-    robots: isPreview ? { index: false, follow: false } : undefined,
-  }
+  const result = await loadBulletin(date, isPreview)
+  if (!result) return {}
+  return bulletinMetadata(
+    { date: result.bulletin.date, slug: date, title: result.bulletin.title, edition: result.bulletin.edition },
+    { preview: isPreview }
+  )
 }
 
 const sectionCard = 'mb-8 break-inside-avoid rounded border border-gray-200 bg-gray-50 p-5'
@@ -24,7 +31,7 @@ const sectionCard = 'mb-8 break-inside-avoid rounded border border-gray-200 bg-g
 export default async function BulletinDetailPage({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
   const { preview } = await searchParams
-  const result = await getBulletinByDate(parseISODate(date), today(), undefined, { preview: preview === '1' })
+  const result = await loadBulletin(date, preview === '1')
 
   if (!result) notFound()
 

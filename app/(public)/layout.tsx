@@ -1,7 +1,17 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import MainNav from '@/components/MainNav'
 import SocialLinks from '@/components/SocialLinks'
+import { CHURCH_NAME } from '@/lib/og/config'
+import { resolveMetadataBase } from '@/lib/site'
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    metadataBase: await resolveMetadataBase(),
+    title: { template: `%s — ${CHURCH_NAME}`, default: CHURCH_NAME },
+  }
+}
 
 export default function PublicLayout({
   children,

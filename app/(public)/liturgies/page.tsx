@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { countLiturgies, listLiturgies } from '@/db/queries/liturgies'
 import { liturgySlug } from '@/lib/bulletin'
 import { formatLongDatePtBR, today } from '@/lib/date'
+import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
+
+export const metadata = institutionalMetadata('liturgies')
 
 const PAGE_SIZE = 50
 

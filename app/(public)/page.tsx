@@ -15,7 +15,10 @@ import {
   formatShortDatePtBR,
   today,
 } from '@/lib/date'
+import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
+
+export const metadata = institutionalMetadata('home')
 
 const PAGE_SIZE = 12
 

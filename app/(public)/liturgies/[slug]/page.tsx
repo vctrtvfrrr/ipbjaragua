@@ -1,20 +1,27 @@
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
 import { formatLongDatePtBR, today } from '@/lib/date'
+import { liturgyMetadata } from '@/lib/og/metadata'
+
+const loadLiturgy = cache((slug: string) => getLiturgyBySlug(slug, today()))
 
 export async function generateMetadata({ params }: PageProps<'/liturgies/[slug]'>) {
   const { slug } = await params
-  const liturgy = await getLiturgyBySlug(slug, today())
+  const liturgy = await loadLiturgy(slug)
   if (!liturgy) return {}
-  return {
-    title: `${liturgy.theme} — ${formatLongDatePtBR(liturgy.date)} — ${liturgy.time}`,
-    ...(liturgy.description ? { description: liturgy.description } : {}),
-  }
+  return liturgyMetadata({
+    slug,
+    theme: liturgy.theme,
+    time: liturgy.time,
+    date: liturgy.date,
+    description: liturgy.description,
+  })
 }
 
 export default async function LiturgyDetailPage({ params }: PageProps<'/liturgies/[slug]'>) {
   const { slug } = await params
-  const liturgy = await getLiturgyBySlug(slug, today())
+  const liturgy = await loadLiturgy(slug)
   if (!liturgy) notFound()
 
   return (

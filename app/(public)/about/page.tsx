@@ -1,3 +1,7 @@
+import { institutionalMetadata } from '@/lib/og/metadata'
+
+export const metadata = institutionalMetadata('about')
+
 export default function About() {
   return (
     <>

@@ -1,4 +1,7 @@
 import { PublicMemberRegistrationForm } from '@/components/PublicMemberRegistrationForm'
+import { institutionalMetadata } from '@/lib/og/metadata'
+
+export const metadata = institutionalMetadata('register')
 
 export default function PublicMemberRegistrationPage() {
   return (
