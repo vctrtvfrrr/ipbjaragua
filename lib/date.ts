@@ -52,6 +52,10 @@ const weekdayFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
 })
 
+export function formatTimePtBR(time: string): string {
+  return time.replace(':', 'h')
+}
+
 export function formatWeekdayPtBR(value: Date): string {
   const name = weekdayFormatter.format(value)
   return name.charAt(0).toUpperCase() + name.slice(1)

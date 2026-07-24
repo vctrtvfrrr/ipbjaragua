@@ -26,7 +26,7 @@ export type LiturgyDetail = {
   id: number
   date: Date
   theme: string
-  time: string | null
+  time: string
   description: string | null
   acts: Array<{
     id: number
@@ -349,7 +349,7 @@ export async function getLiturgyBySlug(
     id: liturgy.id,
     date: liturgy.date,
     theme: liturgy.theme,
-    time: hhmm(liturgy.time),
+    time: hhmm(liturgy.time)!,
     description: liturgy.description ?? null,
     acts: Array.from(actsMap.values()),
   }

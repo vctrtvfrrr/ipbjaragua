@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import Pagination from '@/components/Pagination'
+import PageHeader from '@/components/public/PageHeader'
 import { countLiturgies, listLiturgies } from '@/db/queries/liturgies'
 import { liturgySlug } from '@/lib/bulletin'
 import { formatLongDatePtBR, today } from '@/lib/date'
@@ -18,52 +20,40 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
   const liturgiesList = await listLiturgies({ page, pageSize: PAGE_SIZE, today: todayDate })
 
   return (
-    <section className="container mx-auto py-10 xl:px-0">
-      <h2 className="font-narrow mb-5 text-3xl text-green-900 uppercase">Liturgias</h2>
-      <main>
+    <main>
+      <PageHeader eyebrow="Ordem dos cultos" title="Liturgias" />
+      <section className="container mx-auto px-5 pt-6 pb-20 md:px-8">
         {liturgiesList.length === 0 ? (
-          <p className="text-gray-500">Nenhuma liturgia publicada ainda.</p>
+          <p className="text-muted-foreground">Nenhuma liturgia publicada ainda.</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-3 xl:grid-cols-4">
+            <ul className="grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
               {liturgiesList.map((liturgy) => {
                 const subtitle = liturgy.description ?? liturgy.sermonDescription ?? liturgy.sermonSpeaker
                 return (
-                  <div key={liturgy.id}>
-                    <Link href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}>
-                      <h3 className="font-narrow mt-4 mb-2 text-2xl leading-7">
+                  <li key={liturgy.id} className="border-border border-b pb-5">
+                    <Link
+                      href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}
+                      className="group block"
+                    >
+                      <h2 className="text-brand-ridge font-serif text-2xl leading-snug group-hover:underline">
                         {liturgy.theme}
-                        <small className="mb-2 block font-sans text-base text-gray-500">
-                          {formatLongDatePtBR(liturgy.date)}
-                        </small>
-                      </h3>
+                      </h2>
+                      <p className="font-narrow text-brand-deep mt-2 tracking-[0.06em] uppercase">
+                        {formatLongDatePtBR(liturgy.date)}
+                        {liturgy.time ? ` \u00b7 ${liturgy.time.replace(':', 'h')}` : null}
+                      </p>
                     </Link>
-                    {subtitle ? <p>{subtitle}</p> : null}
-                  </div>
+                    {subtitle ? <p className="text-muted-foreground mt-2 text-sm">{subtitle}</p> : null}
+                  </li>
                 )
               })}
-            </div>
+            </ul>
 
-            {pages > 1 ? (
-              <nav aria-label="Paginação" className="mt-10 flex items-center justify-center gap-6">
-                {page > 1 ? (
-                  <Link href={`/liturgies?page=${page - 1}`} className="text-green-900">
-                    ← Anterior
-                  </Link>
-                ) : null}
-                <span className="text-gray-500">
-                  Página {page} de {pages}
-                </span>
-                {page < pages ? (
-                  <Link href={`/liturgies?page=${page + 1}`} className="text-green-900">
-                    Próxima →
-                  </Link>
-                ) : null}
-              </nav>
-            ) : null}
+            {pages > 1 ? <Pagination page={page} totalPages={pages} basePath="/liturgies" /> : null}
           </>
         )}
-      </main>
-    </section>
+      </section>
+    </main>
   )
 }

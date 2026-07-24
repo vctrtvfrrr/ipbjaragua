@@ -1,7 +1,9 @@
+import { ChevronRightIcon } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
+import PageHeader from '@/components/public/PageHeader'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
-import { formatLongDatePtBR, today } from '@/lib/date'
+import { formatLongDatePtBR, formatTimePtBR, today } from '@/lib/date'
 import { liturgyMetadata } from '@/lib/og/metadata'
 
 const loadLiturgy = cache((slug: string) => getLiturgyBySlug(slug, today()))
@@ -25,28 +27,39 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
   if (!liturgy) notFound()
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-10 xl:px-0">
-      <h2 className="font-narrow text-center text-5xl text-green-900">{liturgy.theme}</h2>
-      <p className="mt-2 text-center text-gray-500">{`${formatLongDatePtBR(liturgy.date)} às ${liturgy.time}`}</p>
+    <main>
+      <PageHeader
+        eyebrow="Liturgia"
+        title={liturgy.theme}
+        meta={`${formatLongDatePtBR(liturgy.date)} às ${formatTimePtBR(liturgy.time)}`}
+      />
 
-      <div className="mt-10 space-y-6">
-        {liturgy.acts.map((act, i) => (
-          <details key={act.id} open={i === 0}>
-            <summary
-              data-marker="⁜ "
-              className="marker:text-2xl marker:font-bold marker:text-red-500 marker:content-[attr(data-marker)]"
-            >
-              <h3 className="font-narrow mb-2 inline cursor-pointer text-2xl font-bold uppercase">{act.name}</h3>
-            </summary>
-            <ul className="mt-2 space-y-4">
-              {act.moments.map((moment) => (
-                <li key={moment.id}>
-                  <MomentView moment={moment} />
-                </li>
-              ))}
-            </ul>
-          </details>
-        ))}
+      <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
+        <ol className="max-w-3xl space-y-10">
+          {liturgy.acts.map((act, i) => (
+            <li key={act.id}>
+              <details open={i === 0} className="group">
+                <summary className="border-brand-accent flex cursor-pointer list-none items-baseline gap-4 border-b-2 pb-2">
+                  <span aria-hidden="true" className="font-narrow text-brand-deep text-sm tabular-nums">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <h2 className="eyebrow text-brand-ridge flex-1">{act.name}</h2>
+                  <ChevronRightIcon
+                    aria-hidden="true"
+                    className="text-brand-accent size-4 transition-transform group-open:rotate-90"
+                  />
+                </summary>
+                <ul className="mt-6 space-y-7">
+                  {act.moments.map((moment) => (
+                    <li key={moment.id}>
+                      <MomentView moment={moment} />
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          ))}
+        </ol>
       </div>
     </main>
   )
@@ -54,16 +67,20 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
 
 type Moment = LiturgyDetail['acts'][0]['moments'][0]
 
+function MomentLabel({ children }: { children: React.ReactNode }) {
+  return <h3 className="font-narrow text-brand-ridge text-xl font-bold">{children}</h3>
+}
+
 function PassagesView({ passages }: { passages: NonNullable<Moment['scripture_passages']> }) {
   return (
     <>
       {passages.map((passage, i) => (
-        <div key={i}>
-          <h4 className="font-narrow text-xl font-bold text-green-900 uppercase">
+        <div key={i} className="mt-2">
+          <MomentLabel>
             {passage.reference}{' '}
-            <small className="font-sans text-sm font-normal text-gray-500 italic">({passage.version})</small>
-          </h4>
-          <p className="mt-1 whitespace-pre-line">{passage.text}</p>
+            <small className="text-muted-foreground font-sans text-sm font-normal italic">({passage.version})</small>
+          </MomentLabel>
+          <p className="mt-2 font-serif whitespace-pre-line">{passage.text}</p>
         </div>
       ))}
     </>
@@ -74,11 +91,9 @@ function MomentView({ moment }: { moment: Moment }) {
   if (moment.type === 'bible_reading' && moment.scripture_passages) {
     return (
       <>
-        <strong className="font-narrow mb-2 text-xl">
-          <span className="text-red-500">‣</span> Leitura Bíblica:
-        </strong>
+        <p className="eyebrow text-brand-ridge">Leitura bíblica</p>
         <PassagesView passages={moment.scripture_passages} />
-        {moment.description ? <p className="text-gray-400">{moment.description}</p> : null}
+        {moment.description ? <p className="text-muted-foreground mt-2 text-sm">{moment.description}</p> : null}
       </>
     )
   }
@@ -86,14 +101,16 @@ function MomentView({ moment }: { moment: Moment }) {
   if (moment.type === 'song') {
     return (
       <>
-        <h4 className="font-narrow text-xl font-bold text-green-900 uppercase">
+        <MomentLabel>
           {moment.song?.title ?? moment.description}
           {moment.song?.songReference ? (
-            <small className="block font-sans font-normal normal-case italic">{moment.song.songReference}</small>
+            <small className="text-muted-foreground block font-sans text-sm font-normal normal-case italic">
+              {moment.song.songReference}
+            </small>
           ) : null}
-        </h4>
+        </MomentLabel>
         {moment.song?.lyrics ? (
-          <div className="mt-2 space-y-2">
+          <div className="mt-3 space-y-3 font-serif">
             {moment.song.lyrics.map((block, i) => {
               if (block.type === 'verse')
                 return (
@@ -104,7 +121,7 @@ function MomentView({ moment }: { moment: Moment }) {
                 )
               if (block.type === 'chorus')
                 return (
-                  <p key={i} className="pl-4 whitespace-pre-line italic">
+                  <p key={i} className="border-brand-accent border-l-2 pl-4 whitespace-pre-line italic">
                     {block.content}
                   </p>
                 )
@@ -120,14 +137,16 @@ function MomentView({ moment }: { moment: Moment }) {
       <>
         {moment.scripture_passages ? <PassagesView passages={moment.scripture_passages} /> : null}
         {moment.description ? (
-          <p className="font-narrow text-center text-lg font-bold text-green-900">
+          <p className="text-brand-ridge mt-2 font-serif text-2xl leading-snug">
             {moment.description}
             {moment.sermon_speaker ? (
-              <cite className="block font-sans text-sm font-normal text-gray-500">— {moment.sermon_speaker}</cite>
+              <cite className="text-muted-foreground mt-1 block font-sans text-sm font-normal not-italic">
+                {moment.sermon_speaker}
+              </cite>
             ) : null}
           </p>
         ) : moment.sermon_speaker ? (
-          <p className="text-gray-500">{moment.sermon_speaker}</p>
+          <p className="text-muted-foreground">{moment.sermon_speaker}</p>
         ) : null}
       </>
     )
@@ -137,15 +156,11 @@ function MomentView({ moment }: { moment: Moment }) {
     const label = moment.sacrament_type === 'baptism' ? 'Batismo' : 'Santa Ceia'
     return (
       <>
-        <p className="font-narrow text-xl font-bold">{label}</p>
-        {moment.description ? <p className="mt-1 whitespace-pre-line">{moment.description}</p> : null}
+        <MomentLabel>{label}</MomentLabel>
+        {moment.description ? <p className="mt-2 whitespace-pre-line">{moment.description}</p> : null}
       </>
     )
   }
 
-  return (
-    <strong className="font-narrow text-xl">
-      <span className="text-red-500">‣</span> {moment.description}
-    </strong>
-  )
+  return <MomentLabel>{moment.description}</MomentLabel>
 }
