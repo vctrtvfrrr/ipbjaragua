@@ -10,6 +10,18 @@
   --font-serif: var(--font-pt-serif);
   --font-narrow: var(--font-pt-sans-narrow);
   --font-heading: var(--font-sans);
+  --color-brand-ridge: var(--brand-ridge);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-on-deep: var(--brand-accent-on-deep);
+  --color-brand-sky: var(--brand-sky);
+  --color-brand-current: var(--brand-current);
+  --color-brand-deep: var(--brand-deep);
+  --text-display: clamp(2.5rem, 6vw, 4rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.02em;
+  --text-editorial: clamp(1.75rem, 3.5vw, 2.5rem);
+  --text-editorial--line-height: 1.1;
+  --text-editorial--letter-spacing: -0.01em;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,24 +63,34 @@
 }
 
 :root {
+  /* Cores da marca. Contraste medido sobre branco: ridge 6,67:1, current 4,64:1,
+     deep 9,25:1. accent fica em 3,34:1 — só texto grande e elementos não textuais.
+     Sobre a água (deep), accent cai a 2,77:1, por isso accent-on-deep existe. */
+  --brand-ridge: #386641;
+  --brand-accent: #6a994e;
+  --brand-accent-on-deep: #9dc47f;
+  --brand-sky: #ebf2fa;
+  --brand-current: #427aa1;
+  --brand-deep: #064789;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(25.3% 0.09 152);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: var(--brand-ridge);
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --muted: var(--brand-sky);
+  --muted-foreground: #5a656e;
+  --accent: var(--brand-sky);
+  --accent-foreground: var(--brand-ridge);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #dde5ee;
+  --input: #7f8c9b;
+  --ring: var(--brand-deep);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -128,5 +150,33 @@
   }
   html {
     @apply font-sans;
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand-deep);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Voz estrutural da marca: sobrelinhas, cabeças de seção, horários e rótulos.
+     É a tipografia dos boletins impressos, não um estilo decorativo. */
+  .eyebrow {
+    font-family: var(--font-narrow);
+    font-weight: 700;
+    font-size: 0.75rem;
+    line-height: 1;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
