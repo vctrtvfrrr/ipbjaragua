@@ -7,13 +7,13 @@ import { INSTITUTIONAL_PAGES, type InstitutionalPageKey } from './pages'
 const TITLE_SUFFIX = ` — ${CHURCH_NAME}`
 
 const INSTITUTIONAL_DESCRIPTIONS: Record<InstitutionalPageKey, string> = {
-  home: 'Igreja Presbiteriana do Brasil em Jaraguá do Sul: boletins semanais, artigos e as liturgias dos nossos cultos.',
-  about: 'Conheça a Igreja Presbiteriana do Brasil em Jaraguá do Sul: nossa história, nossa fé e nossa comunidade.',
-  location: 'Onde encontrar a Igreja Presbiteriana do Brasil em Jaraguá do Sul: endereço, mapa e como chegar.',
-  register: 'Cadastre-se como membro da Igreja Presbiteriana do Brasil em Jaraguá do Sul e some-se à nossa comunidade.',
-  articles: 'Artigos e reflexões publicados pela Igreja Presbiteriana do Brasil em Jaraguá do Sul.',
-  bulletins: 'Boletins semanais da Igreja Presbiteriana do Brasil em Jaraguá do Sul.',
-  liturgies: 'As liturgias dos cultos da Igreja Presbiteriana do Brasil em Jaraguá do Sul.',
+  home: 'IPB de Jaraguá do Sul: boletins semanais, artigos e as liturgias dos nossos cultos.',
+  about: 'Conheça a IPB de Jaraguá do Sul: nossa história, nossa fé e nossa comunidade.',
+  location: 'Onde encontrar a IPB de Jaraguá do Sul: endereço, mapa e como chegar.',
+  register: 'Cadastre-se como membro da IPB de Jaraguá do Sul.',
+  articles: 'Artigos e reflexões publicados pela IPB de Jaraguá do Sul.',
+  bulletins: 'Boletins semanais da IPB de Jaraguá do Sul.',
+  liturgies: 'Liturgias dos cultos da IPB de Jaraguá do Sul.',
 }
 
 type SocialImage = { path: string; alt: string }
