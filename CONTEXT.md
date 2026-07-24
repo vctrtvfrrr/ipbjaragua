@@ -49,7 +49,7 @@ _Avoid_: Thumbnail, capa, banner, imagem de artigo (o banco não pertence a um r
 ### Culto
 
 **Liturgia** (`liturgies`):
-A ordem de um culto numa data específica. É estruturada em **Atos**, que por sua vez contêm **Momentos**. Segue **publicação-por-data** como o **Boletim**: com data até hoje (inclusive) está publicada e aparece no site; com data futura é rascunho e não aparece em lugar nenhum (índice, busca ou URL direta). Não há coluna de status — a data é o único critério.
+A ordem de um culto numa data e horário específicos. É estruturada em **Atos**, que por sua vez contêm **Momentos**. Segue **publicação-por-data** como o **Boletim**: com data até hoje (inclusive) está publicada e aparece no site; com data futura é rascunho e não aparece em lugar nenhum (índice, busca ou URL direta). Não há coluna de status — a data é o único critério. Toda Liturgia possui horário.
 _Avoid_: Culto (o culto é o evento; a Liturgia é sua ordem documentada), ordem de serviço.
 
 **Tipo de Culto**:

@@ -178,8 +178,7 @@ export function renderLiturgyCard(liturgy: {
   longDate: string
   time: string | null
 }): Promise<ImageResponse> {
-  const metaLines = [liturgy.longDate]
-  if (liturgy.time) metaLines.push(`Horário: ${liturgy.time}`)
+  const metaLines = [`${liturgy.longDate} às ${liturgy.time}`]
   return renderCard({ label: 'Liturgia', title: liturgy.theme, metaLines })
 }
 

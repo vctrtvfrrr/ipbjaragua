@@ -27,10 +27,7 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10 xl:px-0">
       <h2 className="font-narrow text-center text-5xl text-green-900">{liturgy.theme}</h2>
-      <p className="mt-2 text-center text-gray-500">
-        {formatLongDatePtBR(liturgy.date)}
-        {liturgy.time ? ` — ${liturgy.time}` : null}
-      </p>
+      <p className="mt-2 text-center text-gray-500">{`${formatLongDatePtBR(liturgy.date)} às ${liturgy.time}`}</p>
 
       <div className="mt-10 space-y-6">
         {liturgy.acts.map((act, i) => (

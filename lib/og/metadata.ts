@@ -115,7 +115,7 @@ export type LiturgyMeta = { slug: string; theme: string; time: string | null; da
 
 export function liturgyMetadata(liturgy: LiturgyMeta): Metadata {
   const longDate = formatLongDatePtBR(liturgy.date)
-  const title = `${liturgy.theme} — ${longDate}${liturgy.time ? ` — ${liturgy.time}` : ''}`
+  const title = `${liturgy.theme} — ${longDate} às ${liturgy.time}`
 
   return socialMetadata({
     title,
