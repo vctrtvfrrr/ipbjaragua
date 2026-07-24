@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import BrandMark from '@/components/brand/BrandMark'
 import SocialLinks from '@/components/SocialLinks'
+import { CHURCH_ADDRESS } from '@/lib/church'
 import { CHURCH_NAME } from '@/lib/og/config'
 import { PUBLIC_NAV } from '@/lib/public-nav'
 
@@ -30,9 +31,11 @@ export default function SiteFooter() {
           <div>
             <h2 className="eyebrow text-brand-accent-on-deep mb-4">Endereço</h2>
             <address className="space-y-1 not-italic">
-              <p>Rua Gustavo Bruch, 86</p>
-              <p>Czerniewicz — Jaraguá do Sul, SC</p>
-              <p>CEP 89255-020</p>
+              <p>{CHURCH_ADDRESS.street}</p>
+              <p>
+                {CHURCH_ADDRESS.district} — {CHURCH_ADDRESS.city}, {CHURCH_ADDRESS.state}
+              </p>
+              <p>CEP {CHURCH_ADDRESS.postalCode}</p>
             </address>
           </div>
         </div>
