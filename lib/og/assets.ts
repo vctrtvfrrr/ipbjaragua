@@ -1,9 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { OG_COLORS } from './config'
 
 const FONTS_DIR = join(process.cwd(), 'assets', 'fonts')
-const LOGO_PATH = join(process.cwd(), 'public', 'images', 'logo.svg')
+const LOGO_PATH = join(process.cwd(), 'public', 'images', 'brand', 'logo-symbol.svg')
 
 export type OgFont = { name: string; data: ArrayBuffer; weight: 400 | 700; style: 'normal' }
 
@@ -37,8 +36,7 @@ let logoPromise: Promise<string> | null = null
 export function loadLogoDataUri(): Promise<string> {
   logoPromise ??= (async () => {
     const svg = await readFile(LOGO_PATH, 'utf8')
-    const recolored = svg.replace(/#041\b/gi, OG_COLORS.green)
-    return `data:image/svg+xml;base64,${Buffer.from(recolored).toString('base64')}`
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
   })()
   return logoPromise
 }
