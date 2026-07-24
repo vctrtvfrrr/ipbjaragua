@@ -50,10 +50,19 @@ export const E2E_AGENDA = [
   { title: 'Reunião de Células', event_date: '2026-06-10' },
 ]
 
+// A validade é relativa ao dia da semeadura: uma data fixa expira e o aviso
+// desaparece da home, quebrando o teste muito depois de escrito.
+function daysFromToday(days: number): Date {
+  const date = new Date()
+  date.setUTCHours(0, 0, 0, 0)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date
+}
+
 export const E2E_ANNOUNCEMENT = {
   title: 'Retiro de Jovens',
   description: 'Inscrições abertas até sexta.\n\n| Item | Valor |\n| --- | --- |\n| Inscrição | R$ 80 |\n',
-  expires_at: '2026-07-14',
+  expires_at: daysFromToday(30),
 }
 
 export const E2E_MEMBER = {
@@ -167,7 +176,7 @@ export async function seedE2eDatabase() {
     })
   }
 
-  await db.insert(announcements).values({ ...E2E_ANNOUNCEMENT, expires_at: parseISODate(E2E_ANNOUNCEMENT.expires_at) })
+  await db.insert(announcements).values(E2E_ANNOUNCEMENT)
   await db.insert(members).values({ ...E2E_MEMBER, birth_date: parseISODate(E2E_MEMBER.birth_date) })
 
   const [adminUser] = await db.insert(users).values(E2E_ADMIN_USER).returning({ id: users.id })
