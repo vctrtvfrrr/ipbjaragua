@@ -19,7 +19,7 @@ Um **Boletim** com data até hoje (inclusive) está publicado e aparece no site.
 _Avoid_: Agendado, oculto, despublicado.
 
 **Preview** (do Boletim):
-A pré-visualização de um **Boletim** ainda em Rascunho: a própria página pública, renderizada via um query param que dispensa a trava de data futura. É **aberto** — não exige autenticação, pois o conteúdo não é sigiloso —, mas emite `noindex` e não é linkado de nenhuma página pública, de modo que buscadores não o indexam e a URL sem o param segue invisível. O preview de um Rascunho renderiza também as **Liturgias** daquela data futura (igualmente rascunhos), exposição transitiva conhecida e aceita.
+A pré-visualização compartilhável de um **Boletim** ainda em Rascunho: a própria página pública, renderizada via um query param que dispensa a trava de data futura. Existe para que o link seja enviado a outras pessoas durante a revisão. É **aberto** — não exige autenticação, pois o conteúdo não é sigiloso —, mas emite `noindex` e não é linkado de nenhuma página pública, de modo que buscadores não o indexam e a URL sem o param segue invisível. O preview de um Rascunho renderiza também as **Liturgias** daquela data futura (igualmente rascunhos), exposição transitiva conhecida e aceita.
 _Avoid_: prévia, rascunho compartilhável.
 
 **Janela de Correção** (derivada de `date` e `created_at`):
@@ -99,7 +99,7 @@ _Avoid_: coluna/flag de comungante (é derivado), catecúmeno.
 _Avoid_: membro inativo, desligado.
 
 **Cadastro Público** (formulário público de membro):
-Formulário no site público, sem autenticação, pelo qual um **Visitante** (na prática, um membro existente ainda fora do sistema) submete seus dados para entrar no rol. A submissão cria um **Membro** `pending` (nunca `active`) — nunca aparece no site nem nos aniversariantes até um **Usuário** revisá-la e promovê-la (ver [ADR-0015](./docs/adr/0015-public-member-registration-lands-as-pending.md)). É a única origem de Membros `pending`; o cadastro pelo painel nasce já com situação eclesiástica definida.
+Formulário no site público, sem autenticação, pelo qual um **Visitante** (na prática, um membro existente ainda fora do sistema) submete seus dados para entrar no rol. A página não é linkada pela interface pública; o acesso ocorre por compartilhamento do link direto. A submissão cria um **Membro** `pending` (nunca `active`) — nunca aparece no site nem nos aniversariantes até um **Usuário** revisá-la e promovê-la (ver [ADR-0015](./docs/adr/0015-public-member-registration-lands-as-pending.md)). É a única origem de Membros `pending`; o cadastro pelo painel nasce já com situação eclesiástica definida.
 _Avoid_: autocadastro (o acesso ao rol depende de revisão), inscrição.
 
 **Aniversário de Casamento**:
