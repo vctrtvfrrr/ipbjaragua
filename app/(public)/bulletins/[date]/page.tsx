@@ -3,11 +3,20 @@ import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import BulletinArticle from '@/components/BulletinArticle'
 import Markdown from '@/components/Markdown'
+import PageHeader from '@/components/public/PageHeader'
+import SectionHead from '@/components/public/SectionHead'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
-import { bulletinSectionWindows, formatLongDatePtBR, formatShortDatePtBR, parseISODate, today } from '@/lib/date'
+import {
+  bulletinSectionWindows,
+  formatLongDatePtBR,
+  formatShortDatePtBR,
+  formatTimePtBR,
+  parseISODate,
+  today,
+} from '@/lib/date'
 import { bulletinMetadata } from '@/lib/og/metadata'
 
 const loadBulletin = cache((date: string, preview: boolean) =>
@@ -26,7 +35,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<'/bul
   )
 }
 
-const sectionCard = 'mb-8 break-inside-avoid rounded border border-gray-200 bg-gray-50 p-5'
+const sectionCard = 'bg-brand-sky mb-8 break-inside-avoid p-6'
 
 export default async function BulletinDetailPage({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
@@ -50,122 +59,126 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
   const agendaDays = groupAgendaByWeekday(agendaItems)
 
   return (
-    <main className="container mx-auto px-4 py-10 xl:px-0">
-      <header className="mb-10">
-        <h1 className="font-narrow mb-1 text-4xl text-green-900">{bulletin.title}</h1>
-        <p className="text-gray-500">{formatLongDatePtBR(bulletin.date)}</p>
-        <p className="text-gray-500">{formatBulletinSubtitle(bulletin.edition, bulletin.date)}</p>
-      </header>
+    <main>
+      <PageHeader
+        eyebrow="Boletim"
+        title={formatLongDatePtBR(bulletin.date)}
+        meta={formatBulletinSubtitle(bulletin.edition, bulletin.date)}
+      />
 
-      {article ? <BulletinArticle article={article} /> : null}
+      <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
+        {article ? <BulletinArticle article={article} /> : null}
 
-      <div className="mb-10 lg:columns-3 lg:gap-8">
-        {bulletin.show_agenda && agendaDays.length > 0 ? (
-          <section className={sectionCard}>
-            <h2 className="font-narrow mb-1 text-2xl text-green-900 uppercase">Agenda da Semana</h2>
-            <p className="mb-5 text-gray-500">
-              {formatShortDatePtBR(windows.agenda.from)} a {formatShortDatePtBR(windows.agenda.to)}
-            </p>
-            <ol className="space-y-6">
-              {agendaDays.map((day) => (
-                <li key={day.weekday}>
-                  <h3 className="font-narrow text-xl font-bold">
-                    <span className="text-red-500">‣</span> {day.label}
-                  </h3>
-                  <ul>
-                    {day.items.map((item) => (
-                      <li key={item.id}>
-                        {item.time ? (
-                          <>
-                            <time>{item.time}</time> –{' '}
-                          </>
-                        ) : null}
-                        {item.title}
-                        {item.description ? (
-                          <>
-                            {' '}
-                            – <em className="text-muted-foreground">{item.description}</em>
-                          </>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ol>
-          </section>
-        ) : null}
+        <div className="mb-10 lg:columns-3 lg:gap-8">
+          {bulletin.show_agenda && agendaDays.length > 0 ? (
+            <section className={sectionCard}>
+              <SectionHead>Agenda da semana</SectionHead>
+              <p className="text-muted-foreground -mt-4 mb-5 text-sm">
+                {formatShortDatePtBR(windows.agenda.from)} a {formatShortDatePtBR(windows.agenda.to)}
+              </p>
+              <ol className="space-y-6">
+                {agendaDays.map((day) => (
+                  <li key={day.weekday}>
+                    <h3 className="eyebrow text-brand-ridge border-brand-accent mb-2 border-b pb-1">{day.label}</h3>
+                    <ul>
+                      {day.items.map((item) => (
+                        <li key={item.id}>
+                          {item.time ? (
+                            <>
+                              <time className="font-narrow text-brand-deep">{formatTimePtBR(item.time)}</time> –{' '}
+                            </>
+                          ) : null}
+                          {item.title}
+                          {item.description ? (
+                            <>
+                              {' '}
+                              – <em className="text-muted-foreground">{item.description}</em>
+                            </>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
 
-        {bulletin.show_announcements && announcements.length > 0 ? (
-          <section className={sectionCard}>
-            <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Avisos Gerais</h2>
-            <ul className="space-y-6">
-              {announcements.map((ann) => (
-                <li key={ann.id}>
-                  <h3 className="font-narrow text-2xl font-bold">{ann.title}</h3>
-                  {ann.description ? (
-                    <div className="text-justify">
-                      <Markdown content={ann.description} />
-                    </div>
-                  ) : null}
-                  {ann.url ? <Link href={ann.url}>Acesse</Link> : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+          {bulletin.show_announcements && announcements.length > 0 ? (
+            <section className={sectionCard}>
+              <SectionHead>Avisos gerais</SectionHead>
+              <ul className="space-y-6">
+                {announcements.map((ann) => (
+                  <li key={ann.id}>
+                    <h3 className="text-brand-ridge font-serif text-xl leading-snug">{ann.title}</h3>
+                    {ann.description ? (
+                      <div className="prose prose-sm mt-1 max-w-none">
+                        <Markdown content={ann.description} />
+                      </div>
+                    ) : null}
+                    {ann.url ? (
+                      <Link href={ann.url} className="text-brand-current underline-offset-4 hover:underline">
+                        Acesse
+                      </Link>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
-        {bulletin.show_birthdays && anniversaries.length > 0 ? (
-          <section className={sectionCard}>
-            <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Aniversariantes</h2>
-            <div className="space-y-4">
-              {anniversaries.map((day) => (
-                <div key={day.md}>
-                  <h3 className="font-narrow text-lg font-bold">
-                    <span className="text-red-500">‣</span> {day.md} — {day.weekday}
-                  </h3>
-                  <ul className="ml-4 space-y-1">
-                    {day.names.map((name, i) => (
-                      <li key={i}>
-                        {name.split('♥').flatMap((part, j, arr) =>
-                          j < arr.length - 1
-                            ? [
-                                part,
-                                <span key={j} className="text-red-500">
-                                  ♥
-                                </span>,
-                              ]
-                            : [part]
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {liturgiesOfDay.length > 0 ? (
-          <section className={sectionCard}>
-            <h2 className="font-narrow mb-5 text-2xl text-green-900 uppercase">Liturgia</h2>
-            <ul className="space-y-1">
-              {liturgiesOfDay.map((l) => (
-                <li key={l.id}>
-                  <Link
-                    href={`/liturgies/${liturgySlug(l.date, l.theme, l.time)}`}
-                    className="text-green-900 underline"
-                  >
-                    <h3 className="font-narrow mt-4 mb-2 text-xl">
-                      {l.theme}
-                      {l.time ? ` — ${l.time}` : null}
+          {bulletin.show_birthdays && anniversaries.length > 0 ? (
+            <section className={sectionCard}>
+              <SectionHead>Aniversariantes</SectionHead>
+              <div className="space-y-4">
+                {anniversaries.map((day) => (
+                  <div key={day.md}>
+                    <h3 className="eyebrow text-brand-ridge mb-1">
+                      {day.md} — {day.weekday}
                     </h3>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+                    <ul className="ml-4 space-y-1">
+                      {day.names.map((name, i) => (
+                        <li key={i}>
+                          {name.split('♥').flatMap((part, j, arr) =>
+                            j < arr.length - 1
+                              ? [
+                                  part,
+                                  <span key={j} className="text-brand-ridge">
+                                    ♥
+                                  </span>,
+                                ]
+                              : [part]
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {liturgiesOfDay.length > 0 ? (
+            <section className={sectionCard}>
+              <SectionHead>Liturgia</SectionHead>
+              <ul className="space-y-1">
+                {liturgiesOfDay.map((l) => (
+                  <li key={l.id}>
+                    <Link
+                      href={`/liturgies/${liturgySlug(l.date, l.theme, l.time)}`}
+                      className="group block underline-offset-4"
+                    >
+                      <h3 className="font-narrow text-brand-deep text-xl group-hover:underline">
+                        {l.theme}
+                        {l.time ? ` · ${formatTimePtBR(l.time)}` : null}
+                      </h3>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
       </div>
     </main>
   )

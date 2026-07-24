@@ -9,13 +9,14 @@ export default function BulletinArticle({ article }: { article: ArticleWithAutho
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <section className="mb-10">
-      <h2 className="font-narrow mb-2 text-2xl text-green-900">{article.title}</h2>
-      <p className="mb-3 text-sm text-gray-500">{publicAuthorName(article)}</p>
+    <section className="mb-12 max-w-3xl">
+      <p className="eyebrow text-brand-ridge">Artigo</p>
+      <h2 className="text-brand-ridge mt-3 font-serif text-3xl leading-snug">{article.title}</h2>
+      <p className="text-muted-foreground mt-2 text-sm">{publicAuthorName(article)}</p>
 
-      <div className="relative">
+      <div className="relative mt-5">
         <div
-          className="prose max-w-none overflow-hidden text-justify transition-all duration-500"
+          className="prose prose-headings:font-serif prose-headings:text-brand-ridge overflow-hidden transition-all duration-500"
           style={{ maxHeight: expanded ? '99999px' : '20rem' }}
         >
           <Markdown content={article.content} />
@@ -26,7 +27,7 @@ export default function BulletinArticle({ article }: { article: ArticleWithAutho
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="pointer-events-auto rounded-full bg-green-900 px-5 py-2 text-sm font-bold text-white shadow-md transition hover:bg-green-800"
+              className="bg-primary text-primary-foreground hover:bg-primary/85 pointer-events-auto h-11 px-6 text-sm font-bold"
             >
               Continuar lendo
             </button>

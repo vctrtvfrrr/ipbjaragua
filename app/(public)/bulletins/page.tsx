@@ -1,4 +1,5 @@
 import BulletinGrid from '@/components/BulletinGrid'
+import PageHeader from '@/components/public/PageHeader'
 import { countBulletins, listBulletins } from '@/db/queries/bulletins'
 import { today } from '@/lib/date'
 import { institutionalMetadata } from '@/lib/og/metadata'
@@ -17,11 +18,11 @@ export default async function BulletinsPage({ searchParams }: PageProps<'/bullet
   const bulletinsList = await listBulletins({ page, pageSize: PAGE_SIZE, today: todayDate })
 
   return (
-    <section className="container mx-auto py-10 xl:px-0">
-      <h2 className="font-narrow mb-5 text-3xl text-green-900 uppercase">Boletins Semanais</h2>
-      <main>
+    <main>
+      <PageHeader eyebrow="Publicações" title="Boletins semanais" />
+      <section className="container mx-auto px-5 pt-6 pb-20 md:px-8">
         <BulletinGrid bulletins={bulletinsList} page={page} totalPages={pages} />
-      </main>
-    </section>
+      </section>
+    </main>
   )
 }
