@@ -18,12 +18,12 @@ describe('institutionalMetadata', () => {
 
   it('names inner pages and points to their generated image', () => {
     const meta = institutionalMetadata('about')
-    expect(meta.title).toBe('Sobre')
-    expect(meta.openGraph?.title).toBe('Sobre — IPB de Jaraguá do Sul')
+    expect(meta.title).toBe('Sobre nós')
+    expect(meta.openGraph?.title).toBe('Sobre nós — IPB de Jaraguá do Sul')
     expect(meta.alternates?.canonical).toBe('/about')
     const image = (meta.openGraph?.images as Array<{ url: string; alt: string }>)[0]
     expect(image.url).toBe('/og/about')
-    expect(image.alt).toBe('Imagem de compartilhamento da página Sobre da IPB de Jaraguá do Sul')
+    expect(image.alt).toBe('Imagem de compartilhamento da página Sobre nós da IPB de Jaraguá do Sul')
   })
 
   it('reuses the same image in openGraph and twitter', () => {
