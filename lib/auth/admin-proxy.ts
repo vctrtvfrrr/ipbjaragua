@@ -10,7 +10,7 @@ export type AdminSessionDecision =
 export async function evaluateAdminSession(token: string | undefined, now = new Date()): Promise<AdminSessionDecision> {
   if (!token) return { ok: false }
 
-  const session = await verifySessionToken(token)
+  const session = await verifySessionToken(token, undefined, now)
   if (!session) return { ok: false }
 
   if (!shouldRenewSession(session.expiresAt, now)) {

@@ -28,10 +28,11 @@ export async function createSessionToken(userId: number, secret?: string, now = 
 
 export async function verifySessionToken(
   token: string,
-  secret?: string
+  secret?: string,
+  now = new Date()
 ): Promise<{ userId: number; expiresAt: Date } | null> {
   try {
-    const { payload } = await jwtVerify(token, getSecretKey(secret))
+    const { payload } = await jwtVerify(token, getSecretKey(secret), { currentDate: now })
     const parsed = sessionPayloadSchema.safeParse(payload)
 
     if (!parsed.success) return null
