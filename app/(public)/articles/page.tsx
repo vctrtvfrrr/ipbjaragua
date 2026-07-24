@@ -1,4 +1,5 @@
 import ArticleGrid from '@/components/ArticleGrid'
+import PageHeader from '@/components/public/PageHeader'
 import { countArticles, listArticles } from '@/db/queries/articles'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
@@ -15,11 +16,11 @@ export default async function ArticlesPage({ searchParams }: PageProps<'/article
   const articles = await listArticles({ page, pageSize: PAGE_SIZE })
 
   return (
-    <section className="container mx-auto py-10 xl:px-0">
-      <h2 className="font-narrow mb-5 text-3xl text-green-900 uppercase">Artigos</h2>
-      <main>
+    <main>
+      <PageHeader eyebrow="Publicações" title="Artigos" />
+      <section className="container mx-auto px-5 pt-6 pb-20 md:px-8">
         <ArticleGrid articles={articles} page={page} totalPages={pages} basePath="/articles" />
-      </main>
-    </section>
+      </section>
+    </main>
   )
 }

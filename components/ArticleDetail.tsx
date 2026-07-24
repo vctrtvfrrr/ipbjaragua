@@ -1,7 +1,8 @@
+import ArticleVisual from '@/components/public/ArticleVisual'
+import PageHeader from '@/components/public/PageHeader'
 import type { ArticleWithAuthor } from '@/db/queries/articles'
 import { publicAuthorName } from '@/lib/article'
 import { formatLongDatePtBR } from '@/lib/date'
-import { featuredImageUrl } from '@/lib/featured-image'
 import Markdown from './Markdown'
 
 export default function ArticleDetail({ article }: { article: ArticleWithAuthor }) {
@@ -9,25 +10,25 @@ export default function ArticleDetail({ article }: { article: ArticleWithAuthor 
   const byline = `${publicAuthorName(article)} — ${date}`
 
   return (
-    <>
-      <div
-        className="overflow-hidden bg-gray-300 bg-cover bg-center inset-shadow-sm"
-        style={{
-          height: '420px',
-          backgroundImage: `url(${featuredImageUrl(article.featuredImagePath)})`,
-        }}
-      />
+    <main>
+      <PageHeader eyebrow="Artigo" title={article.title}>
+        <p className="text-muted-foreground mt-4">{byline}</p>
+      </PageHeader>
 
-      <main className="container mx-auto px-4 py-10 xl:px-0">
-        <header className="mb-8">
-          <h1 className="font-narrow text-4xl leading-tight text-green-900">{article.title}</h1>
-          <small className="mt-3 block text-gray-500">{byline}</small>
-        </header>
+      <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
+        <div className="max-w-3xl">
+          <ArticleVisual
+            featuredImagePath={article.featuredImagePath}
+            slug={article.slug}
+            alt=""
+            className="h-56 w-full object-cover md:h-72"
+          />
 
-        <article className="prose prose-lg max-w-none">
-          <Markdown content={article.content} />
-        </article>
-      </main>
-    </>
+          <article className="prose prose-lg prose-headings:font-serif prose-headings:text-brand-ridge mt-10">
+            <Markdown content={article.content} />
+          </article>
+        </div>
+      </div>
+    </main>
   )
 }
