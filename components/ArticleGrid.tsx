@@ -1,10 +1,9 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import Pagination from '@/components/Pagination'
+import ArticleVisual from '@/components/public/ArticleVisual'
 import type { ArticleWithAuthor } from '@/db/queries/articles'
 import { publicAuthorName } from '@/lib/article'
 import { formatLongDatePtBR } from '@/lib/date'
-import { featuredImageUrl } from '@/lib/featured-image'
 
 type Props = {
   articles: ArticleWithAuthor[]
@@ -15,7 +14,7 @@ type Props = {
 
 export default function ArticleGrid({ articles, page, totalPages, basePath }: Props) {
   if (articles.length === 0) {
-    return <p className="text-gray-500">Nenhum artigo publicado ainda.</p>
+    return <p className="text-muted-foreground">Nenhum artigo publicado ainda.</p>
   }
 
   return (
@@ -26,20 +25,21 @@ export default function ArticleGrid({ articles, page, totalPages, basePath }: Pr
           const byline = `${publicAuthorName(article)} — ${date}`
 
           return (
-            <div key={article.slug}>
-              <Link href={`/articles/${article.slug}`}>
-                <Image
-                  className="h-48 w-full rounded object-cover"
-                  src={featuredImageUrl(article.featuredImagePath)}
-                  width={340}
-                  height={100}
-                  alt={article.title}
+            <article key={article.slug}>
+              <Link href={`/articles/${article.slug}`} className="group block">
+                <ArticleVisual
+                  featuredImagePath={article.featuredImagePath}
+                  slug={article.slug}
+                  alt=""
+                  className="h-48 w-full object-cover"
                 />
-                <h3 className="font-narrow mt-4 mb-2 text-2xl leading-7">{article.title}</h3>
+                <h3 className="text-brand-ridge mt-4 font-serif text-2xl leading-snug group-hover:underline">
+                  {article.title}
+                </h3>
               </Link>
-              <small className="mb-2 block text-gray-500">{byline}</small>
-              {article.excerpt ? <p className="text-justify">{article.excerpt}</p> : null}
-            </div>
+              <p className="text-muted-foreground mt-2 text-sm">{byline}</p>
+              {article.excerpt ? <p className="mt-3">{article.excerpt}</p> : null}
+            </article>
           )
         })}
       </div>

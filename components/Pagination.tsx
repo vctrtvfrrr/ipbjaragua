@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 
 type Props = {
   page: number
@@ -11,17 +11,17 @@ export default function Pagination({ page, totalPages, basePath }: Props) {
   return (
     <nav aria-label="Paginação" className="mt-10 flex items-center justify-center gap-6">
       {page > 1 ? (
-        <Button variant="link" render={<Link href={`${basePath}?page=${page - 1}`} />}>
+        <Link href={`${basePath}?page=${page - 1}`} className={buttonVariants({ variant: 'link' })}>
           ← Anterior
-        </Button>
+        </Link>
       ) : null}
       <span className="text-muted-foreground">
         Página {page} de {totalPages}
       </span>
       {page < totalPages ? (
-        <Button variant="link" render={<Link href={`${basePath}?page=${page + 1}`} />}>
+        <Link href={`${basePath}?page=${page + 1}`} className={buttonVariants({ variant: 'link' })}>
           Próxima →
-        </Button>
+        </Link>
       ) : null}
     </nav>
   )
