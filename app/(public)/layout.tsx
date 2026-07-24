@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
-import Link from 'next/link'
-import MainNav from '@/components/MainNav'
-import SocialLinks from '@/components/SocialLinks'
+import SiteFooter from '@/components/public/SiteFooter'
+import SiteHeader from '@/components/public/SiteHeader'
 import { CHURCH_NAME } from '@/lib/og/config'
 import { resolveMetadataBase } from '@/lib/site'
 
@@ -19,53 +17,10 @@ export default function PublicLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className="font-serif">
-      <header className="container mx-auto p-4 xl:px-0">
-        <div className="-mx-2 my-2 flex flex-wrap justify-center overflow-hidden px-5 md:justify-start lg:px-2">
-          <div className="overflow-hidden px-2 text-center md:text-left">
-            <h1 className="font-serif text-2xl font-bold text-gray-600">
-              <Link href="/">
-                <Image
-                  src="/images/logo.svg"
-                  className="mr-2 inline-block align-bottom"
-                  alt="IPB de Jaraguá do Sul"
-                  width={182}
-                  height={150}
-                  style={{ width: 50, height: 40 }}
-                />
-                IPB de Jaraguá do Sul
-              </Link>
-            </h1>
-          </div>
-
-          <nav className="my-2 mr-4 ml-auto overflow-hidden px-2 text-center md:text-left">
-            <MainNav />
-          </nav>
-
-          <div className="my-2 overflow-hidden px-2 text-center md:text-right">
-            <SocialLinks />
-          </div>
-        </div>
-      </header>
-
-      <section>{children}</section>
-
-      <footer className="bg-gray-100 text-center sm:text-left">
-        <div className="container mx-auto p-4 xl:px-0">
-          <MainNav />
-          <div className="px-3 sm:flex">
-            <div className="w-full sm:w-1/2">
-              <h4 className="pt-10 font-serif text-2xl font-bold">IPB de Jaraguá do Sul</h4>
-              <span className="block pt-1 text-xs font-light tracking-wider">
-                &copy; 2026 Todos os direitos reservados.
-              </span>
-            </div>
-            <div className="mt-10 w-full text-center sm:mt-0 sm:w-1/2 md:text-right">
-              <SocialLinks />
-            </div>
-          </div>
-        </div>
-      </footer>
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <div className="flex-1">{children}</div>
+      <SiteFooter />
     </div>
   )
 }

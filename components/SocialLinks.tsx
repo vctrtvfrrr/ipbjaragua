@@ -6,7 +6,7 @@ export default function SocialLinks() {
       <Link
         href="https://www.facebook.com/ipbjaraguadosul"
         title="Facebook"
-        className="mr-2 inline-block w-6"
+        className="inline-flex size-11 items-center justify-center p-2.5"
         target="_blank"
       >
         <svg className="fill-current" viewBox="-110 1 511 512" xmlns="http://www.w3.org/2000/svg">
@@ -17,7 +17,7 @@ export default function SocialLinks() {
       <Link
         href="https://www.instagram.com/ipbjaraguadosul"
         title="Instagram"
-        className="inline-block w-6"
+        className="inline-flex size-11 items-center justify-center p-2.5"
         target="_blank"
       >
         <svg className="fill-current" viewBox="0 0 512.001 512.001" xmlns="http://www.w3.org/2000/svg">

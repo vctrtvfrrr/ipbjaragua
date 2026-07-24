@@ -9,7 +9,7 @@ export type InstitutionalPage = {
 export const INSTITUTIONAL_PAGES: Record<InstitutionalPageKey, InstitutionalPage> = {
   home: { path: '/', name: 'Início', cardLabel: null },
   about: { path: '/about', name: 'Sobre nós', cardLabel: 'Sobre nós' },
-  location: { path: '/location', name: 'Localização', cardLabel: 'Localização' },
+  location: { path: '/location', name: 'Visite-nos', cardLabel: 'Visite-nos' },
   register: { path: '/members/register', name: 'Cadastro de membro', cardLabel: 'Cadastro de membro' },
   articles: { path: '/articles', name: 'Artigos', cardLabel: 'Artigos' },
   bulletins: { path: '/bulletins', name: 'Boletins', cardLabel: 'Boletins' },
