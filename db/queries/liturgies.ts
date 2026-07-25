@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, getTableColumns, isNull, lte, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, getTableColumns, gt, gte, isNull, lte, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { liturgyActs, liturgyMoments, liturgies, type LiturgyStatus, type ScripturePassage, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
@@ -105,6 +105,20 @@ export async function countLiturgies(
     .select({ value: count() })
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), visibleLiturgy(visibility)))
+  return row?.value ?? 0
+}
+
+/** Conta liturgias com data >= `fromDate`, independente de paginação — usada para localizar
+ * a fronteira futuro/passado na sequência ordenada por data desc sem depender de quais dois
+ * itens caem juntos na mesma página. */
+export async function countFutureOrTodayLiturgies(
+  { visibility, fromDate }: { visibility: LiturgyVisibility; fromDate: Date },
+  db: Database = defaultDb
+): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(liturgies)
+    .where(and(isNull(liturgies.deleted_at), gte(liturgies.date, fromDate), visibleLiturgy(visibility)))
   return row?.value ?? 0
 }
 
@@ -545,10 +559,11 @@ const liturgyCardFields = {
   sermonSpeaker: liturgyMoments.sermon_speaker,
 } as const
 
-/** `upcoming` é uma Liturgia de hoje que ainda não passou; `latest` é a mais recente já
- * realizada. Quem exibe decide as palavras — a distinção importa porque anunciar uma
- * `latest` como se fosse o próximo culto engana quem planeja a visita. */
-export type NextLiturgyResult = { liturgy: LiturgyListItem; kind: 'upcoming' | 'latest' }
+/** `today` é uma Liturgia de hoje que ainda não passou; `future` é a mais próxima em data
+ * futura, sem teto de antecedência; `last-held` é a mais recente já realizada, usada quando
+ * não há nada à frente. Quem exibe decide as palavras — a distinção importa porque anunciar
+ * uma `last-held` como se fosse o próximo culto engana quem planeja a visita. */
+export type NextLiturgyResult = { liturgy: LiturgyListItem; kind: 'today' | 'future' | 'last-held' }
 
 /** Não recebe escopo de visibilidade: o destaque nunca considera Rascunho, nem para quem
  * tem permissão de vê-los. Destacar é selecionar, não renderizar — apontar o próximo culto
@@ -567,7 +582,19 @@ export async function getNextLiturgy(
 
   const todayLiturgies = deduplicateByLiturgyId(todayRows)
   const upcoming = todayLiturgies.find((l) => l.time !== null && currentTime <= addMinutesToHHMM(l.time, 60))
-  if (upcoming) return { liturgy: upcoming, kind: 'upcoming' }
+  if (upcoming) return { liturgy: upcoming, kind: 'today' }
+
+  const futureRows = await db
+    .select(liturgyCardFields)
+    .from(liturgies)
+    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
+    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
+    .where(and(isNull(liturgies.deleted_at), gt(liturgies.date, today), visibleLiturgy('published-only')))
+    .orderBy(asc(liturgies.date), asc(liturgies.time))
+    .limit(20)
+
+  const future = deduplicateByLiturgyId(futureRows)[0]
+  if (future) return { liturgy: future, kind: 'future' }
 
   const fallbackRows = await db
     .select(liturgyCardFields)
@@ -579,5 +606,5 @@ export async function getNextLiturgy(
     .limit(20)
 
   const fallback = deduplicateByLiturgyId(fallbackRows)[0]
-  return fallback ? { liturgy: fallback, kind: 'latest' } : undefined
+  return fallback ? { liturgy: fallback, kind: 'last-held' } : undefined
 }
