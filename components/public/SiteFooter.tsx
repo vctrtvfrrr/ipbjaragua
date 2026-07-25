@@ -10,8 +10,7 @@ export default function SiteFooter() {
     <footer className="bg-brand-deep text-brand-sky print:hidden">
       <div className="container mx-auto grid gap-10 px-5 md:px-8 py-14 md:grid-cols-[auto_1fr_auto] md:gap-16">
         <div className="flex items-start gap-4">
-          <BrandMark variant="symbol" className="h-20 w-auto" />
-          <p className="font-serif text-2xl leading-tight">{CHURCH_NAME}</p>
+          <BrandMark variant="white" className="h-48 w-auto" />
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2">

@@ -4,6 +4,7 @@ const ASSETS = {
   symbol: { src: '/images/brand/logo-symbol.svg', width: 430, height: 407 },
   horizontal: { src: '/images/brand/logo-horizontal.svg', width: 1123, height: 407 },
   vertical: { src: '/images/brand/logo-vertical.svg', width: 653, height: 739 },
+  white: { src: '/images/brand/logo-white.svg', width: 653, height: 739 },
 } as const
 
 type Props = {
