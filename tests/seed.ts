@@ -176,6 +176,8 @@ export type SeedAnnouncement = {
   expires_at: string
   description?: string
   url?: string | null
+  icon?: string
+  featured_image_id?: number | null
 }
 
 export async function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
@@ -185,6 +187,8 @@ export async function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
       expires_at: parseISODate(row.expires_at),
       description: row.description ?? 'Descrição do aviso',
       url: row.url ?? null,
+      icon: row.icon ?? 'Pin',
+      featured_image_id: row.featured_image_id ?? null,
     })
   }
 }
