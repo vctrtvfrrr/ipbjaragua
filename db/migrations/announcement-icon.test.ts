@@ -18,7 +18,9 @@ describe('announcement icon migration', () => {
       .filter((file) => /^\d{4}_.+\.sql$/.test(file))
       .sort()
 
-    for (const file of migrationFiles.slice(0, -1)) {
+    const iconMigrationIndex = migrationFiles.findIndex((file) => file === '0012_lyrical_bullseye.sql')
+
+    for (const file of migrationFiles.slice(0, iconMigrationIndex)) {
       await applySql(client, await readFile(join(migrationsDirectory, file), 'utf8'))
     }
 
@@ -27,7 +29,7 @@ describe('announcement icon migration', () => {
       VALUES ('Aviso existente', 'Descrição', '2026-07-12')
     `)
 
-    await applySql(client, await readFile(join(migrationsDirectory, migrationFiles.at(-1)!), 'utf8'))
+    await applySql(client, await readFile(join(migrationsDirectory, migrationFiles[iconMigrationIndex]), 'utf8'))
 
     const { rows } = await client.query<{ title: string; icon: string }>('SELECT title, icon FROM announcements')
     expect(rows).toEqual([{ title: 'Aviso existente', icon: 'Pin' }])

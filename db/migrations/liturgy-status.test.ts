@@ -18,7 +18,9 @@ describe('liturgy status migration', () => {
       .filter((file) => /^\d{4}_.+\.sql$/.test(file))
       .sort()
 
-    for (const file of migrationFiles.slice(0, -1)) {
+    const statusMigrationIndex = migrationFiles.findIndex((file) => file === '0011_wooden_donald_blake.sql')
+
+    for (const file of migrationFiles.slice(0, statusMigrationIndex)) {
       await applySql(client, await readFile(join(migrationsDirectory, file), 'utf8'))
     }
 
@@ -30,7 +32,7 @@ describe('liturgy status migration', () => {
         (((CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date + 1), 'Future service', '09:00')
     `)
 
-    await applySql(client, await readFile(join(migrationsDirectory, migrationFiles.at(-1)!), 'utf8'))
+    await applySql(client, await readFile(join(migrationsDirectory, migrationFiles[statusMigrationIndex]), 'utf8'))
 
     const { rows } = await client.query<{ theme: string; status: string }>(
       'SELECT theme, status FROM liturgies ORDER BY date'
