@@ -1,6 +1,7 @@
 import { ChevronRightIcon } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
+import KeepOneLiturgyActOpen from '@/components/public/KeepOneLiturgyActOpen'
 import OpenDetailsOnPrint from '@/components/public/OpenDetailsOnPrint'
 import PageHeader from '@/components/public/PageHeader'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
@@ -37,11 +38,12 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
       />
 
       <div className="container mx-auto px-5 pt-6 pb-20 md:px-8 print:px-0 print:pt-7 print:pb-0">
-        <ol className="max-w-3xl space-y-10 print:max-w-none print:space-y-7">
+        <KeepOneLiturgyActOpen listId="liturgy-acts" />
+        <ol id="liturgy-acts" className="max-w-3xl space-y-10 print:max-w-none print:space-y-7">
           {liturgy.acts.map((act, i) => (
             <li key={act.id}>
               <details open={i === 0} className="group">
-                <summary className="border-brand-accent flex cursor-pointer list-none items-baseline gap-4 border-b-2 pb-2 print:break-after-avoid">
+                <summary className="border-brand-accent flex cursor-pointer list-none items-baseline gap-4 border-b-2 pb-2 group-open:cursor-default print:break-after-avoid">
                   <span aria-hidden="true" className="font-narrow text-brand-deep text-sm tabular-nums">
                     {String(i + 1).padStart(2, '0')}
                   </span>
