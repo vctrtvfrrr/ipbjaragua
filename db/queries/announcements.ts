@@ -1,6 +1,7 @@
 import { and, count, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { announcements, featuredImages } from '@/db/schema'
+import type { AnnouncementIconName } from '@/lib/announcement-icon'
 
 export type Announcement = typeof announcements.$inferSelect
 export type AnnouncementWithFeaturedImage = Announcement & { featuredImagePath: string | null }
@@ -16,7 +17,7 @@ export type CreateAnnouncementInput = {
   title: string
   description: string
   url: string | null
-  icon: string
+  icon: AnnouncementIconName
   featured_image_id: number | null
   expires_at: Date
 }
