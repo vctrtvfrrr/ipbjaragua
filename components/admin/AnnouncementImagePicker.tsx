@@ -3,12 +3,12 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import { FieldError } from '@/components/admin/FormFeedback'
-import type { FeaturedImage } from '@/db/queries/featured-images'
-import { featuredImageUrl } from '@/lib/featured-image'
 import { cn } from '@/lib/utils'
 
+export type AnnouncementImageOption = { id: number; url: string }
+
 type Props = {
-  images: FeaturedImage[]
+  images: AnnouncementImageOption[]
   defaultValue?: number | null
   errors?: string[]
 }
@@ -55,7 +55,7 @@ export function AnnouncementImagePicker({ images, defaultValue, errors }: Props)
               />
               <Image
                 className="aspect-video w-full rounded object-cover"
-                src={featuredImageUrl(image.path)}
+                src={image.url}
                 alt=""
                 width={240}
                 height={135}

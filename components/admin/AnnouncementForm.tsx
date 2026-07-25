@@ -14,18 +14,17 @@ import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Announcement } from '@/db/queries/announcements'
-import type { FeaturedImage } from '@/db/queries/featured-images'
 import { formatISODate } from '@/lib/date'
 import type { ActionState } from '@/lib/entity-action'
 import { AnnouncementIconPicker } from './AnnouncementIconPicker'
-import { AnnouncementImagePicker } from './AnnouncementImagePicker'
+import { AnnouncementImagePicker, type AnnouncementImageOption } from './AnnouncementImagePicker'
 import { FieldError, FormError } from './FormFeedback'
 import { MarkdownField } from './MarkdownField'
 
 const INITIAL_STATE: ActionState = { status: 'idle' }
 
 type Props = ({ mode: 'create'; canCreateAgenda: boolean } | { mode: 'edit'; announcement: Announcement }) & {
-  images: FeaturedImage[]
+  images: AnnouncementImageOption[]
 }
 
 export function AnnouncementForm(props: Props) {

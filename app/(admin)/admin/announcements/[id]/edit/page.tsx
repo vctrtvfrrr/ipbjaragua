@@ -3,6 +3,7 @@ import { AnnouncementForm } from '@/components/admin/AnnouncementForm'
 import { getAnnouncementById } from '@/db/queries/announcements'
 import { listFeaturedImages } from '@/db/queries/featured-images'
 import { requirePageRead } from '@/lib/auth/require-page-read'
+import { featuredImageUrl } from '@/lib/featured-image'
 
 export default async function EditAnnouncementPage({ params }: PageProps<'/admin/announcements/[id]/edit'>) {
   const user = await requirePageRead('announcements')
@@ -16,7 +17,7 @@ export default async function EditAnnouncementPage({ params }: PageProps<'/admin
     notFound()
   }
 
-  const images = await listFeaturedImages()
+  const images = (await listFeaturedImages()).map((image) => ({ id: image.id, url: featuredImageUrl(image.path) }))
 
   return (
     <section className="grid gap-6">
