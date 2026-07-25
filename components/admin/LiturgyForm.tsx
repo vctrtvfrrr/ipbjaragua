@@ -10,6 +10,8 @@ import { generateLiturgyDescriptionAction } from '@/app/(admin)/admin/liturgies/
 import type { LiturgyEditorData, SongPickerOption } from '@/db/queries/liturgies'
 import { formatISODate } from '@/lib/date'
 import {
+  buildLiturgyActErrorSummary,
+  liturgyActLabel,
   MOMENT_TYPE_LABELS,
   MOMENT_TYPES,
   SACRAMENT_TYPE_LABELS,
@@ -19,6 +21,7 @@ import {
   type SacramentType,
 } from '@/lib/liturgy'
 import type { ActionState } from '@/lib/entity-action'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Form, FormActions, FormField } from '@/components/ui/form'
@@ -61,9 +64,10 @@ export function LiturgyForm(props: Props) {
   const [acts, setActs] = useState<ActDraft[]>(() =>
     liturgy ? fromEditorData(liturgy) : defaults ? fromDefaults(defaults) : [emptyAct()]
   )
+  const [openActKey, setOpenActKey] = useState<string | null>(acts[0]?.key ?? null)
   const [description, setDescription] = useState(liturgy?.description ?? defaults?.description ?? '')
   const [isGenerating, startGeneration] = useTransition()
-  const [clientErrors, setClientErrors] = useState<FormErrors>({})
+  const [validationAttempted, setValidationAttempted] = useState(false)
 
   const formError = state.status === 'error' ? state.formError : undefined
   const payload = useMemo(
@@ -90,6 +94,13 @@ export function LiturgyForm(props: Props) {
       }),
     [acts, date, description, liturgy, theme, time]
   )
+  const clientErrors = useMemo(() => {
+    if (!validationAttempted) return {}
+    const result = liturgyTreeSchema.safeParse(JSON.parse(payload))
+    return result.success ? {} : errorsFromIssues(result.error.issues)
+  }, [payload, validationAttempted])
+  const actErrorSummary = useMemo(() => buildLiturgyActErrorSummary(clientErrors, acts), [acts, clientErrors])
+  const actIndexesWithErrors = useMemo(() => new Set(actErrorSummary.map((group) => group.actIndex)), [actErrorSummary])
 
   useEffect(() => {
     if (state.status !== 'success') return
@@ -98,12 +109,10 @@ export function LiturgyForm(props: Props) {
   }, [state.status, props.mode, router])
 
   function updateAct(index: number, next: Partial<ActDraft>) {
-    setClientErrors({})
     setActs((current) => current.map((act, i) => (i === index ? { ...act, ...next } : act)))
   }
 
   function updateMoment(actIndex: number, momentIndex: number, next: Partial<MomentDraft>) {
-    setClientErrors({})
     setActs((current) =>
       current.map((act, i) =>
         i === actIndex
@@ -118,12 +127,30 @@ export function LiturgyForm(props: Props) {
     if (result.success) return
 
     event.preventDefault()
-    setClientErrors(errorsFromIssues(result.error.issues))
+    setValidationAttempted(true)
   }
 
   return (
     <Form action={formAction} onSubmit={submit} className="space-y-6">
       <FormError message={formError} />
+      {actErrorSummary.length > 0 ? (
+        <div
+          role="alert"
+          className="border-destructive/30 bg-destructive/10 text-destructive grid gap-3 rounded-lg border px-4 py-3 text-sm"
+        >
+          <p className="font-medium">Revise os erros nos Atos:</p>
+          {actErrorSummary.map((group) => (
+            <div key={group.actIndex}>
+              <p className="font-medium">{group.label}</p>
+              <ul className="list-disc pl-5">
+                {group.messages.map((message, index) => (
+                  <li key={`${message}-${index}`}>{message}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : null}
       <input type="hidden" name="payload" value={payload} />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -145,62 +172,77 @@ export function LiturgyForm(props: Props) {
       </div>
 
       <section className="grid gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold tracking-normal">Atos</h3>
-          <Button type="button" variant="outline" onClick={() => setActs((current) => [...current, emptyAct()])}>
+        <h3 className="text-base font-semibold tracking-normal">Atos</h3>
+        <FieldError messages={clientErrors.acts} />
+
+        <Accordion
+          value={openActKey ? [openActKey] : []}
+          onValueChange={(value) => setOpenActKey((value[0] as string | undefined) ?? null)}
+        >
+          {acts.map((act, actIndex) => (
+            <AccordionItem key={act.key} value={act.key} id={`act-${actIndex}`}>
+              <AccordionTrigger>
+                <span>{liturgyActLabel(act, actIndex)}</span>
+                {actIndexesWithErrors.has(actIndex) ? (
+                  <span
+                    className="bg-destructive size-2 shrink-0 rounded-full"
+                    aria-label="Ato com erro de validação"
+                  />
+                ) : null}
+              </AccordionTrigger>
+              <AccordionContent className="grid gap-4">
+                <div className="flex flex-wrap items-end gap-3">
+                  <FormField className="min-w-52 flex-1">
+                    <Label htmlFor={`act-${act.key}-name`}>Nome do Ato</Label>
+                    <Input
+                      id={`act-${act.key}-name`}
+                      value={act.name}
+                      onChange={(event) => updateAct(actIndex, { name: event.target.value })}
+                    />
+                    <FieldError messages={clientErrors[`acts.${actIndex}.name`]} />
+                  </FormField>
+                  <ReorderButtons
+                    index={actIndex}
+                    length={acts.length}
+                    onMove={(direction) => setActs((current) => moveItem(current, actIndex, actIndex + direction))}
+                    onRemove={() => removeAct(actIndex)}
+                    removeLabel="Remover ato"
+                  />
+                </div>
+
+                <div className="grid gap-3">
+                  {act.moments.map((moment, momentIndex) => (
+                    <MomentFields
+                      key={moment.key}
+                      actIndex={actIndex}
+                      momentIndex={momentIndex}
+                      moment={moment}
+                      songs={props.songs}
+                      errors={clientErrors}
+                      onUpdate={(next) => updateMoment(actIndex, momentIndex, next)}
+                      onMove={(direction) => moveMoment(actIndex, momentIndex, direction)}
+                      length={act.moments.length}
+                      onRemove={() => removeMoment(actIndex, momentIndex)}
+                    />
+                  ))}
+                </div>
+
+                <div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => addMoment(actIndex)}>
+                    <Plus data-icon="inline-start" />
+                    Momento
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+
+        <div>
+          <Button type="button" variant="outline" onClick={addAct}>
             <Plus data-icon="inline-start" />
             Ato
           </Button>
-        </div>
-        <FieldError messages={clientErrors.acts} />
-
-        <div className="grid gap-4">
-          {acts.map((act, actIndex) => (
-            <div key={act.key} id={`act-${actIndex}`} className="grid gap-4 rounded-lg border p-4">
-              <div className="flex flex-wrap items-end gap-3">
-                <FormField className="min-w-52 flex-1">
-                  <Label htmlFor={`act-${act.key}-name`}>Nome do Ato</Label>
-                  <Input
-                    id={`act-${act.key}-name`}
-                    value={act.name}
-                    onChange={(event) => updateAct(actIndex, { name: event.target.value })}
-                  />
-                  <FieldError messages={clientErrors[`acts.${actIndex}.name`]} />
-                </FormField>
-                <ReorderButtons
-                  index={actIndex}
-                  length={acts.length}
-                  onMove={(direction) => setActs((current) => moveItem(current, actIndex, actIndex + direction))}
-                  onRemove={() => removeAct(actIndex)}
-                  removeLabel="Remover ato"
-                />
-              </div>
-
-              <div className="grid gap-3">
-                {act.moments.map((moment, momentIndex) => (
-                  <MomentFields
-                    key={moment.key}
-                    actIndex={actIndex}
-                    momentIndex={momentIndex}
-                    moment={moment}
-                    songs={props.songs}
-                    errors={clientErrors}
-                    onUpdate={(next) => updateMoment(actIndex, momentIndex, next)}
-                    onMove={(direction) => moveMoment(actIndex, momentIndex, direction)}
-                    length={act.moments.length}
-                    onRemove={() => removeMoment(actIndex, momentIndex)}
-                  />
-                ))}
-              </div>
-
-              <div>
-                <Button type="button" variant="outline" size="sm" onClick={() => addMoment(actIndex)}>
-                  <Plus data-icon="inline-start" />
-                  Momento
-                </Button>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -245,12 +287,10 @@ export function LiturgyForm(props: Props) {
   )
 
   function addMoment(actIndex: number) {
-    setClientErrors({})
     updateAct(actIndex, { moments: [...acts[actIndex].moments, emptyMoment()] })
   }
 
   function moveMoment(actIndex: number, momentIndex: number, direction: -1 | 1) {
-    setClientErrors({})
     updateAct(actIndex, {
       moments: moveItem(acts[actIndex].moments, momentIndex, momentIndex + direction),
     })
@@ -259,7 +299,9 @@ export function LiturgyForm(props: Props) {
   function removeAct(actIndex: number) {
     const act = acts[actIndex]
     if (actHasContent(act) && !window.confirm('Remover este Ato e seus Momentos?')) return
-    setClientErrors({})
+    if (act.key === openActKey) {
+      setOpenActKey(acts[actIndex - 1]?.key ?? acts.find((_, index) => index !== actIndex)?.key ?? null)
+    }
     setActs((current) => current.filter((_, i) => i !== actIndex))
   }
 
@@ -267,6 +309,12 @@ export function LiturgyForm(props: Props) {
     const moment = acts[actIndex].moments[momentIndex]
     if (momentHasContent(moment) && !window.confirm('Remover este Momento?')) return
     updateAct(actIndex, { moments: acts[actIndex].moments.filter((_, i) => i !== momentIndex) })
+  }
+
+  function addAct() {
+    const act = emptyAct()
+    setActs((current) => [...current, act])
+    setOpenActKey(act.key)
   }
 }
 

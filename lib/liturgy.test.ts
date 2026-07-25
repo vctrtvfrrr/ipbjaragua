@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLiturgyDuplicationDefaults } from './liturgy'
+import { buildLiturgyActErrorSummary, buildLiturgyDuplicationDefaults } from './liturgy'
 
 const source = {
   theme: 'Culto de Domingo',
@@ -102,5 +102,57 @@ describe('buildLiturgyDuplicationDefaults', () => {
 
     expect(defaults.acts[0].moments[0].song_id).toBeNull()
     expect(defaults.acts[0].moments[0].description).toBe('Hino de entrada')
+  })
+})
+
+describe('buildLiturgyActErrorSummary', () => {
+  it('groups validation errors by act name', () => {
+    const summary = buildLiturgyActErrorSummary(
+      {
+        'acts.0.name': ['Campo obrigatório'],
+        'acts.0.moments.0.description': ['Cântico exige música ou descrição'],
+        'acts.1.moments.0.sacrament_type': ['Sacramento exige tipo'],
+      },
+      [{ name: 'Adoração' }, { name: 'Consagração' }]
+    )
+
+    expect(summary).toEqual([
+      {
+        actIndex: 0,
+        label: 'Adoração',
+        messages: ['Campo obrigatório', 'Cântico exige música ou descrição'],
+      },
+      { actIndex: 1, label: 'Consagração', messages: ['Sacramento exige tipo'] },
+    ])
+  })
+
+  it('uses the numbered label when an act has no name', () => {
+    const summary = buildLiturgyActErrorSummary(
+      { 'acts.1.moments.0.scripture_passages': ['Leitura bíblica exige ao menos uma passagem'] },
+      [{ name: 'Adoração' }, { name: '  ' }]
+    )
+
+    expect(summary).toEqual([
+      {
+        actIndex: 1,
+        label: 'Ato 2',
+        messages: ['Leitura bíblica exige ao menos uma passagem'],
+      },
+    ])
+  })
+
+  it('excludes errors outside the act accordion', () => {
+    const summary = buildLiturgyActErrorSummary(
+      {
+        date: ['Data inválida'],
+        time: ['Horário obrigatório'],
+        theme: ['Campo obrigatório'],
+        description: ['Descrição inválida'],
+        acts: ['Liturgia exige ao menos um Ato'],
+      },
+      []
+    )
+
+    expect(summary).toEqual([])
   })
 })

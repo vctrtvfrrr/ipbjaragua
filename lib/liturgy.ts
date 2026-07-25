@@ -110,6 +110,32 @@ export const deleteLiturgySchema = z.object({
 export type LiturgyTreeInput = z.output<typeof createLiturgySchema>
 export type LiturgyMomentInput = LiturgyTreeInput['acts'][number]['moments'][number]
 
+export function liturgyActLabel(act: { name: string }, index: number): string {
+  return act.name.trim() || `Ato ${index + 1}`
+}
+
+export function buildLiturgyActErrorSummary(
+  errors: Readonly<Record<string, string[]>>,
+  acts: ReadonlyArray<{ name: string }>
+): Array<{ actIndex: number; label: string; messages: string[] }> {
+  const messagesByAct = new Map<number, string[]>()
+
+  for (const [path, messages] of Object.entries(errors)) {
+    const match = /^acts\.(\d+)\./.exec(path)
+    if (!match) continue
+
+    const actIndex = Number(match[1])
+    if (!acts[actIndex]) continue
+    messagesByAct.set(actIndex, [...(messagesByAct.get(actIndex) ?? []), ...messages])
+  }
+
+  return [...messagesByAct].map(([actIndex, messages]) => ({
+    actIndex,
+    label: liturgyActLabel(acts[actIndex], actIndex),
+    messages,
+  }))
+}
+
 export function normalizeMomentForType(moment: LiturgyMomentInput) {
   return {
     type: moment.type,
