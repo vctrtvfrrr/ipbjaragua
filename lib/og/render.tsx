@@ -19,7 +19,7 @@ function DraftBadge() {
         top: 56,
         right: 64,
         display: 'flex',
-        backgroundColor: OG_COLORS.red,
+        backgroundColor: OG_COLORS.draft,
         color: '#ffffff',
         fontFamily: 'PT Sans',
         fontWeight: 700,
@@ -47,7 +47,7 @@ function Identity({ logo, large }: { logo: string; large?: boolean }) {
           fontFamily: 'PT Serif',
           fontWeight: 700,
           fontSize: large ? 68 : 40,
-          color: OG_COLORS.green,
+          color: OG_COLORS.ridge,
           lineHeight: 1.05,
           maxWidth: large ? 720 : 620,
         }}
@@ -92,7 +92,7 @@ function Card({ logo, content, identityOnly }: { logo: string; content: CardCont
                 fontSize: 30,
                 letterSpacing: 6,
                 textTransform: 'uppercase',
-                color: OG_COLORS.red,
+                color: OG_COLORS.current,
               }}
             >
               {content.label}
@@ -107,7 +107,7 @@ function Card({ logo, content, identityOnly }: { logo: string; content: CardCont
                 fontWeight: 700,
                 fontSize: fitTitleFontSize(content.title),
                 lineHeight: 1.05,
-                color: OG_COLORS.green,
+                color: OG_COLORS.ridge,
                 lineClamp: OG_TITLE_MAX_LINES,
                 textOverflow: 'ellipsis',
               }}
@@ -136,7 +136,7 @@ function Card({ logo, content, identityOnly }: { logo: string; content: CardCont
           width: OG_SIZE.width,
           height: 18,
           display: 'flex',
-          backgroundColor: OG_COLORS.green,
+          backgroundColor: OG_COLORS.ridge,
         }}
       />
     </div>
