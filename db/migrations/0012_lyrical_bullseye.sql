@@ -1,0 +1,3 @@
+ALTER TABLE "announcements" ADD COLUMN "icon" text DEFAULT 'Pin' NOT NULL;--> statement-breakpoint
+ALTER TABLE "announcements" ADD COLUMN "featured_image_id" integer;--> statement-breakpoint
+ALTER TABLE "announcements" ADD CONSTRAINT "announcements_featured_image_id_featured_images_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "public"."featured_images"("id") ON DELETE set null ON UPDATE no action;
