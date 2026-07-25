@@ -26,7 +26,7 @@ export function MarkdownField({ label = 'Conteúdo', name = 'content', defaultVa
   const [content, setContent] = useState(defaultValue)
 
   return (
-    <div className="group/field grid gap-2">
+    <div className="group/field grid min-w-0 gap-2">
       <Label>{label}</Label>
       <MdxEditor
         markdown={defaultValue}
