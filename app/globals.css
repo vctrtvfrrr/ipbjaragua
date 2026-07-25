@@ -183,6 +183,8 @@
 
   body {
     background: #ffffff;
+    orphans: 2;
+    widows: 2;
   }
 
   /* Sublinhado em toda ligação vira ruído numa folha que ninguém vai clicar. */

@@ -58,7 +58,20 @@ export const E2E_LITURGY = {
 }
 
 export const E2E_LITURGY_ACTS = [
-  { name: 'Adoração', position: 1, moment: 'Chamada à adoração' },
+  {
+    name: 'Adoração',
+    position: 1,
+    moment: 'Chamada à adoração',
+    scripture: {
+      reference: 'Salmo 119.1–48',
+      version: 'NAA',
+      text: Array.from(
+        { length: 48 },
+        (_, index) =>
+          `${index + 1} Bem-aventurados os irrepreensíveis no seu caminho, que andam na lei do Senhor e guardam os seus testemunhos.`
+      ).join('\n'),
+    },
+  },
   { name: 'Consagração', position: 2, moment: 'Bênção apostólica' },
 ] as const
 
@@ -157,7 +170,16 @@ export async function seedE2eDatabase() {
       .insert(liturgyActs)
       .values({ liturgy_id: seededLiturgy.id, name: act.name, position: act.position })
       .returning({ id: liturgyActs.id })
-    await db.insert(liturgyMoments).values({ act_id: inserted.id, type: 'other', position: 1, description: act.moment })
+    await db.insert(liturgyMoments).values(
+      'scripture' in act
+        ? {
+            act_id: inserted.id,
+            type: 'bible_reading',
+            position: 1,
+            scripture_passages: [act.scripture],
+          }
+        : { act_id: inserted.id, type: 'other', position: 1, description: act.moment }
+    )
   }
 
   const bulletinRows = [

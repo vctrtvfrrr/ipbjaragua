@@ -55,7 +55,7 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
                 </summary>
                 <ul className="mt-6 space-y-7">
                   {act.moments.map((moment) => (
-                    <li key={moment.id} className="print:break-inside-avoid">
+                    <li key={moment.id}>
                       <MomentView moment={moment} />
                     </li>
                   ))}
@@ -72,7 +72,7 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
 type Moment = LiturgyDetail['acts'][0]['moments'][0]
 
 function MomentLabel({ children }: { children: React.ReactNode }) {
-  return <h3 className="font-narrow text-brand-ridge text-xl font-bold">{children}</h3>
+  return <h3 className="font-narrow text-brand-ridge text-xl font-bold print:break-after-avoid">{children}</h3>
 }
 
 function PassagesView({ passages }: { passages: NonNullable<Moment['scripture_passages']> }) {
@@ -95,7 +95,7 @@ function MomentView({ moment }: { moment: Moment }) {
   if (moment.type === 'bible_reading' && moment.scripture_passages) {
     return (
       <>
-        <p className="eyebrow text-brand-ridge">Leitura bíblica</p>
+        <p className="eyebrow text-brand-ridge print:break-after-avoid">Leitura bíblica</p>
         <PassagesView passages={moment.scripture_passages} />
         {moment.description ? <p className="text-muted-foreground mt-2 text-sm">{moment.description}</p> : null}
       </>
@@ -118,14 +118,17 @@ function MomentView({ moment }: { moment: Moment }) {
             {moment.song.lyrics.map((block, i) => {
               if (block.type === 'verse')
                 return (
-                  <p key={i} className="whitespace-pre-line">
+                  <p key={i} className="whitespace-pre-line print:break-inside-avoid">
                     {block.number ? <strong>{block.number}. </strong> : null}
                     {block.content}
                   </p>
                 )
               if (block.type === 'chorus')
                 return (
-                  <p key={i} className="border-brand-accent border-l-2 pl-4 whitespace-pre-line italic">
+                  <p
+                    key={i}
+                    className="border-brand-accent border-l-2 pl-4 whitespace-pre-line italic print:break-inside-avoid"
+                  >
                     {block.content}
                   </p>
                 )

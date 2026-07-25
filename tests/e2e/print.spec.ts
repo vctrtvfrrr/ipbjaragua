@@ -34,6 +34,14 @@ test('prints the liturgy on A4 pages', async ({ page }) => {
   }
 })
 
+test('uses three pages for a liturgy whose first reading crosses a page break (page-count proxy)', async ({ page }) => {
+  await page.goto(LITURGY_PATH)
+
+  const sizes = pdfPageSizes(await page.pdf({ format: 'A4', printBackground: true }))
+
+  expect(sizes).toHaveLength(3)
+})
+
 test('brings collapsed acts onto the paper', async ({ page }) => {
   const [, collapsedAct] = E2E_LITURGY_ACTS
   await page.goto(LITURGY_PATH)
