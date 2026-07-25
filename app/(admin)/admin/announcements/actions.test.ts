@@ -90,6 +90,19 @@ describe('createAnnouncementAction.execute', () => {
     expect(await db.select().from(announcements).where(isNull(announcements.deleted_at))).toEqual([])
   })
 
+  it('echoes back submitted values so the form can restore them after a validation error', async () => {
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ title: '' })
+    )
+
+    expect(state.status).toBe('error')
+    if (state.status === 'error') {
+      expect(state.values?.description).toBe('O ensaio será após o culto.')
+      expect(state.values?.expires_at).toBe('2026-07-12')
+    }
+  })
+
   it.each(['javascript:alert(1)', '/avisos', 'mailto:secretaria@example.com'])(
     'rejects non-http absolute URLs: %s',
     async (url) => {

@@ -37,6 +37,7 @@ export function AnnouncementForm(props: Props) {
 
   const fieldErrors = state.status === 'error' ? state.fieldErrors : undefined
   const formError = state.status === 'error' ? state.formError : undefined
+  const values = state.status === 'error' ? state.values : undefined
 
   useEffect(() => {
     if (state.status !== 'success') return
@@ -52,21 +53,21 @@ export function AnnouncementForm(props: Props) {
 
       <FormField>
         <Label htmlFor="title">Título</Label>
-        <Input id="title" name="title" defaultValue={announcement?.title} />
+        <Input id="title" name="title" defaultValue={values?.title ?? announcement?.title} />
         <FieldError messages={fieldErrors?.title} />
       </FormField>
 
       <MarkdownField
         label="Descrição"
         name="description"
-        defaultValue={announcement?.description}
+        defaultValue={values?.description ?? announcement?.description}
         errors={fieldErrors?.description}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField>
           <Label htmlFor="url">URL</Label>
-          <Input id="url" name="url" type="url" inputMode="url" defaultValue={announcement?.url ?? ''} />
+          <Input id="url" name="url" type="url" inputMode="url" defaultValue={values?.url ?? announcement?.url ?? ''} />
           <FieldError messages={fieldErrors?.url} />
         </FormField>
 
@@ -76,7 +77,7 @@ export function AnnouncementForm(props: Props) {
             id="expires_at"
             name="expires_at"
             type="date"
-            defaultValue={announcement ? formatISODate(announcement.expires_at) : ''}
+            defaultValue={values?.expires_at ?? (announcement ? formatISODate(announcement.expires_at) : '')}
           />
           <FieldError messages={fieldErrors?.expires_at} />
         </FormField>

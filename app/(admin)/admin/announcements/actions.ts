@@ -36,7 +36,25 @@ const iconSchema = z
   .optional()
   .default(DEFAULT_ANNOUNCEMENT_ICON)
 
-const nullableFeaturedImageId = z.coerce.number().int().positive().nullable()
+const nullableFeaturedImageId = z
+  .string()
+  .optional()
+  .transform((value, context) => {
+    const trimmed = value?.trim()
+    if (!trimmed) return null
+
+    const parsed = Number(trimmed)
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      context.addIssue({ code: 'custom', message: 'Imagem inválida' })
+      return z.NEVER
+    }
+    return parsed
+  })
+
+const checkboxBoolean = z
+  .string()
+  .optional()
+  .transform((value) => value === 'on')
 
 const announcementFieldsSchema = z.object({
   title: z.string().trim().min(1, 'Título é obrigatório'),
@@ -48,7 +66,7 @@ const announcementFieldsSchema = z.object({
 })
 
 const createAnnouncementSchema = announcementFieldsSchema.extend({
-  add_to_agenda: z.boolean(),
+  add_to_agenda: checkboxBoolean,
 })
 
 const updateAnnouncementSchema = announcementFieldsSchema.extend({
@@ -63,7 +81,6 @@ export const createAnnouncementAction = defineEntityAction({
   entity: 'announcements',
   action: 'create',
   schema: createAnnouncementSchema,
-  parse: parseCreateAnnouncementForm,
   write: ({ data, db, user }) => {
     if (data.add_to_agenda && !user.can('agenda', 'create')) throw new AgendaPermissionDeniedError()
 
@@ -88,7 +105,6 @@ export const updateAnnouncementAction = defineEntityAction({
   entity: 'announcements',
   action: 'update',
   schema: updateAnnouncementSchema,
-  parse: parseAnnouncementForm,
   write: ({ data, db }) =>
     updateAnnouncement(
       data.id,
@@ -112,35 +128,6 @@ export const deleteAnnouncementAction = defineEntityAction({
   write: ({ data, db }) => softDeleteAnnouncement(data.id, db),
   revalidate: revalidateAnnouncementPages,
 })
-
-function parseAnnouncementForm(formData: FormData): Record<string, unknown> {
-  return {
-    id: stringValue(formData, 'id'),
-    title: stringValue(formData, 'title'),
-    description: stringValue(formData, 'description'),
-    url: stringValue(formData, 'url'),
-    icon: stringValue(formData, 'icon'),
-    featured_image_id: nullableNumberValue(formData, 'featured_image_id'),
-    expires_at: stringValue(formData, 'expires_at'),
-  }
-}
-
-function parseCreateAnnouncementForm(formData: FormData): Record<string, unknown> {
-  return {
-    ...parseAnnouncementForm(formData),
-    add_to_agenda: formData.has('add_to_agenda'),
-  }
-}
-
-function stringValue(formData: FormData, name: string): string | undefined {
-  const value = formData.get(name)
-  return typeof value === 'string' ? value : undefined
-}
-
-function nullableNumberValue(formData: FormData, name: string): string | null {
-  const value = stringValue(formData, name)
-  return value ? value : null
-}
 
 function agendaPermissionErrorMessage(error: unknown): string | undefined {
   return error instanceof AgendaPermissionDeniedError ? AGENDA_PERMISSION_ERROR : undefined
