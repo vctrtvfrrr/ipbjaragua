@@ -16,7 +16,7 @@ export type LiturgyListItem = {
   id: number
   date: Date
   theme: string
-  time: string | null
+  time: string
   description: string | null
   sermonDescription: string | null
   sermonSpeaker: string | null
@@ -129,7 +129,7 @@ export async function listLiturgies(
         id: row.id,
         date: row.date,
         theme: row.theme,
-        time: hhmm(row.time),
+        time: hhmm(row.time)!,
         description: row.description ?? null,
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
@@ -142,12 +142,12 @@ export async function listLiturgies(
 export async function listLiturgiesByDate(
   date: Date,
   db: Database = defaultDb
-): Promise<Array<{ id: number; date: Date; theme: string; time: string | null }>> {
+): Promise<Array<{ id: number; date: Date; theme: string; time: string }>> {
   const rows = await db
     .select({ id: liturgies.id, date: liturgies.date, theme: liturgies.theme, time: liturgies.time })
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date)))
-  return rows.map((r) => ({ ...r, time: hhmm(r.time) }))
+  return rows.map((r) => ({ ...r, time: hhmm(r.time)! }))
 }
 
 export async function countLiturgiesForAdmin(db: Database = defaultDb): Promise<number> {
@@ -491,7 +491,7 @@ function deduplicateByLiturgyId(
         id: row.id,
         date: row.date,
         theme: row.theme,
-        time: hhmm(row.time),
+        time: hhmm(row.time)!,
         description: row.description ?? null,
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
@@ -511,7 +511,11 @@ const liturgyCardFields = {
   sermonSpeaker: liturgyMoments.sermon_speaker,
 } as const
 
-export type NextLiturgyResult = { liturgy: LiturgyListItem; label: 'Próxima Liturgia' | 'Liturgia' }
+/** `upcoming` é uma Liturgia de hoje que ainda não passou; `latest` é a mais recente já
+ * realizada. Nunca há uma Liturgia futura aqui: com data futura ela é rascunho e não
+ * aparece em lugar nenhum. Quem exibe decide as palavras — a distinção importa porque
+ * anunciar uma `latest` como se fosse o próximo culto engana quem planeja a visita. */
+export type NextLiturgyResult = { liturgy: LiturgyListItem; kind: 'upcoming' | 'latest' }
 
 export async function getNextLiturgy(
   { today, currentTime }: { today: Date; currentTime: string },
@@ -527,7 +531,7 @@ export async function getNextLiturgy(
 
   const todayLiturgies = deduplicateByLiturgyId(todayRows)
   const upcoming = todayLiturgies.find((l) => l.time !== null && currentTime <= addMinutesToHHMM(l.time, 60))
-  if (upcoming) return { liturgy: upcoming, label: 'Próxima Liturgia' }
+  if (upcoming) return { liturgy: upcoming, kind: 'upcoming' }
 
   const fallbackRows = await db
     .select(liturgyCardFields)
@@ -539,5 +543,5 @@ export async function getNextLiturgy(
     .limit(20)
 
   const fallback = deduplicateByLiturgyId(fallbackRows)[0]
-  return fallback ? { liturgy: fallback, label: 'Liturgia' } : undefined
+  return fallback ? { liturgy: fallback, kind: 'latest' } : undefined
 }

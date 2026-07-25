@@ -18,6 +18,7 @@ import {
   formatISODate,
   formatLongDatePtBR,
   formatShortDatePtBR,
+  formatTimePtBR,
   formatWeekdayPtBR,
   today,
 } from '@/lib/date'
@@ -30,29 +31,41 @@ export const metadata = institutionalMetadata('home')
 
 const PAGE_SIZE = 12
 
-function formatServiceTime(time: string): string {
-  return time.replace(':', 'h')
-}
-
 function NextService({ next }: { next: NextLiturgyResult }) {
-  const { liturgy } = next
+  const { liturgy, kind } = next
+  const upcoming = kind === 'upcoming'
   const when = [formatWeekdayPtBR(liturgy.date), formatLongDatePtBR(liturgy.date)].join(', ')
 
   return (
     <>
-      <p className="eyebrow text-brand-ridge">{next.label}</p>
+      <p className="eyebrow text-brand-ridge">{upcoming ? 'Próximo culto' : 'Último culto'}</p>
       <h1 className="text-display text-brand-ridge mt-6 font-serif">{liturgy.theme}</h1>
       <p className="font-narrow text-brand-deep mt-6 text-2xl tracking-[0.06em] uppercase sm:text-3xl">
-        {when}
-        {liturgy.time ? ` · ${formatServiceTime(liturgy.time)}` : null}
+        {when} às {formatTimePtBR(liturgy.time)}
       </p>
       {liturgy.sermonSpeaker ? <p className="text-muted-foreground mt-3">Pregação: {liturgy.sermonSpeaker}</p> : null}
-      <Link
-        href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}
-        className={cn(buttonVariants({ size: 'lg' }), 'mt-10 h-12 px-6 text-base')}
-      >
-        Ver a ordem do culto
-      </Link>
+      {upcoming ? null : (
+        <p className="text-muted-foreground mt-4 max-w-prose">
+          A ordem de um culto é publicada no dia em que ele acontece. A programação da semana está na Agenda, mais
+          abaixo.
+        </p>
+      )}
+      <div className="mt-10 flex flex-wrap gap-3">
+        <Link
+          href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}
+          className={cn(buttonVariants({ size: 'lg' }), 'h-12 px-6 text-base')}
+        >
+          Ver a ordem do culto
+        </Link>
+        {upcoming ? null : (
+          <Link
+            href="/location"
+            className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-12 px-6 text-base')}
+          >
+            Visite-nos
+          </Link>
+        )}
+      </div>
     </>
   )
 }
@@ -162,7 +175,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
                         {day.items.map((item) => (
                           <div key={`${item.time ?? ''}-${item.title}`} className="flex gap-3">
                             <dt className="font-narrow text-brand-deep w-16 shrink-0 tabular-nums">
-                              {item.time ? <time>{formatServiceTime(item.time)}</time> : '—'}
+                              {item.time ? <time>{formatTimePtBR(item.time)}</time> : '—'}
                             </dt>
                             <dd>
                               <span className="block">{item.title}</span>

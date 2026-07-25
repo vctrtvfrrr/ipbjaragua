@@ -4,7 +4,7 @@ import { formatISODate, parseISODate } from '@/lib/date'
 import { liturgyActs, liturgyMoments } from '@/db/schema'
 import { createTestDb, type TestDb } from '@/tests/db'
 import { seedLiturgies } from '@/tests/seed'
-import { countLiturgies, getLiturgyBySlug, listLiturgies, listLiturgiesByDate } from './liturgies'
+import { countLiturgies, getLiturgyBySlug, getNextLiturgy, listLiturgies, listLiturgiesByDate } from './liturgies'
 
 describe('countLiturgies', () => {
   let db: TestDb
@@ -245,5 +245,57 @@ describe('listLiturgiesByDate', () => {
     const result = await listLiturgiesByDate(parseISODate('2026-06-07'), db)
 
     expect(result).toEqual([])
+  })
+})
+
+describe('getNextLiturgy', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it("reports today's service that has not started as upcoming", async () => {
+    await seedLiturgies(db, [{ date: '2026-06-14', theme: 'Culto Vespertino', time: '19:00' }])
+
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-14'), currentTime: '08:00' }, db)
+
+    expect(result).toMatchObject({ kind: 'upcoming', liturgy: { theme: 'Culto Vespertino', time: '19:00' } })
+  })
+
+  it('still reports it as upcoming within an hour of the start', async () => {
+    await seedLiturgies(db, [{ date: '2026-06-14', theme: 'Culto Vespertino', time: '19:00' }])
+
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-14'), currentTime: '19:45' }, db)
+
+    expect(result?.kind).toBe('upcoming')
+  })
+
+  it('falls back to the most recent past service, flagged as latest', async () => {
+    await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '18:00' },
+      { date: '2026-05-31', theme: 'Culto de Oração', time: '19:30' },
+    ])
+
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-10'), currentTime: '10:00' }, db)
+
+    expect(result).toMatchObject({ kind: 'latest', liturgy: { theme: 'Culto Solene' } })
+  })
+
+  it('never reaches for a future-dated service, since it is a draft', async () => {
+    await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '18:00' },
+      { date: '2026-06-21', theme: 'Culto da Familia', time: '18:00' },
+    ])
+
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-10'), currentTime: '10:00' }, db)
+
+    expect(result?.liturgy.theme).toBe('Culto Solene')
+  })
+
+  it('returns nothing when no service has happened yet', async () => {
+    await seedLiturgies(db, [{ date: '2026-06-21', theme: 'Culto da Familia', time: '18:00' }])
+
+    expect(await getNextLiturgy({ today: parseISODate('2026-06-10'), currentTime: '10:00' }, db)).toBeUndefined()
   })
 })
