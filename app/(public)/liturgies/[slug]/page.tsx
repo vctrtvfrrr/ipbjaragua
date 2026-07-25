@@ -5,22 +5,30 @@ import KeepOneLiturgyActOpen from '@/components/public/KeepOneLiturgyActOpen'
 import OpenDetailsOnPrint from '@/components/public/OpenDetailsOnPrint'
 import PageHeader from '@/components/public/PageHeader'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
+import { getCurrentUser } from '@/lib/auth/current-user'
 import { formatLongDatePtBR, formatTimePtBR } from '@/lib/date'
+import { liturgyVisibilityForUser } from '@/lib/liturgy-visibility'
 import { liturgyMetadata } from '@/lib/og/metadata'
 
-const loadLiturgy = cache((slug: string) => getLiturgyBySlug(slug, 'published-only'))
+const loadLiturgy = cache(async (slug: string) => {
+  const user = await getCurrentUser()
+  return getLiturgyBySlug(slug, liturgyVisibilityForUser(user))
+})
 
 export async function generateMetadata({ params }: PageProps<'/liturgies/[slug]'>) {
   const { slug } = await params
   const liturgy = await loadLiturgy(slug)
   if (!liturgy) return {}
-  return liturgyMetadata({
-    slug,
-    theme: liturgy.theme,
-    time: liturgy.time,
-    date: liturgy.date,
-    description: liturgy.description,
-  })
+  return liturgyMetadata(
+    {
+      slug,
+      theme: liturgy.theme,
+      time: liturgy.time,
+      date: liturgy.date,
+      description: liturgy.description,
+    },
+    { draft: liturgy.status === 'draft' }
+  )
 }
 
 export default async function LiturgyDetailPage({ params }: PageProps<'/liturgies/[slug]'>) {
@@ -31,6 +39,11 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
   return (
     <main>
       <OpenDetailsOnPrint />
+      {liturgy.status === 'draft' ? (
+        <p className="bg-brand-current font-narrow print:border-brand-ridge print:text-brand-ridge py-2 text-center text-sm font-bold tracking-[0.06em] text-white uppercase print:border-b-2 print:bg-transparent print:py-1">
+          Rascunho — esta Liturgia não aparece para o público
+        </p>
+      ) : null}
       <PageHeader
         eyebrow="Liturgia"
         title={liturgy.theme}

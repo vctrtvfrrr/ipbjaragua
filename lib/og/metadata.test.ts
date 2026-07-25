@@ -99,4 +99,10 @@ describe('liturgyMetadata', () => {
     expect(image.url).toBe('/liturgies/2026-06-07-culto-solene/og')
     expect(image.alt).toBe('Imagem de compartilhamento da Liturgia Culto Solene, de 07 de junho de 2026')
   })
+
+  it('makes a draft noindex and drops the canonical', () => {
+    const meta = liturgyMetadata({ ...base, description: null }, { draft: true })
+    expect(meta.robots).toEqual({ index: false, follow: false })
+    expect(meta.alternates).toBeUndefined()
+  })
 })

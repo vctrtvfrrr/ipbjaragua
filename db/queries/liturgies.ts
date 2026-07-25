@@ -18,6 +18,7 @@ export type LiturgyListItem = {
   date: Date
   theme: string
   time: string
+  status: LiturgyStatus
   description: string | null
   sermonDescription: string | null
   sermonSpeaker: string | null
@@ -32,6 +33,7 @@ export type LiturgyDetail = {
   date: Date
   theme: string
   time: string
+  status: LiturgyStatus
   description: string | null
   acts: Array<{
     id: number
@@ -132,6 +134,7 @@ export async function listLiturgies(
       date: liturgies.date,
       theme: liturgies.theme,
       time: liturgies.time,
+      status: liturgies.status,
       description: liturgies.description,
       sermonDescription: liturgyMoments.description,
       sermonSpeaker: liturgyMoments.sermon_speaker,
@@ -154,6 +157,7 @@ export async function listLiturgies(
         date: row.date,
         theme: row.theme,
         time: hhmm(row.time)!,
+        status: row.status,
         description: row.description ?? null,
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
@@ -167,9 +171,15 @@ export async function listLiturgiesByDate(
   date: Date,
   visibility: LiturgyVisibility,
   db: Database = defaultDb
-): Promise<Array<{ id: number; date: Date; theme: string; time: string }>> {
+): Promise<Array<{ id: number; date: Date; theme: string; time: string; status: LiturgyStatus }>> {
   const rows = await db
-    .select({ id: liturgies.id, date: liturgies.date, theme: liturgies.theme, time: liturgies.time })
+    .select({
+      id: liturgies.id,
+      date: liturgies.date,
+      theme: liturgies.theme,
+      time: liturgies.time,
+      status: liturgies.status,
+    })
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date), visibleLiturgy(visibility)))
   return rows.map((r) => ({ ...r, time: hhmm(r.time)! }))
@@ -398,6 +408,7 @@ export async function getLiturgyBySlug(
     date: liturgy.date,
     theme: liturgy.theme,
     time: hhmm(liturgy.time)!,
+    status: liturgy.status,
     description: liturgy.description ?? null,
     acts: Array.from(actsMap.values()),
   }
@@ -525,6 +536,7 @@ function deduplicateByLiturgyId(
     date: Date
     theme: string
     time: string | null
+    status: LiturgyStatus
     description: string | null
     sermonDescription: string | null
     sermonSpeaker: string | null
@@ -540,6 +552,7 @@ function deduplicateByLiturgyId(
         date: row.date,
         theme: row.theme,
         time: hhmm(row.time)!,
+        status: row.status,
         description: row.description ?? null,
         sermonDescription: row.sermonDescription ?? null,
         sermonSpeaker: row.sermonSpeaker ?? null,
@@ -554,6 +567,7 @@ const liturgyCardFields = {
   date: liturgies.date,
   theme: liturgies.theme,
   time: liturgies.time,
+  status: liturgies.status,
   description: liturgies.description,
   sermonDescription: liturgyMoments.description,
   sermonSpeaker: liturgyMoments.sermon_speaker,

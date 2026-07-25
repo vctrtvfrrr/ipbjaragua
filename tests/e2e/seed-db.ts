@@ -1,3 +1,4 @@
+import type { BrowserContext } from '@playwright/test'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
@@ -13,6 +14,7 @@ import {
   userPermissions,
   users,
 } from '../../db/schema'
+import { createSessionToken, SESSION_COOKIE_NAME, SESSION_DURATION_SECONDS } from '../../lib/auth/session'
 import { parseISODate } from '../../lib/date'
 
 export const E2E_DATABASE_URL =
@@ -55,6 +57,14 @@ export const E2E_LITURGY = {
   theme: 'Culto Solene',
   time: '09:00',
   status: 'published' as const,
+}
+
+// Same date as E2E_LITURGY, so it also surfaces in the Boletim's Liturgia section.
+export const E2E_LITURGY_DRAFT = {
+  date: '2026-06-07',
+  theme: 'Culto Vespertino',
+  time: '18:00',
+  status: 'draft' as const,
 }
 
 export const E2E_LITURGY_ACTS = [
@@ -112,7 +122,17 @@ export const E2E_ADMIN_PERMISSIONS = [
   { entity: 'articles', action: 'create' },
   { entity: 'articles', action: 'update' },
   { entity: 'articles', action: 'delete' },
+  { entity: 'liturgies', action: 'read' },
 ] as const
+
+// A logged-in user without liturgies.read must see exactly what an anonymous visitor sees.
+export const E2E_LIMITED_USER = {
+  email: 'sem-permissao-e2e@example.com',
+  name: 'Sem Permissão E2E',
+  status: 'active' as const,
+}
+
+export const E2E_LIMITED_PERMISSIONS = [{ entity: 'articles', action: 'read' }] as const
 
 async function ensureE2eDatabase() {
   const admin = postgres(ADMIN_DATABASE_URL, { max: 1 })
@@ -182,6 +202,18 @@ export async function seedE2eDatabase() {
     )
   }
 
+  const [draftLiturgy] = await db
+    .insert(liturgies)
+    .values({ ...E2E_LITURGY_DRAFT, date: parseISODate(E2E_LITURGY_DRAFT.date) })
+    .returning({ id: liturgies.id })
+  const [draftAct] = await db
+    .insert(liturgyActs)
+    .values({ liturgy_id: draftLiturgy.id, name: 'Adoração', position: 1 })
+    .returning({ id: liturgyActs.id })
+  await db
+    .insert(liturgyMoments)
+    .values({ act_id: draftAct.id, type: 'other', position: 1, description: 'Chamada à adoração' })
+
   const bulletinRows = [
     {
       date: '2026-06-07',
@@ -234,6 +266,11 @@ export async function seedE2eDatabase() {
     .insert(userPermissions)
     .values(E2E_ADMIN_PERMISSIONS.map((permission) => ({ user_id: adminUser.id, ...permission })))
 
+  const [limitedUser] = await db.insert(users).values(E2E_LIMITED_USER).returning({ id: users.id })
+  await db
+    .insert(userPermissions)
+    .values(E2E_LIMITED_PERMISSIONS.map((permission) => ({ user_id: limitedUser.id, ...permission })))
+
   await client.end()
 
   return { adminUserId: adminUser.id }
@@ -242,11 +279,43 @@ export async function seedE2eDatabase() {
 export const E2E_BULLETINS_COUNT = 3
 
 export async function getE2eAdminUserId(): Promise<number> {
+  return getE2eUserIdByEmail(E2E_ADMIN_USER.email)
+}
+
+export async function getE2eLimitedUserId(): Promise<number> {
+  return getE2eUserIdByEmail(E2E_LIMITED_USER.email)
+}
+
+async function getE2eUserIdByEmail(email: string): Promise<number> {
   const client = postgres(E2E_DATABASE_URL, { max: 1 })
   try {
-    const [row] = await client`SELECT id FROM users WHERE email = ${E2E_ADMIN_USER.email}`
+    const [row] = await client`SELECT id FROM users WHERE email = ${email}`
     return row.id
   } finally {
     await client.end()
   }
+}
+
+export async function authenticateAsE2eAdmin(context: BrowserContext, baseURL: string | undefined) {
+  await authenticateAsE2eUser(await getE2eAdminUserId(), context, baseURL)
+}
+
+export async function authenticateAsE2eLimitedUser(context: BrowserContext, baseURL: string | undefined) {
+  await authenticateAsE2eUser(await getE2eLimitedUserId(), context, baseURL)
+}
+
+async function authenticateAsE2eUser(userId: number, context: BrowserContext, baseURL: string | undefined) {
+  const token = await createSessionToken(userId, E2E_SESSION_SECRET)
+
+  await context.addCookies([
+    {
+      name: SESSION_COOKIE_NAME,
+      value: token,
+      url: baseURL ?? 'http://localhost:3210',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      expires: Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS,
+    },
+  ])
 }

@@ -3,12 +3,15 @@ import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import BulletinArticle from '@/components/BulletinArticle'
 import Markdown from '@/components/Markdown'
+import DraftBadge from '@/components/public/DraftBadge'
 import PageHeader from '@/components/public/PageHeader'
 import SectionHead from '@/components/public/SectionHead'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
+import { getCurrentUser } from '@/lib/auth/current-user'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
+import { liturgyVisibilityForUser } from '@/lib/liturgy-visibility'
 import {
   bulletinSectionWindows,
   formatLongDatePtBR,
@@ -40,12 +43,15 @@ const sectionCard = 'bg-brand-sky mb-8 break-inside-avoid p-6 print:bg-transpare
 export default async function BulletinDetailPage({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
   const { preview } = await searchParams
-  const result = await loadBulletin(date, preview === '1')
+  const isPreview = preview === '1'
+  const result = await loadBulletin(date, isPreview)
 
   if (!result) notFound()
 
   const { bulletin, article } = result
   const windows = bulletinSectionWindows(bulletin.date)
+  // The Preview never leaks a draft Liturgia through an anonymous URL, regardless of session.
+  const liturgyVisibility = isPreview ? 'published-only' : liturgyVisibilityForUser(await getCurrentUser())
 
   const [agendaItems, announcements, anniversaries, liturgiesOfDay] = await Promise.all([
     bulletin.show_agenda ? listAgendaInWindow(windows.agenda.from, windows.agenda.to) : Promise.resolve([]),
@@ -53,7 +59,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
     bulletin.show_birthdays
       ? listAnniversariesInWindow(windows.birthdays.from, windows.birthdays.to)
       : Promise.resolve([]),
-    listLiturgiesByDate(bulletin.date, 'published-only'),
+    listLiturgiesByDate(bulletin.date, liturgyVisibility),
   ])
 
   const agendaDays = groupAgendaByWeekday(agendaItems)
@@ -171,6 +177,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
                       <h3 className="font-narrow text-brand-deep text-xl group-hover:underline">
                         {l.theme}
                         {` · ${formatTimePtBR(l.time)}`}
+                        {l.status === 'draft' ? <DraftBadge /> : null}
                       </h3>
                     </Link>
                   </li>

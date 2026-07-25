@@ -113,7 +113,7 @@ export function bulletinMetadata(bulletin: BulletinMeta, options: { preview?: bo
 
 export type LiturgyMeta = { slug: string; theme: string; time: string; date: Date; description: string | null }
 
-export function liturgyMetadata(liturgy: LiturgyMeta): Metadata {
+export function liturgyMetadata(liturgy: LiturgyMeta, options: { draft?: boolean } = {}): Metadata {
   const longDate = formatLongDatePtBR(liturgy.date)
   const title = `${liturgy.theme} — ${longDate} às ${formatTimePtBR(liturgy.time)}`
 
@@ -121,7 +121,7 @@ export function liturgyMetadata(liturgy: LiturgyMeta): Metadata {
     title,
     ogTitle: `${title}${TITLE_SUFFIX}`,
     ...(liturgy.description ? { description: liturgy.description } : {}),
-    canonical: `/liturgies/${liturgy.slug}`,
+    ...(options.draft ? { noindex: true } : { canonical: `/liturgies/${liturgy.slug}` }),
     image: {
       path: `/liturgies/${liturgy.slug}/og`,
       alt: `Imagem de compartilhamento da Liturgia ${liturgy.theme}, de ${longDate}`,

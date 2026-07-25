@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import { Fragment } from 'react'
 import Pagination from '@/components/Pagination'
+import DraftBadge from '@/components/public/DraftBadge'
 import PageHeader from '@/components/public/PageHeader'
 import { countFutureOrTodayLiturgies, countLiturgies, listLiturgies } from '@/db/queries/liturgies'
+import { getCurrentUser } from '@/lib/auth/current-user'
 import { liturgySlug } from '@/lib/bulletin'
 import { formatLongDatePtBR, formatTimePtBR, today } from '@/lib/date'
+import { liturgyVisibilityForUser } from '@/lib/liturgy-visibility'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
@@ -14,13 +17,14 @@ const PAGE_SIZE = 50
 
 export default async function LiturgiesPage({ searchParams }: PageProps<'/liturgies'>) {
   const { page: rawPage } = await searchParams
-  const total = await countLiturgies({ visibility: 'published-only' })
+  const visibility = liturgyVisibilityForUser(await getCurrentUser())
+  const total = await countLiturgies({ visibility })
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
   const todayDate = today()
   const [liturgiesList, futureCount] = await Promise.all([
-    listLiturgies({ page, pageSize: PAGE_SIZE, visibility: 'published-only' }),
-    countFutureOrTodayLiturgies({ visibility: 'published-only', fromDate: todayDate }),
+    listLiturgies({ page, pageSize: PAGE_SIZE, visibility }),
+    countFutureOrTodayLiturgies({ visibility, fromDate: todayDate }),
   ])
   // Índice absoluto (na sequência ordenada por data desc) do último item futuro/hoje; -1 quando
   // não há fronteira nesta lista (tudo futuro ou tudo passado), para não depender de dois itens
@@ -49,6 +53,7 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
                       >
                         <h2 className="text-brand-ridge font-serif text-2xl leading-snug group-hover:underline">
                           {liturgy.theme}
+                          {liturgy.status === 'draft' ? <DraftBadge /> : null}
                         </h2>
                         <p className="font-narrow text-brand-deep mt-2 tracking-[0.06em] uppercase">
                           {formatLongDatePtBR(liturgy.date)} às {formatTimePtBR(liturgy.time)}

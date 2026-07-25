@@ -1,23 +1,5 @@
-import { expect, test, type BrowserContext } from '@playwright/test'
-import { createSessionToken, SESSION_COOKIE_NAME, SESSION_DURATION_SECONDS } from '../../lib/auth/session'
-import { E2E_SESSION_SECRET, getE2eAdminUserId } from './seed-db'
-
-async function authenticate(context: BrowserContext, baseURL: string | undefined) {
-  const adminUserId = await getE2eAdminUserId()
-  const token = await createSessionToken(adminUserId, E2E_SESSION_SECRET)
-
-  await context.addCookies([
-    {
-      name: SESSION_COOKIE_NAME,
-      value: token,
-      url: baseURL ?? 'http://localhost:3210',
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax',
-      expires: Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS,
-    },
-  ])
-}
+import { expect, test } from '@playwright/test'
+import { authenticateAsE2eAdmin } from './seed-db'
 
 test('blocks an unauthenticated visitor from /admin', async ({ page }) => {
   await page.goto('/admin')
@@ -30,7 +12,7 @@ test('an authenticated user runs a full article CRUD that round-trips to the pub
   context,
   baseURL,
 }) => {
-  await authenticate(context, baseURL)
+  await authenticateAsE2eAdmin(context, baseURL)
 
   const title = `Artigo E2E ${Date.now()}`
   const editedTitle = `${title} editado`
