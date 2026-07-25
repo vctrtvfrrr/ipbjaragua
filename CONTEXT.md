@@ -43,7 +43,7 @@ O texto curto que sintetiza uma publicação para o leitor e para os buscadores 
 _Avoid_: meta description (é o uso técnico do texto, não o conceito), SEO text, legenda.
 
 **Imagem Destacada** (`featured_images`):
-Imagem **decorativa** de um banco compartilhado, exibida no topo de um recurso do site. O operador a envia pelo painel e ela é normalizada (WEBP, máx. 1600px de largura); os bytes vivem em disco, a linha guarda só o `id` e um `path` opaco (token aleatório). O vínculo com um recurso é **sorteado uma vez na criação** e depois **estável** — editar o recurso não re-sorteia; excluir a Imagem desfaz o vínculo (`ON DELETE SET NULL`). Sem imagem vinculada — banco vazio na criação, ou imagem excluída/arquivo ausente — o recurso cai numa **imagem de fallback** estática. O banco é **genérico por design**; hoje só o **Artigo** o consome.
+Imagem **decorativa** de um banco compartilhado, associável a recursos do site. O operador a envia pelo painel e ela é normalizada (WEBP, máx. 1600px de largura); os bytes vivem em disco, a linha guarda só o `id` e um `path` opaco (token aleatório). No **Artigo**, o vínculo é sorteado uma vez na criação e depois estável; sem imagem vinculada, o Artigo usa uma imagem de fallback estática. No **Aviso**, o vínculo é opcional e escolhido pelo operador, sem fallback. Excluir uma Imagem desfaz seus vínculos sem excluir os recursos associados. O banco é genérico por design, não pertence a um tipo específico de recurso.
 _Avoid_: Thumbnail, capa, banner, imagem de artigo (o banco não pertence a um recurso específico), imagem informativa (é decorativa — o `alt` vem do contexto do recurso, não da imagem).
 
 ### Culto
@@ -123,8 +123,12 @@ A ação de duplicar um **Evento** como um novo, sem recorrência armazenada. Ab
 _Avoid_: Recorrência, agendamento (não há regra automática; cada Evento é uma entrada avulsa).
 
 **Aviso** (`announcements`):
-Mensagem com prazo de validade (`expires_at`, o último dia em que ainda é exibida), opcionalmente com link. Exibida no **Boletim** e na home (seção "Avisos Gerais"). É uma mensagem **viva, não um instantâneo**: cada Boletim mostra os Avisos vigentes na _sua_ data (não na data de hoje), e o vínculo é derivado da data, não uma referência guardada — por isso editar ou excluir um Aviso altera retroativamente o que Boletins passados exibem. Essa retroatividade é conhecida e aceita.
+Mensagem com prazo de validade (`expires_at`, o último dia em que ainda é exibida), opcionalmente com link. Todo Aviso possui um **Ícone de Aviso**. Exibida no **Boletim** e na home (seção "Avisos Gerais"). É uma mensagem **viva, não um instantâneo**: cada Boletim mostra os Avisos vigentes na _sua_ data (não na data de hoje), e o vínculo é derivado da data, não uma referência guardada — por isso editar ou excluir um Aviso altera retroativamente o que Boletins passados exibem. Essa retroatividade é conhecida e aceita. Somente na criação, pode gerar um **Evento** independente contendo apenas seu título e usando o último dia de exibição como data; mudanças posteriores em qualquer dos dois não se propagam ao outro, e editar o Aviso não permite gerar outro Evento.
 _Avoid_: Anúncio (termo anterior), notificação, comunicado.
+
+**Ícone de Aviso**:
+O símbolo da biblioteca visual associado a um **Aviso**. É obrigatório; na ausência de escolha explícita do operador, usa **Pin**.
+_Avoid_: Emoji, ilustração.
 
 ### Acesso ao painel
 
