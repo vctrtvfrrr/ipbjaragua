@@ -3,7 +3,7 @@
 import type { ActionState } from '@/lib/entity-action'
 import { liturgyDescriptionInput } from '@/lib/description-input'
 import { generatePublicationDescription } from '@/lib/generate-description'
-import { createLiturgyAction, deleteLiturgyAction, updateLiturgyAction } from './actions'
+import { createLiturgyAction, deleteLiturgyAction, unpublishLiturgyAction, updateLiturgyAction } from './actions'
 
 export async function createLiturgyFormAction(prev: ActionState, formData: FormData): Promise<ActionState> {
   return createLiturgyAction.action(prev, formData)
@@ -15,6 +15,10 @@ export async function updateLiturgyFormAction(prev: ActionState, formData: FormD
 
 export async function deleteLiturgyFormAction(prev: ActionState, formData: FormData): Promise<ActionState> {
   return deleteLiturgyAction.action(prev, formData)
+}
+
+export async function unpublishLiturgyFormAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return unpublishLiturgyAction.action(prev, formData)
 }
 
 export async function generateLiturgyDescriptionAction(input: {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildLiturgyActErrorSummary, buildLiturgyDuplicationDefaults } from './liturgy'
+import {
+  buildLiturgyActErrorSummary,
+  buildLiturgyDuplicationDefaults,
+  draftLiturgyTreeSchema,
+  liturgyTreeSchema,
+} from './liturgy'
 
 const source = {
   theme: 'Culto de Domingo',
@@ -167,5 +172,148 @@ describe('buildLiturgyActErrorSummary', () => {
     )
 
     expect(summary).toEqual([])
+  })
+})
+
+const incompleteTree = {
+  date: '2026-06-07',
+  theme: 'Culto Solene',
+  time: '09:00',
+  description: '',
+  acts: [] as Array<Record<string, unknown>>,
+}
+
+describe('draftLiturgyTreeSchema', () => {
+  it('accepts a liturgy with no acts, a nameless act, an empty song and a passage-less reading', () => {
+    const result = draftLiturgyTreeSchema.safeParse(incompleteTree)
+
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts an act without a name and moments missing their completeness fields', () => {
+    const result = draftLiturgyTreeSchema.safeParse({
+      ...incompleteTree,
+      acts: [
+        {
+          name: '',
+          moments: [
+            {
+              type: 'song',
+              description: '',
+              song_id: null,
+              scripture_passages: [],
+              sermon_speaker: '',
+              sacrament_type: null,
+            },
+            {
+              type: 'bible_reading',
+              description: '',
+              song_id: null,
+              scripture_passages: [],
+              sermon_speaker: '',
+              sacrament_type: null,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  it('still requires a sacrament type for a Momento de Sacramento — that is a DB constraint', () => {
+    const result = draftLiturgyTreeSchema.safeParse({
+      ...incompleteTree,
+      acts: [
+        {
+          name: 'Ceia',
+          moments: [
+            {
+              type: 'sacrament',
+              description: '',
+              song_id: null,
+              scripture_passages: [],
+              sermon_speaker: '',
+              sacrament_type: null,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.path.join('.'))).toContain('acts.0.moments.0.sacrament_type')
+    }
+  })
+
+  it('accepts a scripture passage with only the reference filled in, but the full schema rejects it', () => {
+    const actsWithPartialPassage = [
+      {
+        name: 'Leitura',
+        moments: [
+          {
+            type: 'bible_reading',
+            description: '',
+            song_id: null,
+            scripture_passages: [{ reference: 'Salmo 1', text: '', version: '' }],
+            sermon_speaker: '',
+            sacrament_type: null,
+          },
+        ],
+      },
+    ]
+
+    const draftResult = draftLiturgyTreeSchema.safeParse({ ...incompleteTree, acts: actsWithPartialPassage })
+    expect(draftResult.success).toBe(true)
+
+    const fullResult = liturgyTreeSchema.safeParse({ ...incompleteTree, acts: actsWithPartialPassage })
+    expect(fullResult.success).toBe(false)
+    if (!fullResult.success) {
+      const paths = fullResult.error.issues.map((issue) => issue.path.join('.'))
+      expect(paths).toContain('acts.0.moments.0.scripture_passages.0.text')
+      expect(paths).toContain('acts.0.moments.0.scripture_passages.0.version')
+    }
+  })
+})
+
+describe('liturgyTreeSchema', () => {
+  it('rejects everything the draft schema accepted: no acts, a nameless act, an empty song and a passage-less reading', () => {
+    expect(liturgyTreeSchema.safeParse(incompleteTree).success).toBe(false)
+
+    const withIncompleteAct = liturgyTreeSchema.safeParse({
+      ...incompleteTree,
+      acts: [
+        {
+          name: '',
+          moments: [
+            {
+              type: 'song',
+              description: '',
+              song_id: null,
+              scripture_passages: [],
+              sermon_speaker: '',
+              sacrament_type: null,
+            },
+            {
+              type: 'bible_reading',
+              description: '',
+              song_id: null,
+              scripture_passages: [],
+              sermon_speaker: '',
+              sacrament_type: null,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(withIncompleteAct.success).toBe(false)
+    if (!withIncompleteAct.success) {
+      const paths = withIncompleteAct.error.issues.map((issue) => issue.path.join('.'))
+      expect(paths).toContain('acts.0.name')
+      expect(paths).toContain('acts.0.moments.0.description')
+      expect(paths).toContain('acts.0.moments.1.scripture_passages')
+    }
   })
 })

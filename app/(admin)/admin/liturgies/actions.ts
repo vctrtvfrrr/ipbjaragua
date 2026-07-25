@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache'
 import {
   createLiturgyTree,
+  setLiturgyStatus,
   softDeleteLiturgy,
   updateLiturgyTree,
   type LiturgyTreeScopeError,
@@ -41,6 +42,15 @@ export const deleteLiturgyAction = defineEntityAction({
   schema: deleteLiturgySchema,
   parse: parseSerializedLiturgyPayload,
   write: ({ data, db }) => softDeleteLiturgy(data.id, db),
+  revalidate: revalidateLiturgyPages,
+})
+
+export const unpublishLiturgyAction = defineEntityAction({
+  entity: 'liturgies',
+  action: 'update',
+  schema: deleteLiturgySchema,
+  parse: parseSerializedLiturgyPayload,
+  write: ({ data, db }) => setLiturgyStatus(data.id, 'draft', db),
   revalidate: revalidateLiturgyPages,
 })
 

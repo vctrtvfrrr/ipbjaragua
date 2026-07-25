@@ -6,8 +6,11 @@ export const MOMENT_TYPES = ['bible_reading', 'song', 'prayer', 'sermon', 'sacra
 
 export const SACRAMENT_TYPES = ['baptism', 'eucharist'] as const
 
+export const LITURGY_STATUSES = ['draft', 'published'] as const
+
 export type MomentType = (typeof MOMENT_TYPES)[number]
 export type SacramentType = (typeof SACRAMENT_TYPES)[number]
+export type LiturgyStatus = (typeof LITURGY_STATUSES)[number]
 
 export const MOMENT_TYPE_LABELS: Record<MomentType, string> = {
   bible_reading: 'Leitura Bíblica',
@@ -35,46 +38,75 @@ export const scripturePassageSchema = z.object({
   version: requiredTrimmedString('Campo obrigatório'),
 })
 
-export const liturgyMomentSchema = z
-  .object({
-    id: z.number().int().positive().optional(),
-    type: z.enum(MOMENT_TYPES),
-    description: nullableTrimmedString,
-    song_id: optionalId,
-    scripture_passages: z.array(scripturePassageSchema),
-    sermon_speaker: nullableTrimmedString,
-    sacrament_type: z.enum(SACRAMENT_TYPES).nullable().optional(),
-  })
-  .superRefine((moment, context) => {
-    if (moment.type === 'song' && !moment.song_id && !moment.description) {
-      context.addIssue({
-        code: 'custom',
-        path: ['description'],
-        message: 'Cântico exige música ou descrição',
-      })
-    }
+// A rascunho pode ter uma passagem parcialmente preenchida (ex.: só a referência) — o banco não
+// exige completude, apenas a publicação (ver ADR-0020).
+export const draftScripturePassageSchema = z.object({
+  reference: nullableTrimmedString,
+  text: nullableTrimmedString,
+  version: nullableTrimmedString,
+})
 
-    if (moment.type === 'bible_reading' && moment.scripture_passages.length < 1) {
-      context.addIssue({
-        code: 'custom',
-        path: ['scripture_passages'],
-        message: 'Leitura bíblica exige ao menos uma passagem',
-      })
-    }
+const liturgyMomentFields = z.object({
+  id: z.number().int().positive().optional(),
+  type: z.enum(MOMENT_TYPES),
+  description: nullableTrimmedString,
+  song_id: optionalId,
+  scripture_passages: z.array(scripturePassageSchema),
+  sermon_speaker: nullableTrimmedString,
+  sacrament_type: z.enum(SACRAMENT_TYPES).nullable().optional(),
+})
 
-    if (moment.type === 'sacrament' && !moment.sacrament_type) {
-      context.addIssue({
-        code: 'custom',
-        path: ['sacrament_type'],
-        message: 'Sacramento exige tipo',
-      })
-    }
-  })
+const draftLiturgyMomentFields = liturgyMomentFields.extend({
+  scripture_passages: z.array(draftScripturePassageSchema),
+})
+
+type IssueSink = { addIssue: (issue: { code: 'custom'; path: PropertyKey[]; message: string }) => void }
+
+// The DB check constraint `sacrament_type_required` applies regardless of draft/publish, so both
+// variants below enforce it; the draft variant skips the completeness rules a half-built moment
+// hasn't earned yet (see ADR-0020).
+function requireSacramentType(moment: { type: MomentType; sacrament_type?: SacramentType | null }, context: IssueSink) {
+  if (moment.type === 'sacrament' && !moment.sacrament_type) {
+    context.addIssue({
+      code: 'custom',
+      path: ['sacrament_type'],
+      message: 'Sacramento exige tipo',
+    })
+  }
+}
+
+export const liturgyMomentSchema = liturgyMomentFields.superRefine((moment, context) => {
+  if (moment.type === 'song' && !moment.song_id && !moment.description) {
+    context.addIssue({
+      code: 'custom',
+      path: ['description'],
+      message: 'Cântico exige música ou descrição',
+    })
+  }
+
+  if (moment.type === 'bible_reading' && moment.scripture_passages.length < 1) {
+    context.addIssue({
+      code: 'custom',
+      path: ['scripture_passages'],
+      message: 'Leitura bíblica exige ao menos uma passagem',
+    })
+  }
+
+  requireSacramentType(moment, context)
+})
+
+export const draftLiturgyMomentSchema = draftLiturgyMomentFields.superRefine(requireSacramentType)
 
 export const liturgyActSchema = z.object({
   id: z.number().int().positive().optional(),
   name: requiredTrimmedString('Campo obrigatório'),
   moments: z.array(liturgyMomentSchema),
+})
+
+export const draftLiturgyActSchema = z.object({
+  id: z.number().int().positive().optional(),
+  name: z.string().trim(),
+  moments: z.array(draftLiturgyMomentSchema),
 })
 
 export const liturgyTreeSchema = z.object({
@@ -91,23 +123,50 @@ export const liturgyTreeSchema = z.object({
   acts: z.array(liturgyActSchema).min(1, 'Liturgia exige ao menos um Ato'),
 })
 
-export const createLiturgySchema = liturgyTreeSchema.transform((data) => ({
-  ...data,
-  date: parseISODate(data.date),
-}))
+// Rascunho relaxa a validação de completude, mas mantém data, horário e tipo de culto — o que o
+// banco já exige — além do tipo de sacramento, via draftLiturgyActSchema/draftLiturgyMomentSchema.
+export const draftLiturgyTreeSchema = z.object({
+  date: liturgyTreeSchema.shape.date,
+  theme: liturgyTreeSchema.shape.theme,
+  time: liturgyTreeSchema.shape.time,
+  description: liturgyTreeSchema.shape.description,
+  acts: z.array(draftLiturgyActSchema),
+})
 
-export const updateLiturgySchema = liturgyTreeSchema
-  .extend({ id: z.number().int().positive('ID é obrigatório') })
-  .transform((data) => ({
-    ...data,
-    date: parseISODate(data.date),
-  }))
+function parseLiturgyTree(raw: Record<string, unknown>, status: LiturgyStatus | undefined, context: IssueSink) {
+  const treeSchema = status === 'draft' ? draftLiturgyTreeSchema : liturgyTreeSchema
+  const result = treeSchema.safeParse(raw)
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      context.addIssue({ code: 'custom', path: issue.path, message: issue.message })
+    }
+    return undefined
+  }
+  return { ...result.data, date: parseISODate(result.data.date) }
+}
+
+export const createLiturgySchema = z
+  .object({ status: z.enum(LITURGY_STATUSES, 'Campo obrigatório') })
+  .passthrough()
+  .transform((raw, context) => {
+    const tree = parseLiturgyTree(raw, raw.status, context)
+    return tree ? { status: raw.status, ...tree } : z.NEVER
+  })
+
+export const updateLiturgySchema = z
+  .object({ id: z.number().int().positive('ID é obrigatório'), status: z.enum(LITURGY_STATUSES).optional() })
+  .passthrough()
+  .transform((raw, context) => {
+    const tree = parseLiturgyTree(raw, raw.status, context)
+    return tree ? { id: raw.id, status: raw.status, ...tree } : z.NEVER
+  })
 
 export const deleteLiturgySchema = z.object({
   id: z.number().int().positive('ID é obrigatório'),
 })
 
 export type LiturgyTreeInput = z.output<typeof createLiturgySchema>
+export type LiturgyTreeUpdateInput = z.output<typeof updateLiturgySchema>
 export type LiturgyMomentInput = LiturgyTreeInput['acts'][number]['moments'][number]
 
 export function liturgyActLabel(act: { name: string }, index: number): string {
@@ -156,10 +215,14 @@ export function normalizeMomentForType(moment: LiturgyMomentInput) {
   }
 }
 
+// The submit button that triggered the form carries the save intent as a `status` field
+// (see LiturgyForm) — only that button's name/value pair reaches FormData, per the HTML spec.
 export function parseSerializedLiturgyPayload(formData: FormData): unknown {
   const payload = formData.get('payload')
   if (typeof payload !== 'string') throw new Error('payload is required')
-  return JSON.parse(payload)
+  const parsed = JSON.parse(payload)
+  const status = formData.get('status')
+  return typeof status === 'string' ? { ...(parsed as object), status } : parsed
 }
 
 type LiturgyDuplicationSource = {
@@ -172,7 +235,7 @@ type LiturgyDuplicationSource = {
       type: MomentType
       description: string | null
       song_id: number | null
-      scripture_passages: Array<{ reference: string; text: string; version: string }> | null
+      scripture_passages: Array<{ reference: string | null; text: string | null; version: string | null }> | null
       sermon_speaker: string | null
       sacrament_type: SacramentType | null
     }>
@@ -213,9 +276,9 @@ export function buildLiturgyDuplicationDefaults(
         description: moment.description ?? '',
         song_id: moment.song_id !== null && activeSongIds.has(moment.song_id) ? moment.song_id : null,
         scripture_passages: (moment.scripture_passages ?? []).map((passage) => ({
-          reference: passage.reference,
-          text: passage.text,
-          version: passage.version,
+          reference: passage.reference ?? '',
+          text: passage.text ?? '',
+          version: passage.version ?? '',
         })),
         sermon_speaker: moment.sermon_speaker ?? '',
         sacrament_type: moment.sacrament_type,

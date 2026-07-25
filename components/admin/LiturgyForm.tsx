@@ -2,10 +2,14 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FormEvent, useActionState, useEffect, useMemo, useState, useTransition } from 'react'
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { FormEvent, useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { createLiturgyFormAction, updateLiturgyFormAction } from '@/app/(admin)/admin/liturgies/form-actions'
+import {
+  createLiturgyFormAction,
+  unpublishLiturgyFormAction,
+  updateLiturgyFormAction,
+} from '@/app/(admin)/admin/liturgies/form-actions'
 import { generateLiturgyDescriptionAction } from '@/app/(admin)/admin/liturgies/form-actions'
 import type { LiturgyEditorData, SongPickerOption } from '@/db/queries/liturgies'
 import { formatISODate } from '@/lib/date'
@@ -15,8 +19,10 @@ import {
   MOMENT_TYPE_LABELS,
   MOMENT_TYPES,
   SACRAMENT_TYPE_LABELS,
+  draftLiturgyTreeSchema,
   liturgyTreeSchema,
   type LiturgyFormDefaults,
+  type LiturgyStatus,
   type MomentType,
   type SacramentType,
 } from '@/lib/liturgy'
@@ -24,6 +30,16 @@ import type { ActionState } from '@/lib/entity-action'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -67,7 +83,9 @@ export function LiturgyForm(props: Props) {
   const [openActKey, setOpenActKey] = useState<string | null>(acts[0]?.key ?? null)
   const [description, setDescription] = useState(liturgy?.description ?? defaults?.description ?? '')
   const [isGenerating, startGeneration] = useTransition()
-  const [validationAttempted, setValidationAttempted] = useState(false)
+  const [attemptedIntent, setAttemptedIntent] = useState<LiturgyStatus | null>(null)
+  const lastIntentRef = useRef<LiturgyStatus | undefined>(undefined)
+  const isPublished = props.mode === 'edit' && props.liturgy.status === 'published'
 
   const formError = state.status === 'error' ? state.formError : undefined
   const payload = useMemo(
@@ -95,16 +113,25 @@ export function LiturgyForm(props: Props) {
     [acts, date, description, liturgy, theme, time]
   )
   const clientErrors = useMemo(() => {
-    if (!validationAttempted) return {}
-    const result = liturgyTreeSchema.safeParse(JSON.parse(payload))
+    if (!attemptedIntent) return {}
+    const schema = attemptedIntent === 'draft' ? draftLiturgyTreeSchema : liturgyTreeSchema
+    const result = schema.safeParse(JSON.parse(payload))
     return result.success ? {} : errorsFromIssues(result.error.issues)
-  }, [payload, validationAttempted])
+  }, [payload, attemptedIntent])
   const actErrorSummary = useMemo(() => buildLiturgyActErrorSummary(clientErrors, acts), [acts, clientErrors])
   const actIndexesWithErrors = useMemo(() => new Set(actErrorSummary.map((group) => group.actIndex)), [actErrorSummary])
 
   useEffect(() => {
     if (state.status !== 'success') return
-    toast.success(props.mode === 'edit' ? 'Liturgia atualizada' : 'Liturgia criada')
+    const message =
+      lastIntentRef.current === 'draft'
+        ? 'Liturgia salva como rascunho'
+        : lastIntentRef.current === 'published'
+          ? 'Liturgia publicada'
+          : props.mode === 'edit'
+            ? 'Liturgia atualizada'
+            : 'Liturgia criada'
+    toast.success(message)
     router.push('/admin/liturgies')
   }, [state.status, props.mode, router])
 
@@ -123,167 +150,184 @@ export function LiturgyForm(props: Props) {
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
-    const result = liturgyTreeSchema.safeParse(JSON.parse(payload))
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    const intent = submitter?.name === 'status' ? (submitter.value as LiturgyStatus) : undefined
+    lastIntentRef.current = intent
+
+    const schema = intent === 'draft' ? draftLiturgyTreeSchema : liturgyTreeSchema
+    const result = schema.safeParse(JSON.parse(payload))
     if (result.success) return
 
     event.preventDefault()
-    setValidationAttempted(true)
+    setAttemptedIntent(intent === 'draft' ? 'draft' : 'published')
   }
 
   return (
-    <Form action={formAction} onSubmit={submit} className="space-y-6">
-      <FormError message={formError} />
-      {actErrorSummary.length > 0 ? (
-        <div
-          role="alert"
-          className="border-destructive/30 bg-destructive/10 text-destructive grid gap-3 rounded-lg border px-4 py-3 text-sm"
-        >
-          <p className="font-medium">Revise os erros nos Atos:</p>
-          {actErrorSummary.map((group) => (
-            <div key={group.actIndex}>
-              <p className="font-medium">{group.label}</p>
-              <ul className="list-disc pl-5">
-                {group.messages.map((message, index) => (
-                  <li key={`${message}-${index}`}>{message}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+    <div className="grid gap-4">
+      <Form action={formAction} onSubmit={submit} className="space-y-6">
+        <FormError message={formError} />
+        {actErrorSummary.length > 0 ? (
+          <div
+            role="alert"
+            className="border-destructive/30 bg-destructive/10 text-destructive grid gap-3 rounded-lg border px-4 py-3 text-sm"
+          >
+            <p className="font-medium">Revise os erros nos Atos:</p>
+            {actErrorSummary.map((group) => (
+              <div key={group.actIndex}>
+                <p className="font-medium">{group.label}</p>
+                <ul className="list-disc pl-5">
+                  {group.messages.map((message, index) => (
+                    <li key={`${message}-${index}`}>{message}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <input type="hidden" name="payload" value={payload} />
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <FormField>
+            <Label htmlFor="date">Data</Label>
+            <Input id="date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+            <FieldError messages={clientErrors.date} />
+          </FormField>
+          <FormField>
+            <Label htmlFor="time">Horário</Label>
+            <Input id="time" type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+            <FieldError messages={clientErrors.time} />
+          </FormField>
+          <FormField>
+            <Label htmlFor="theme">Tipo de Culto</Label>
+            <Input id="theme" value={theme} onChange={(event) => setTheme(event.target.value)} />
+            <FieldError messages={clientErrors.theme} />
+          </FormField>
+        </div>
+
+        <section className="grid gap-4">
+          <h3 className="text-base font-semibold tracking-normal">Atos</h3>
+          <FieldError messages={clientErrors.acts} />
+
+          <Accordion
+            value={openActKey ? [openActKey] : []}
+            onValueChange={(value) => setOpenActKey((value[0] as string | undefined) ?? null)}
+          >
+            {acts.map((act, actIndex) => (
+              <AccordionItem key={act.key} value={act.key} id={`act-${actIndex}`}>
+                <AccordionTrigger>
+                  <span>{liturgyActLabel(act, actIndex)}</span>
+                  {actIndexesWithErrors.has(actIndex) ? (
+                    <>
+                      <span aria-hidden="true" className="bg-destructive size-2 shrink-0 rounded-full" />
+                      <span className="sr-only">Ato com erro de validação</span>
+                    </>
+                  ) : null}
+                </AccordionTrigger>
+                <AccordionContent className="grid gap-4">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <FormField className="min-w-52 flex-1">
+                      <Label htmlFor={`act-${act.key}-name`}>Nome do Ato</Label>
+                      <Input
+                        id={`act-${act.key}-name`}
+                        value={act.name}
+                        onChange={(event) => updateAct(actIndex, { name: event.target.value })}
+                      />
+                      <FieldError messages={clientErrors[`acts.${actIndex}.name`]} />
+                    </FormField>
+                    <ReorderButtons
+                      index={actIndex}
+                      length={acts.length}
+                      onMove={(direction) => setActs((current) => moveItem(current, actIndex, actIndex + direction))}
+                      onRemove={() => removeAct(actIndex)}
+                      removeLabel="Remover ato"
+                    />
+                  </div>
+
+                  <div className="grid gap-3">
+                    {act.moments.map((moment, momentIndex) => (
+                      <MomentFields
+                        key={moment.key}
+                        actIndex={actIndex}
+                        momentIndex={momentIndex}
+                        moment={moment}
+                        songs={props.songs}
+                        errors={clientErrors}
+                        onUpdate={(next) => updateMoment(actIndex, momentIndex, next)}
+                        onMove={(direction) => moveMoment(actIndex, momentIndex, direction)}
+                        length={act.moments.length}
+                        onRemove={() => removeMoment(actIndex, momentIndex)}
+                      />
+                    ))}
+                  </div>
+
+                  <div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addMoment(actIndex)}>
+                      <Plus data-icon="inline-start" />
+                      Momento
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+
+          <div>
+            <Button type="button" variant="outline" onClick={addAct}>
+              <Plus data-icon="inline-start" />
+              Ato
+            </Button>
+          </div>
+        </section>
+
+        <FormField>
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="description">Descrição</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isGenerating}
+              onClick={() =>
+                startGeneration(async () => {
+                  const generationActs = acts.map((act) => ({
+                    ...act,
+                    moments: act.moments.map((moment) => ({
+                      ...moment,
+                      song_title: props.songs.find((song) => song.id === moment.song_id)?.title,
+                    })),
+                  }))
+                  const result = await generateLiturgyDescriptionAction({ mode: props.mode, acts: generationActs })
+                  if (result.error) toast.error(result.error)
+                  else if (result.description) setDescription(result.description)
+                })
+              }
+            >
+              {isGenerating ? 'Gerando…' : 'Gerar descrição'}
+            </Button>
+          </div>
+          <Textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} />
+        </FormField>
+
+        <FormActions>
+          <Link href="/admin/liturgies" className={cn(buttonVariants({ variant: 'outline' }))}>
+            Cancelar
+          </Link>
+          {!isPublished ? (
+            <Button type="submit" name="status" value="draft" variant="outline" disabled={isPending}>
+              {isPending ? 'Salvando...' : 'Salvar como rascunho'}
+            </Button>
+          ) : null}
+          <Button type="submit" {...(!isPublished ? { name: 'status', value: 'published' } : {})} disabled={isPending}>
+            {isPending ? 'Salvando...' : isPublished ? 'Salvar' : 'Publicar'}
+          </Button>
+        </FormActions>
+      </Form>
+      {isPublished && props.mode === 'edit' ? (
+        <div className="flex justify-end">
+          <UnpublishLiturgyButton liturgyId={props.liturgy.id} theme={props.liturgy.theme} />
         </div>
       ) : null}
-      <input type="hidden" name="payload" value={payload} />
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <FormField>
-          <Label htmlFor="date">Data</Label>
-          <Input id="date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
-          <FieldError messages={clientErrors.date} />
-        </FormField>
-        <FormField>
-          <Label htmlFor="time">Horário</Label>
-          <Input id="time" type="time" value={time} onChange={(event) => setTime(event.target.value)} />
-          <FieldError messages={clientErrors.time} />
-        </FormField>
-        <FormField>
-          <Label htmlFor="theme">Tipo de Culto</Label>
-          <Input id="theme" value={theme} onChange={(event) => setTheme(event.target.value)} />
-          <FieldError messages={clientErrors.theme} />
-        </FormField>
-      </div>
-
-      <section className="grid gap-4">
-        <h3 className="text-base font-semibold tracking-normal">Atos</h3>
-        <FieldError messages={clientErrors.acts} />
-
-        <Accordion
-          value={openActKey ? [openActKey] : []}
-          onValueChange={(value) => setOpenActKey((value[0] as string | undefined) ?? null)}
-        >
-          {acts.map((act, actIndex) => (
-            <AccordionItem key={act.key} value={act.key} id={`act-${actIndex}`}>
-              <AccordionTrigger>
-                <span>{liturgyActLabel(act, actIndex)}</span>
-                {actIndexesWithErrors.has(actIndex) ? (
-                  <>
-                    <span aria-hidden="true" className="bg-destructive size-2 shrink-0 rounded-full" />
-                    <span className="sr-only">Ato com erro de validação</span>
-                  </>
-                ) : null}
-              </AccordionTrigger>
-              <AccordionContent className="grid gap-4">
-                <div className="flex flex-wrap items-end gap-3">
-                  <FormField className="min-w-52 flex-1">
-                    <Label htmlFor={`act-${act.key}-name`}>Nome do Ato</Label>
-                    <Input
-                      id={`act-${act.key}-name`}
-                      value={act.name}
-                      onChange={(event) => updateAct(actIndex, { name: event.target.value })}
-                    />
-                    <FieldError messages={clientErrors[`acts.${actIndex}.name`]} />
-                  </FormField>
-                  <ReorderButtons
-                    index={actIndex}
-                    length={acts.length}
-                    onMove={(direction) => setActs((current) => moveItem(current, actIndex, actIndex + direction))}
-                    onRemove={() => removeAct(actIndex)}
-                    removeLabel="Remover ato"
-                  />
-                </div>
-
-                <div className="grid gap-3">
-                  {act.moments.map((moment, momentIndex) => (
-                    <MomentFields
-                      key={moment.key}
-                      actIndex={actIndex}
-                      momentIndex={momentIndex}
-                      moment={moment}
-                      songs={props.songs}
-                      errors={clientErrors}
-                      onUpdate={(next) => updateMoment(actIndex, momentIndex, next)}
-                      onMove={(direction) => moveMoment(actIndex, momentIndex, direction)}
-                      length={act.moments.length}
-                      onRemove={() => removeMoment(actIndex, momentIndex)}
-                    />
-                  ))}
-                </div>
-
-                <div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => addMoment(actIndex)}>
-                    <Plus data-icon="inline-start" />
-                    Momento
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-
-        <div>
-          <Button type="button" variant="outline" onClick={addAct}>
-            <Plus data-icon="inline-start" />
-            Ato
-          </Button>
-        </div>
-      </section>
-
-      <FormField>
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor="description">Descrição</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isGenerating}
-            onClick={() =>
-              startGeneration(async () => {
-                const generationActs = acts.map((act) => ({
-                  ...act,
-                  moments: act.moments.map((moment) => ({
-                    ...moment,
-                    song_title: props.songs.find((song) => song.id === moment.song_id)?.title,
-                  })),
-                }))
-                const result = await generateLiturgyDescriptionAction({ mode: props.mode, acts: generationActs })
-                if (result.error) toast.error(result.error)
-                else if (result.description) setDescription(result.description)
-              })
-            }
-          >
-            {isGenerating ? 'Gerando…' : 'Gerar descrição'}
-          </Button>
-        </div>
-        <Textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} />
-      </FormField>
-
-      <FormActions>
-        <Link href="/admin/liturgies" className={cn(buttonVariants({ variant: 'outline' }))}>
-          Cancelar
-        </Link>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? 'Salvando...' : 'Salvar'}
-        </Button>
-      </FormActions>
-    </Form>
+    </div>
   )
 
   function addMoment(actIndex: number) {
@@ -316,6 +360,45 @@ export function LiturgyForm(props: Props) {
     setActs((current) => [...current, act])
     setOpenActKey(act.key)
   }
+}
+
+function UnpublishLiturgyButton({ liturgyId, theme }: { liturgyId: number; theme: string }) {
+  const [state, formAction, isPending] = useActionState(unpublishLiturgyFormAction, INITIAL_STATE)
+  const router = useRouter()
+  const payload = useMemo(() => JSON.stringify({ id: liturgyId }), [liturgyId])
+
+  const formError = state.status === 'error' ? state.formError : undefined
+
+  useEffect(() => {
+    if (state.status !== 'success') return
+    toast.success('Liturgia voltou a rascunho')
+    router.refresh()
+  }, [state.status, router])
+
+  return (
+    <Dialog>
+      <DialogTrigger render={<Button variant="destructive" size="sm" />}>
+        <RotateCcw data-icon="inline-start" />
+        Voltar para rascunho
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Voltar para rascunho</DialogTitle>
+          <DialogDescription>Tem certeza que deseja voltar «{theme}» para rascunho?</DialogDescription>
+        </DialogHeader>
+        <FormError message={formError} />
+        <form action={formAction}>
+          <input type="hidden" name="payload" value={payload} />
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" type="button" />}>Cancelar</DialogClose>
+            <Button type="submit" variant="destructive" disabled={isPending}>
+              {isPending ? 'Voltando...' : 'Voltar para rascunho'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 function MomentFields({
@@ -612,7 +695,11 @@ function fromEditorData(liturgy: LiturgyEditorData): ActDraft[] {
       type: moment.type,
       description: moment.description ?? '',
       song_id: moment.song_id,
-      scripture_passages: moment.scripture_passages ?? [],
+      scripture_passages: (moment.scripture_passages ?? []).map((passage) => ({
+        reference: passage.reference ?? '',
+        text: passage.text ?? '',
+        version: passage.version ?? '',
+      })),
       sermon_speaker: moment.sermon_speaker ?? '',
       sacrament_type: moment.sacrament_type,
     })),

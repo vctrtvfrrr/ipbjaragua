@@ -5,7 +5,7 @@ import { liturgyActs, liturgyMoments, liturgies, songs } from '@/db/schema'
 import type { CurrentUser } from '@/lib/auth/current-user'
 import { createTestDb, type TestDb } from '@/tests/db'
 import { seedLiturgies, seedSongs } from '@/tests/seed'
-import { createLiturgyAction, deleteLiturgyAction, updateLiturgyAction } from './actions'
+import { createLiturgyAction, deleteLiturgyAction, unpublishLiturgyAction, updateLiturgyAction } from './actions'
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -32,6 +32,7 @@ function payload(overrides: Record<string, unknown> = {}) {
     theme: 'Culto Solene',
     time: '09:00',
     description: '',
+    status: 'published',
     acts: [
       {
         name: 'Ato inicial',
@@ -49,6 +50,10 @@ function payload(overrides: Record<string, unknown> = {}) {
     ],
     ...overrides,
   }
+}
+
+function withoutStatus(input: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(input).filter(([key]) => key !== 'status'))
 }
 
 describe('createLiturgyAction.execute', () => {
@@ -163,6 +168,28 @@ describe('createLiturgyAction.execute', () => {
 
     expect(state.status).toBe('error')
     expect(await db.select().from(liturgies).where(eq(liturgies.theme, 'Culto Solene'))).toHaveLength(1)
+  })
+
+  it('saves as draft a liturgy with no acts', async () => {
+    const state = await createLiturgyAction.execute(
+      { user: userWithPermission(true), db },
+      formData(payload({ status: 'draft', acts: [] }))
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [liturgy] = await db.select().from(liturgies)
+    expect(liturgy.status).toBe('draft')
+  })
+
+  it('refuses to publish the same incomplete liturgy and returns errors by path', async () => {
+    const state = await createLiturgyAction.execute(
+      { user: userWithPermission(true), db },
+      formData(payload({ status: 'published', acts: [] }))
+    )
+
+    expect(state.status).toBe('error')
+    expect(state.status === 'error' && state.fieldErrors?.acts).toBeDefined()
+    expect(await db.select().from(liturgies)).toEqual([])
   })
 })
 
@@ -422,6 +449,91 @@ describe('updateLiturgyAction.execute', () => {
     const options = await listSongPickerOptions(db)
 
     expect(options.map((option) => option.id)).toEqual([activeId])
+  })
+
+  it('saves as draft a liturgy with no acts', async () => {
+    const [liturgyId] = await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '09:00', status: 'draft' },
+    ])
+
+    const state = await updateLiturgyAction.execute(
+      { user: userWithPermission(true), db },
+      formData(payload({ id: liturgyId, status: 'draft', acts: [] }))
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [liturgy] = await db.select().from(liturgies).where(eq(liturgies.id, liturgyId))
+    expect(liturgy.status).toBe('draft')
+  })
+
+  it('refuses to publish an incomplete liturgy and returns errors by path', async () => {
+    const [liturgyId] = await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '09:00', status: 'draft' },
+    ])
+
+    const state = await updateLiturgyAction.execute(
+      { user: userWithPermission(true), db },
+      formData(payload({ id: liturgyId, status: 'published', acts: [] }))
+    )
+
+    expect(state.status).toBe('error')
+    expect(state.status === 'error' && state.fieldErrors?.acts).toBeDefined()
+    const [liturgy] = await db.select().from(liturgies).where(eq(liturgies.id, liturgyId))
+    expect(liturgy.status).toBe('draft')
+  })
+
+  it('publishes a complete liturgy', async () => {
+    const [liturgyId] = await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '09:00', status: 'draft' },
+    ])
+
+    const state = await updateLiturgyAction.execute(
+      { user: userWithPermission(true), db },
+      formData(payload({ id: liturgyId, status: 'published' }))
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [liturgy] = await db.select().from(liturgies).where(eq(liturgies.id, liturgyId))
+    expect(liturgy.status).toBe('published')
+  })
+
+  it('keeps a published liturgy published when the edit does not mention status', async () => {
+    const [liturgyId] = await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '09:00', status: 'published' },
+    ])
+
+    const state = await updateLiturgyAction.execute(
+      { user: userWithPermission(true), db },
+      formData(withoutStatus(payload({ id: liturgyId, theme: 'Culto Atualizado' })))
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [liturgy] = await db.select().from(liturgies).where(eq(liturgies.id, liturgyId))
+    expect(liturgy).toMatchObject({ status: 'published', theme: 'Culto Atualizado' })
+  })
+})
+
+describe('unpublishLiturgyAction.execute', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+    vi.mocked(revalidatePath).mockClear()
+  })
+
+  it('moves a published liturgy back to draft', async () => {
+    const [liturgyId] = await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Solene', time: '09:00', status: 'published' },
+    ])
+
+    const state = await unpublishLiturgyAction.execute(
+      { user: userWithPermission(true), db },
+      formData({ id: liturgyId })
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [liturgy] = await db.select().from(liturgies).where(eq(liturgies.id, liturgyId))
+    expect(liturgy.status).toBe('draft')
   })
 })
 

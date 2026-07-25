@@ -3,7 +3,9 @@ import { check, date, integer, jsonb, pgEnum, pgTable, text, time, unique } from
 import { deletedAt, id, timestamps } from './common-fields'
 import { songs } from './songs.schema'
 
-export type ScripturePassage = { reference: string; text: string; version: string }
+// Fields are nullable because drafts (see ADR-0020) may store partially filled passages —
+// the JSONB column itself has no structural constraint enforcing completeness.
+export type ScripturePassage = { reference: string | null; text: string | null; version: string | null }
 
 export const momentType = pgEnum('moment_type', [
   'bible_reading',

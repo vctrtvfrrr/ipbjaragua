@@ -3,7 +3,7 @@ import { db as defaultDb, type Database } from '@/db'
 import { liturgyActs, liturgyMoments, liturgies, type LiturgyStatus, type ScripturePassage, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
 import { parseISODate } from '@/lib/date'
-import { normalizeMomentForType, type LiturgyTreeInput } from '@/lib/liturgy'
+import { normalizeMomentForType, type LiturgyTreeInput, type LiturgyTreeUpdateInput } from '@/lib/liturgy'
 import type { LiturgyVisibility } from '@/lib/liturgy-visibility'
 import { type LyricsBlock, songReference } from '@/lib/song'
 
@@ -64,6 +64,7 @@ export type LiturgyEditorData = {
   date: Date
   theme: string
   time: string
+  status: LiturgyStatus
   description: string | null
   acts: Array<{
     id: number
@@ -227,6 +228,7 @@ export async function getLiturgyForEditor(
     date: liturgy.date,
     theme: liturgy.theme,
     time: hhmm(liturgy.time)!,
+    status: liturgy.status,
     description: liturgy.description ?? null,
     acts: Array.from(acts.values()),
   }
@@ -246,7 +248,13 @@ export async function createLiturgyTree(input: LiturgyTreeInput, db: Database = 
   return db.transaction(async (tx) => {
     const [liturgy] = await tx
       .insert(liturgies)
-      .values({ date: input.date, theme: input.theme, time: input.time, description: input.description })
+      .values({
+        date: input.date,
+        theme: input.theme,
+        time: input.time,
+        description: input.description,
+        status: input.status,
+      })
       .returning()
 
     await writeActsAndMoments(liturgy.id, input.acts, tx as Database)
@@ -256,7 +264,7 @@ export async function createLiturgyTree(input: LiturgyTreeInput, db: Database = 
 
 export async function updateLiturgyTree(
   id: number,
-  input: LiturgyTreeInput,
+  input: LiturgyTreeUpdateInput,
   db: Database = defaultDb
 ): Promise<Liturgy> {
   return db.transaction(async (tx) => {
@@ -265,7 +273,13 @@ export async function updateLiturgyTree(
 
     const [liturgy] = await tx
       .update(liturgies)
-      .set({ date: input.date, theme: input.theme, time: input.time, description: input.description })
+      .set({
+        date: input.date,
+        theme: input.theme,
+        time: input.time,
+        description: input.description,
+        ...(input.status ? { status: input.status } : {}),
+      })
       .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
       .returning()
     if (!liturgy) throw new LiturgyNotFoundError(id)
@@ -279,6 +293,17 @@ export async function softDeleteLiturgy(id: number, db: Database = defaultDb): P
   const [liturgy] = await db
     .update(liturgies)
     .set({ deleted_at: sql`CURRENT_TIMESTAMP` })
+    .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
+    .returning()
+
+  if (!liturgy) throw new LiturgyNotFoundError(id)
+  return liturgy
+}
+
+export async function setLiturgyStatus(id: number, status: LiturgyStatus, db: Database = defaultDb): Promise<Liturgy> {
+  const [liturgy] = await db
+    .update(liturgies)
+    .set({ status })
     .where(and(eq(liturgies.id, id), isNull(liturgies.deleted_at)))
     .returning()
 
@@ -374,7 +399,7 @@ async function assertActiveLiturgy(id: number, db: Database): Promise<Liturgy> {
   return liturgy
 }
 
-async function assertTreeScope(id: number, input: LiturgyTreeInput, db: Database): Promise<void> {
+async function assertTreeScope(id: number, input: { acts: LiturgyTreeInput['acts'] }, db: Database): Promise<void> {
   const actRows = await db.select({ id: liturgyActs.id }).from(liturgyActs).where(eq(liturgyActs.liturgy_id, id))
   const allowedActIds = new Set(actRows.map((row) => row.id))
   const submittedActIds = input.acts.flatMap((act) => (act.id ? [act.id] : []))
