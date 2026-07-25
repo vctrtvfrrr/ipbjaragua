@@ -98,7 +98,7 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
       listActiveAnnouncements(todayDate),
       listRecentBulletins({ today: todayDate, limit: 5 }),
       getLatestDominicalBulletin(todayDate),
-      getNextLiturgy({ today: todayDate, currentTime }),
+      getNextLiturgy({ today: todayDate, currentTime, visibility: 'published-only' }),
     ])
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)

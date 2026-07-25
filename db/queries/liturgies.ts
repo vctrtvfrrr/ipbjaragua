@@ -1,9 +1,10 @@
 import { and, asc, count, desc, eq, getTableColumns, isNull, lte, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { liturgyActs, liturgyMoments, liturgies, type ScripturePassage, songs } from '@/db/schema'
+import { liturgyActs, liturgyMoments, liturgies, type LiturgyStatus, type ScripturePassage, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
 import { parseISODate } from '@/lib/date'
 import { normalizeMomentForType, type LiturgyTreeInput } from '@/lib/liturgy'
+import type { LiturgyVisibility } from '@/lib/liturgy-visibility'
 import { type LyricsBlock, songReference } from '@/lib/song'
 
 export type Liturgy = typeof liturgies.$inferSelect
@@ -20,6 +21,10 @@ export type LiturgyListItem = {
   description: string | null
   sermonDescription: string | null
   sermonSpeaker: string | null
+}
+
+function visibleLiturgy(visibility: LiturgyVisibility) {
+  return visibility === 'include-drafts' ? undefined : eq(liturgies.status, 'published')
 }
 
 export type LiturgyDetail = {
@@ -50,6 +55,7 @@ export type LiturgyForAdmin = {
   date: Date
   theme: string
   time: string
+  status: LiturgyStatus
   actsCount: number
 }
 
@@ -90,16 +96,19 @@ export class LiturgyTreeScopeError extends Error {
   }
 }
 
-export async function countLiturgies({ today }: { today: Date }, db: Database = defaultDb): Promise<number> {
+export async function countLiturgies(
+  { visibility }: { visibility: LiturgyVisibility },
+  db: Database = defaultDb
+): Promise<number> {
   const [row] = await db
     .select({ value: count() })
     .from(liturgies)
-    .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today)))
+    .where(and(isNull(liturgies.deleted_at), visibleLiturgy(visibility)))
   return row?.value ?? 0
 }
 
 export async function listLiturgies(
-  { page, pageSize, today }: { page: number; pageSize: number; today: Date },
+  { page, pageSize, visibility }: { page: number; pageSize: number; visibility: LiturgyVisibility },
   db: Database = defaultDb
 ): Promise<LiturgyListItem[]> {
   const rows = await db
@@ -115,7 +124,7 @@ export async function listLiturgies(
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
     .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
-    .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today)))
+    .where(and(isNull(liturgies.deleted_at), visibleLiturgy(visibility)))
     .orderBy(desc(liturgies.date))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
@@ -141,12 +150,13 @@ export async function listLiturgies(
 
 export async function listLiturgiesByDate(
   date: Date,
+  visibility: LiturgyVisibility,
   db: Database = defaultDb
 ): Promise<Array<{ id: number; date: Date; theme: string; time: string }>> {
   const rows = await db
     .select({ id: liturgies.id, date: liturgies.date, theme: liturgies.theme, time: liturgies.time })
     .from(liturgies)
-    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date)))
+    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date), visibleLiturgy(visibility)))
   return rows.map((r) => ({ ...r, time: hhmm(r.time)! }))
 }
 
@@ -278,16 +288,15 @@ export async function softDeleteLiturgy(id: number, db: Database = defaultDb): P
 
 export async function getLiturgyBySlug(
   slug: string,
-  today: Date,
+  visibility: LiturgyVisibility,
   db: Database = defaultDb
 ): Promise<LiturgyDetail | undefined> {
   const date = parseISODate(slug.slice(0, 10))
-  if (date > today) return undefined
 
   const candidates = await db
     .select()
     .from(liturgies)
-    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date), lte(liturgies.date, today)))
+    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, date), visibleLiturgy(visibility)))
 
   const liturgy = candidates.find((l) => liturgySlug(l.date, l.theme, l.time) === slug)
   if (!liturgy) return undefined
@@ -512,13 +521,12 @@ const liturgyCardFields = {
 } as const
 
 /** `upcoming` é uma Liturgia de hoje que ainda não passou; `latest` é a mais recente já
- * realizada. Nunca há uma Liturgia futura aqui: com data futura ela é rascunho e não
- * aparece em lugar nenhum. Quem exibe decide as palavras — a distinção importa porque
- * anunciar uma `latest` como se fosse o próximo culto engana quem planeja a visita. */
+ * realizada. Quem exibe decide as palavras — a distinção importa porque anunciar uma
+ * `latest` como se fosse o próximo culto engana quem planeja a visita. */
 export type NextLiturgyResult = { liturgy: LiturgyListItem; kind: 'upcoming' | 'latest' }
 
 export async function getNextLiturgy(
-  { today, currentTime }: { today: Date; currentTime: string },
+  { today, currentTime, visibility }: { today: Date; currentTime: string; visibility: LiturgyVisibility },
   db: Database = defaultDb
 ): Promise<NextLiturgyResult | undefined> {
   const todayRows = await db
@@ -526,7 +534,7 @@ export async function getNextLiturgy(
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
     .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
-    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, today)))
+    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, today), visibleLiturgy(visibility)))
     .orderBy(asc(liturgies.time))
 
   const todayLiturgies = deduplicateByLiturgyId(todayRows)
@@ -538,7 +546,7 @@ export async function getNextLiturgy(
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
     .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
-    .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today)))
+    .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today), visibleLiturgy(visibility)))
     .orderBy(desc(liturgies.date))
     .limit(20)
 

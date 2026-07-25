@@ -16,6 +16,8 @@ export const momentType = pgEnum('moment_type', [
 ])
 
 export const sacramentType = pgEnum('sacrament_type', ['baptism', 'eucharist'])
+export const liturgyStatus = pgEnum('liturgy_status', ['draft', 'published'])
+export type LiturgyStatus = (typeof liturgyStatus.enumValues)[number]
 
 export const liturgies = pgTable(
   'liturgies',
@@ -25,6 +27,7 @@ export const liturgies = pgTable(
     theme: text('theme').notNull(),
     time: time('time').notNull(),
     description: text('description'),
+    status: liturgyStatus('status').notNull().default('draft'),
     ...timestamps(),
     ...deletedAt(),
   },

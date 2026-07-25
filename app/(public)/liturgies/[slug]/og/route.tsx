@@ -1,12 +1,12 @@
 import { getLiturgyBySlug } from '@/db/queries/liturgies'
-import { formatLongDatePtBR, today } from '@/lib/date'
+import { formatLongDatePtBR } from '@/lib/date'
 import { ogNotFound, renderLiturgyCard } from '@/lib/og/render'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(_request: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params
-  const liturgy = await getLiturgyBySlug(slug, today())
+  const liturgy = await getLiturgyBySlug(slug, 'published-only')
   if (!liturgy) return ogNotFound()
 
   return renderLiturgyCard({

@@ -53,7 +53,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
     bulletin.show_birthdays
       ? listAnniversariesInWindow(windows.birthdays.from, windows.birthdays.to)
       : Promise.resolve([]),
-    listLiturgiesByDate(bulletin.date),
+    listLiturgiesByDate(bulletin.date, 'published-only'),
   ])
 
   const agendaDays = groupAgendaByWeekday(agendaItems)

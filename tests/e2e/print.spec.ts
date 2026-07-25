@@ -17,7 +17,10 @@ function pdfPageSizes(pdf: Buffer): Array<{ width: number; height: number }> {
 /** Reproduz o que o navegador faz ao imprimir: troca a mídia e emite `beforeprint`. */
 async function enterPrintMode(page: Page) {
   await page.emulateMedia({ media: 'print' })
-  await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')))
+  await page.waitForFunction(() => {
+    window.dispatchEvent(new Event('beforeprint'))
+    return [...document.querySelectorAll('details')].every((details) => details.open)
+  })
 }
 
 test('prints the liturgy on A4 pages', async ({ page }) => {

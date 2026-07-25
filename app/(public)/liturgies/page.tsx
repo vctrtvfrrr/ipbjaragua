@@ -3,7 +3,7 @@ import Pagination from '@/components/Pagination'
 import PageHeader from '@/components/public/PageHeader'
 import { countLiturgies, listLiturgies } from '@/db/queries/liturgies'
 import { liturgySlug } from '@/lib/bulletin'
-import { formatLongDatePtBR, formatTimePtBR, today } from '@/lib/date'
+import { formatLongDatePtBR, formatTimePtBR } from '@/lib/date'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
@@ -13,11 +13,10 @@ const PAGE_SIZE = 50
 
 export default async function LiturgiesPage({ searchParams }: PageProps<'/liturgies'>) {
   const { page: rawPage } = await searchParams
-  const todayDate = today()
-  const total = await countLiturgies({ today: todayDate })
+  const total = await countLiturgies({ visibility: 'published-only' })
   const pages = totalPages(total, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
-  const liturgiesList = await listLiturgies({ page, pageSize: PAGE_SIZE, today: todayDate })
+  const liturgiesList = await listLiturgies({ page, pageSize: PAGE_SIZE, visibility: 'published-only' })
 
   return (
     <main>

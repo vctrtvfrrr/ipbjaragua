@@ -60,6 +60,7 @@ export default async function AdminLiturgiesPage({ searchParams }: AdminLiturgie
                 <TableHead>Tipo de Culto</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Horário</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Atos</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -70,6 +71,7 @@ export default async function AdminLiturgiesPage({ searchParams }: AdminLiturgie
                   <TableCell className="font-medium whitespace-normal">{liturgy.theme}</TableCell>
                   <TableCell>{formatLongDatePtBR(liturgy.date)}</TableCell>
                   <TableCell>{liturgy.time}</TableCell>
+                  <TableCell>{liturgy.status === 'published' ? 'Publicada' : 'Rascunho'}</TableCell>
                   <TableCell>{liturgy.actsCount}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">

@@ -1,5 +1,15 @@
 import { eq } from 'drizzle-orm'
-import { agenda, announcements, articles, bulletins, liturgies, members, songs, users } from '@/db/schema'
+import {
+  agenda,
+  announcements,
+  articles,
+  bulletins,
+  liturgies,
+  type LiturgyStatus,
+  members,
+  songs,
+  users,
+} from '@/db/schema'
 import type { LyricsBlock } from '@/lib/song'
 import { parseISODate } from '@/lib/date'
 import type { TestDb } from './db'
@@ -108,6 +118,7 @@ export type SeedLiturgy = {
   date: string
   theme: string
   time?: string
+  status?: LiturgyStatus
 }
 
 export async function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): Promise<number[]> {
@@ -115,7 +126,12 @@ export async function seedLiturgies(db: TestDb, rows: SeedLiturgy[]): Promise<nu
   for (const row of rows) {
     const [inserted] = await db
       .insert(liturgies)
-      .values({ date: parseISODate(row.date), theme: row.theme, time: row.time ?? '09:00' })
+      .values({
+        date: parseISODate(row.date),
+        theme: row.theme,
+        time: row.time ?? '09:00',
+        status: row.status ?? 'published',
+      })
       .returning({ id: liturgies.id })
     ids.push(inserted.id)
   }

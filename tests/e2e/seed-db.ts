@@ -54,6 +54,7 @@ export const E2E_LITURGY = {
   date: '2026-06-07',
   theme: 'Culto Solene',
   time: '09:00',
+  status: 'published' as const,
 }
 
 export const E2E_LITURGY_ACTS = [

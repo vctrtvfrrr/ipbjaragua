@@ -4,10 +4,10 @@ import { cache } from 'react'
 import OpenDetailsOnPrint from '@/components/public/OpenDetailsOnPrint'
 import PageHeader from '@/components/public/PageHeader'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
-import { formatLongDatePtBR, formatTimePtBR, today } from '@/lib/date'
+import { formatLongDatePtBR, formatTimePtBR } from '@/lib/date'
 import { liturgyMetadata } from '@/lib/og/metadata'
 
-const loadLiturgy = cache((slug: string) => getLiturgyBySlug(slug, today()))
+const loadLiturgy = cache((slug: string) => getLiturgyBySlug(slug, 'published-only'))
 
 export async function generateMetadata({ params }: PageProps<'/liturgies/[slug]'>) {
   const { slug } = await params
