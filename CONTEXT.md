@@ -14,12 +14,12 @@ _Avoid_: Folheto, informativo.
 Um **Boletim** cuja data cai num domingo é Dominical, o caso regular: traz sempre Agenda, Avisos e Aniversariantes. Um publicado em dia de semana, em caráter raro, é Excepcional: título variável e em geral sem essas seções. A distinção é derivada do dia da semana da data, não armazenada.
 _Avoid_: Boletim especial, edição extra.
 
-**Publicado / Rascunho**:
-Um **Boletim** com data até hoje (inclusive) está publicado e aparece no site. Com data futura é rascunho de uma edição ainda não publicada e não aparece em nenhum lugar do site (índice, busca ou URL direta) — salvo pelo **Preview**. Não há coluna de status: a data é o único critério de publicação.
+**Publicado / Rascunho** (do Boletim):
+Um **Boletim** com data até hoje (inclusive) está publicado e aparece no site. Com data futura é rascunho de uma edição ainda não publicada e não aparece em nenhum lugar do site (índice, busca ou URL direta) — salvo pelo **Preview**. Não há coluna de status: a data é o único critério de publicação. A **Liturgia** não segue esta regra — nela a publicação é um status explícito (ver [ADR-0020](./docs/adr/0020-liturgy-publication-by-explicit-status.md)).
 _Avoid_: Agendado, oculto, despublicado.
 
 **Preview** (do Boletim):
-A pré-visualização compartilhável de um **Boletim** ainda em Rascunho: a própria página pública, renderizada via um query param que dispensa a trava de data futura. Existe para que o link seja enviado a outras pessoas durante a revisão. É **aberto** — não exige autenticação, pois o conteúdo não é sigiloso —, mas emite `noindex` e não é linkado de nenhuma página pública, de modo que buscadores não o indexam e a URL sem o param segue invisível. O preview de um Rascunho renderiza também as **Liturgias** daquela data futura (igualmente rascunhos), exposição transitiva conhecida e aceita.
+A pré-visualização compartilhável de um **Boletim** ainda em Rascunho: a própria página pública, renderizada via um query param que dispensa a trava de data futura. Existe para que o link seja enviado a outras pessoas durante a revisão. É **aberto** — não exige autenticação, pois o conteúdo não é sigiloso —, mas emite `noindex` e não é linkado de nenhuma página pública, de modo que buscadores não o indexam e a URL sem o param segue invisível. Renderiza apenas as **Liturgias** publicadas daquela data: o Preview não é porta de saída para Liturgia em Rascunho.
 _Avoid_: prévia, rascunho compartilhável.
 
 **Janela de Correção** (derivada de `date` e `created_at`):
@@ -49,8 +49,16 @@ _Avoid_: Thumbnail, capa, banner, imagem de artigo (o banco não pertence a um r
 ### Culto
 
 **Liturgia** (`liturgies`):
-A ordem de um culto numa data e horário específicos. É estruturada em **Atos**, que por sua vez contêm **Momentos**. Segue **publicação-por-data** como o **Boletim**: com data até hoje (inclusive) está publicada e aparece no site; com data futura é rascunho e não aparece em lugar nenhum (índice, busca ou URL direta). Não há coluna de status — a data é o único critério. Toda Liturgia possui horário.
+A ordem de um culto numa data e horário específicos. É estruturada em **Atos**, que por sua vez contêm **Momentos**. Diferente do **Boletim**, publica por **status explícito** e não pela data: uma Liturgia publicada aparece no site mesmo com data futura. Toda Liturgia possui horário.
 _Avoid_: Culto (o culto é o evento; a Liturgia é sua ordem documentada), ordem de serviço.
+
+**Publicado / Rascunho** (da Liturgia, `liturgies.status`):
+Uma **Liturgia** publicada aparece no site independentemente da data, inclusive futura. Em Rascunho, é renderizada só para quem tem permissão de leitura de Liturgia — e sinalizada como Rascunho onde aparece — sendo 404 para o visitante. A data não interfere: publicar e despublicar são escolhas do operador, nos dois sentidos (ver [ADR-0020](./docs/adr/0020-liturgy-publication-by-explicit-status.md)).
+_Avoid_: Agendado, oculto, despublicado, não publicado.
+
+**Próxima Liturgia**:
+A Liturgia publicada mais cedo entre as que ainda vão acontecer — a de hoje cujo horário não venceu ou, não havendo, a mais próxima em data futura. É ela que a home destaca; Rascunhos nunca entram nessa escolha, porque o destaque aponta para uma página que o visitante precisa conseguir abrir. Quando não há nenhuma à frente, a home recua para a **última realizada**, e diz ao leitor qual das duas está mostrando.
+_Avoid_: Última liturgia, próximo culto (o culto é o evento).
 
 **Tipo de Culto**:
 A designação do culto — "Culto Solene", "Culto de Ações de Graças" etc. Hoje vive na coluna `liturgies.theme`, nome enganoso (ver _Ambiguidades sinalizadas_).

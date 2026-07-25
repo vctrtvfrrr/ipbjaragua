@@ -10,6 +10,8 @@ status: accepted
 
 > **Atualização (#17 — Preview):** o "404 por URL direta" para data futura ganha uma exceção: a página pública aceita um query param de **Preview** que dispensa a trava de data e renderiza o Rascunho. O preview é **aberto** (sem autenticação — o conteúdo não é sigiloso), mas emite `noindex` e não é linkado de nenhuma página pública; a URL **sem** o param segue resultando em 404. A regra "data futura = rascunho, invisível por descoberta normal" permanece; só se abre uma porta explícita para pré-visualização.
 
+> **Atualização (ADR-0020):** este ADR passa a valer **somente para o Boletim**. A **Liturgia**, que herdava a mesma regra, publica por status explícito desde o [ADR-0020](./0020-liturgy-publication-by-explicit-status.md) e aparece no site mesmo com data futura. Com isso o Preview de um Boletim em Rascunho renderiza apenas as Liturgias **publicadas** daquela data — a exposição transitiva de rascunhos deixa de existir.
+
 ## Contexto
 
 Os **Boletins** são publicados semanalmente, em geral aos domingos. Para preparar uma edição com antecedência, é útil criar a linha no banco antes do dia em que ela deve ir ao ar. Surgiu então a pergunta: o que distingue um boletim "no ar" de um que ainda está sendo montado?
