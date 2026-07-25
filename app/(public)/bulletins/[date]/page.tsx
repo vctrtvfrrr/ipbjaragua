@@ -35,7 +35,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<'/bul
   )
 }
 
-const sectionCard = 'bg-brand-sky mb-8 break-inside-avoid p-6'
+const sectionCard = 'bg-brand-sky mb-8 break-inside-avoid p-6 print:bg-transparent print:px-0'
 
 export default async function BulletinDetailPage({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
@@ -66,10 +66,10 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
         meta={formatBulletinSubtitle(bulletin.edition, bulletin.date)}
       />
 
-      <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
+      <div className="container mx-auto px-5 pt-6 pb-20 md:px-8 print:px-0 print:pt-7 print:pb-0">
         {article ? <BulletinArticle article={article} /> : null}
 
-        <div className="mb-10 lg:columns-3 lg:gap-8">
+        <div className="mb-10 lg:columns-3 lg:gap-8 print:columns-1">
           {bulletin.show_agenda && agendaDays.length > 0 ? (
             <section className={sectionCard}>
               <SectionHead>Agenda da semana</SectionHead>

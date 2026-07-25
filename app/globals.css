@@ -170,6 +170,27 @@
   }
 }
 
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+
+  html {
+    /* Corpo em pontos: no papel a medida de referência é tipográfica, não o viewport. */
+    font-size: 11pt;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  /* Sublinhado em toda ligação vira ruído numa folha que ninguém vai clicar. */
+  a {
+    text-decoration: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

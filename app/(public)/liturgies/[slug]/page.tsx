@@ -1,6 +1,7 @@
 import { ChevronRightIcon } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
+import OpenDetailsOnPrint from '@/components/public/OpenDetailsOnPrint'
 import PageHeader from '@/components/public/PageHeader'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
 import { formatLongDatePtBR, formatTimePtBR, today } from '@/lib/date'
@@ -28,30 +29,31 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
 
   return (
     <main>
+      <OpenDetailsOnPrint />
       <PageHeader
         eyebrow="Liturgia"
         title={liturgy.theme}
         meta={`${formatLongDatePtBR(liturgy.date)} às ${formatTimePtBR(liturgy.time)}`}
       />
 
-      <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
-        <ol className="max-w-3xl space-y-10">
+      <div className="container mx-auto px-5 pt-6 pb-20 md:px-8 print:px-0 print:pt-7 print:pb-0">
+        <ol className="max-w-3xl space-y-10 print:max-w-none print:space-y-7">
           {liturgy.acts.map((act, i) => (
             <li key={act.id}>
               <details open={i === 0} className="group">
-                <summary className="border-brand-accent flex cursor-pointer list-none items-baseline gap-4 border-b-2 pb-2">
+                <summary className="border-brand-accent flex cursor-pointer list-none items-baseline gap-4 border-b-2 pb-2 print:break-after-avoid">
                   <span aria-hidden="true" className="font-narrow text-brand-deep text-sm tabular-nums">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <h2 className="eyebrow text-brand-ridge flex-1">{act.name}</h2>
                   <ChevronRightIcon
                     aria-hidden="true"
-                    className="text-brand-accent size-4 transition-transform group-open:rotate-90"
+                    className="text-brand-accent size-4 transition-transform group-open:rotate-90 print:hidden"
                   />
                 </summary>
                 <ul className="mt-6 space-y-7">
                   {act.moments.map((moment) => (
-                    <li key={moment.id}>
+                    <li key={moment.id} className="print:break-inside-avoid">
                       <MomentView moment={moment} />
                     </li>
                   ))}

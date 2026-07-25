@@ -7,7 +7,7 @@ import { PUBLIC_NAV } from '@/lib/public-nav'
 
 export default function SiteFooter() {
   return (
-    <footer className="bg-brand-deep text-brand-sky">
+    <footer className="bg-brand-deep text-brand-sky print:hidden">
       <div className="container mx-auto grid gap-10 px-5 md:px-8 py-14 md:grid-cols-[auto_1fr_auto] md:gap-16">
         <div className="flex items-start gap-4">
           <BrandMark variant="symbol" className="h-20 w-auto" />

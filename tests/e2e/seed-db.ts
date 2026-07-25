@@ -1,7 +1,18 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
-import { agenda, announcements, articles, bulletins, liturgies, members, userPermissions, users } from '../../db/schema'
+import {
+  agenda,
+  announcements,
+  articles,
+  bulletins,
+  liturgies,
+  liturgyActs,
+  liturgyMoments,
+  members,
+  userPermissions,
+  users,
+} from '../../db/schema'
 import { parseISODate } from '../../lib/date'
 
 export const E2E_DATABASE_URL =
@@ -44,6 +55,11 @@ export const E2E_LITURGY = {
   theme: 'Culto Solene',
   time: '09:00',
 }
+
+export const E2E_LITURGY_ACTS = [
+  { name: 'Adoração', position: 1, moment: 'Chamada à adoração' },
+  { name: 'Consagração', position: 2, moment: 'Bênção apostólica' },
+] as const
 
 export const E2E_AGENDA = [
   { title: 'Culto Dominical', event_date: '2026-06-14', time: '10:00' },
@@ -130,7 +146,18 @@ export async function seedE2eDatabase() {
     }
   }
 
-  await db.insert(liturgies).values({ ...E2E_LITURGY, date: parseISODate(E2E_LITURGY.date) })
+  const [seededLiturgy] = await db
+    .insert(liturgies)
+    .values({ ...E2E_LITURGY, date: parseISODate(E2E_LITURGY.date) })
+    .returning({ id: liturgies.id })
+  // Dois Atos: a folha impressa só prova algo se houver um Ato recolhido na tela.
+  for (const act of E2E_LITURGY_ACTS) {
+    const [inserted] = await db
+      .insert(liturgyActs)
+      .values({ liturgy_id: seededLiturgy.id, name: act.name, position: act.position })
+      .returning({ id: liturgyActs.id })
+    await db.insert(liturgyMoments).values({ act_id: inserted.id, type: 'other', position: 1, description: act.moment })
+  }
 
   const bulletinRows = [
     {

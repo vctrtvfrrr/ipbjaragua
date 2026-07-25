@@ -16,14 +16,14 @@ export default function BulletinArticle({ article }: { article: ArticleWithAutho
 
       <div className="relative mt-5">
         <div
-          className="prose prose-headings:font-serif prose-headings:text-brand-ridge overflow-hidden transition-all duration-500"
+          className="prose prose-headings:font-serif prose-headings:text-brand-ridge overflow-hidden transition-all duration-500 print:max-h-none!"
           style={{ maxHeight: expanded ? '99999px' : '20rem' }}
         >
           <Markdown content={article.content} />
         </div>
 
         {expanded ? null : (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-28 items-end justify-center bg-linear-to-t from-white via-white/90 to-transparent">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-28 items-end justify-center bg-linear-to-t from-white via-white/90 to-transparent print:hidden">
             <button
               type="button"
               onClick={() => setExpanded(true)}
