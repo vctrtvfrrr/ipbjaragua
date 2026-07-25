@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og'
+import { formatTimePtBR } from '@/lib/date'
 import { loadLogoDataUri, loadOgFonts } from './assets'
 import { CHURCH_NAME, OG_COLORS, OG_SIZE } from './config'
 import { fitTitleFontSize, OG_TITLE_MAX_LINES } from './text'
@@ -173,12 +174,8 @@ export function renderBulletinCard(bulletin: {
   })
 }
 
-export function renderLiturgyCard(liturgy: {
-  theme: string
-  longDate: string
-  time: string | null
-}): Promise<ImageResponse> {
-  const metaLines = [`${liturgy.longDate} às ${liturgy.time}`]
+export function renderLiturgyCard(liturgy: { theme: string; longDate: string; time: string }): Promise<ImageResponse> {
+  const metaLines = [`${liturgy.longDate} às ${formatTimePtBR(liturgy.time)}`]
   return renderCard({ label: 'Liturgia', title: liturgy.theme, metaLines })
 }
 

@@ -170,7 +170,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
                     >
                       <h3 className="font-narrow text-brand-deep text-xl group-hover:underline">
                         {l.theme}
-                        {l.time ? ` · ${formatTimePtBR(l.time)}` : null}
+                        {` · ${formatTimePtBR(l.time)}`}
                       </h3>
                     </Link>
                   </li>

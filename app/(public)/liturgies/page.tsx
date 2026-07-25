@@ -3,7 +3,7 @@ import Pagination from '@/components/Pagination'
 import PageHeader from '@/components/public/PageHeader'
 import { countLiturgies, listLiturgies } from '@/db/queries/liturgies'
 import { liturgySlug } from '@/lib/bulletin'
-import { formatLongDatePtBR, today } from '@/lib/date'
+import { formatLongDatePtBR, formatTimePtBR, today } from '@/lib/date'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
@@ -40,8 +40,7 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
                         {liturgy.theme}
                       </h2>
                       <p className="font-narrow text-brand-deep mt-2 tracking-[0.06em] uppercase">
-                        {formatLongDatePtBR(liturgy.date)}
-                        {liturgy.time ? ` \u00b7 ${liturgy.time.replace(':', 'h')}` : null}
+                        {formatLongDatePtBR(liturgy.date)} às {formatTimePtBR(liturgy.time)}
                       </p>
                     </Link>
                     {subtitle ? <p className="text-muted-foreground mt-2 text-sm">{subtitle}</p> : null}

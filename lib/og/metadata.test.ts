@@ -88,7 +88,7 @@ describe('liturgyMetadata', () => {
 
   it('always includes the mandatory time in the title', () => {
     const meta = liturgyMetadata({ ...base, description: null })
-    expect(meta.title).toBe('Culto Solene — 07 de junho de 2026 às 19:00')
+    expect(meta.title).toBe('Culto Solene — 07 de junho de 2026 às 19h00')
     expect(meta.description).toBeUndefined()
   })
 
