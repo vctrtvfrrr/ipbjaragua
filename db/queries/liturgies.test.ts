@@ -307,10 +307,7 @@ describe('getNextLiturgy', () => {
   it("reports today's service that has not started as upcoming", async () => {
     await seedLiturgies(db, [{ date: '2026-06-14', theme: 'Culto Vespertino', time: '19:00' }])
 
-    const result = await getNextLiturgy(
-      { today: parseISODate('2026-06-14'), currentTime: '08:00', visibility: 'published-only' },
-      db
-    )
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-14'), currentTime: '08:00' }, db)
 
     expect(result).toMatchObject({ kind: 'upcoming', liturgy: { theme: 'Culto Vespertino', time: '19:00' } })
   })
@@ -318,10 +315,7 @@ describe('getNextLiturgy', () => {
   it('still reports it as upcoming within an hour of the start', async () => {
     await seedLiturgies(db, [{ date: '2026-06-14', theme: 'Culto Vespertino', time: '19:00' }])
 
-    const result = await getNextLiturgy(
-      { today: parseISODate('2026-06-14'), currentTime: '19:45', visibility: 'published-only' },
-      db
-    )
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-14'), currentTime: '19:45' }, db)
 
     expect(result?.kind).toBe('upcoming')
   })
@@ -332,10 +326,7 @@ describe('getNextLiturgy', () => {
       { date: '2026-05-31', theme: 'Culto de Oração', time: '19:30' },
     ])
 
-    const result = await getNextLiturgy(
-      { today: parseISODate('2026-06-10'), currentTime: '10:00', visibility: 'published-only' },
-      db
-    )
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-10'), currentTime: '10:00' }, db)
 
     expect(result).toMatchObject({ kind: 'latest', liturgy: { theme: 'Culto Solene' } })
   })
@@ -346,10 +337,7 @@ describe('getNextLiturgy', () => {
       { date: '2026-06-21', theme: 'Culto da Familia', time: '18:00' },
     ])
 
-    const result = await getNextLiturgy(
-      { today: parseISODate('2026-06-10'), currentTime: '10:00', visibility: 'published-only' },
-      db
-    )
+    const result = await getNextLiturgy({ today: parseISODate('2026-06-10'), currentTime: '10:00' }, db)
 
     expect(result?.liturgy.theme).toBe('Culto Solene')
   })
@@ -357,22 +345,14 @@ describe('getNextLiturgy', () => {
   it('returns nothing when no service has happened yet', async () => {
     await seedLiturgies(db, [{ date: '2026-06-21', theme: 'Culto da Familia', time: '18:00' }])
 
-    expect(
-      await getNextLiturgy(
-        { today: parseISODate('2026-06-10'), currentTime: '10:00', visibility: 'published-only' },
-        db
-      )
-    ).toBeUndefined()
+    expect(await getNextLiturgy({ today: parseISODate('2026-06-10'), currentTime: '10:00' }, db)).toBeUndefined()
   })
 
-  it('filters drafts according to visibility', async () => {
+  it('never selects a draft, since the highlight takes no visibility scope', async () => {
     await seedLiturgies(db, [{ date: '2026-06-14', theme: 'Culto Vespertino', status: 'draft' }])
 
     await expect(
-      getNextLiturgy({ today: parseISODate('2026-06-14'), currentTime: '08:00', visibility: 'published-only' }, db)
+      getNextLiturgy({ today: parseISODate('2026-06-14'), currentTime: '08:00' }, db)
     ).resolves.toBeUndefined()
-    await expect(
-      getNextLiturgy({ today: parseISODate('2026-06-14'), currentTime: '08:00', visibility: 'include-drafts' }, db)
-    ).resolves.toMatchObject({ liturgy: { theme: 'Culto Vespertino' } })
   })
 })

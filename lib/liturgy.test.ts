@@ -126,6 +126,19 @@ describe('buildLiturgyActErrorSummary', () => {
     ])
   })
 
+  it('orders groups by act, whatever order the errors arrive in', () => {
+    const summary = buildLiturgyActErrorSummary(
+      {
+        'acts.2.name': ['Campo obrigatório'],
+        'acts.0.name': ['Campo obrigatório'],
+        'acts.1.name': ['Campo obrigatório'],
+      },
+      [{ name: 'Adoração' }, { name: 'Confissão' }, { name: 'Consagração' }]
+    )
+
+    expect(summary.map((group) => group.actIndex)).toEqual([0, 1, 2])
+  })
+
   it('uses the numbered label when an act has no name', () => {
     const summary = buildLiturgyActErrorSummary(
       { 'acts.1.moments.0.scripture_passages': ['Leitura bíblica exige ao menos uma passagem'] },

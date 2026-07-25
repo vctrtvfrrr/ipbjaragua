@@ -129,11 +129,13 @@ export function buildLiturgyActErrorSummary(
     messagesByAct.set(actIndex, [...(messagesByAct.get(actIndex) ?? []), ...messages])
   }
 
-  return [...messagesByAct].map(([actIndex, messages]) => ({
-    actIndex,
-    label: liturgyActLabel(acts[actIndex], actIndex),
-    messages,
-  }))
+  return [...messagesByAct]
+    .sort(([a], [b]) => a - b)
+    .map(([actIndex, messages]) => ({
+      actIndex,
+      label: liturgyActLabel(acts[actIndex], actIndex),
+      messages,
+    }))
 }
 
 export function normalizeMomentForType(moment: LiturgyMomentInput) {

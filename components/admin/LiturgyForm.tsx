@@ -184,10 +184,10 @@ export function LiturgyForm(props: Props) {
               <AccordionTrigger>
                 <span>{liturgyActLabel(act, actIndex)}</span>
                 {actIndexesWithErrors.has(actIndex) ? (
-                  <span
-                    className="bg-destructive size-2 shrink-0 rounded-full"
-                    aria-label="Ato com erro de validação"
-                  />
+                  <>
+                    <span aria-hidden="true" className="bg-destructive size-2 shrink-0 rounded-full" />
+                    <span className="sr-only">Ato com erro de validação</span>
+                  </>
                 ) : null}
               </AccordionTrigger>
               <AccordionContent className="grid gap-4">

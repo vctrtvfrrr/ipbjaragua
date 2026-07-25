@@ -525,8 +525,11 @@ const liturgyCardFields = {
  * `latest` como se fosse o próximo culto engana quem planeja a visita. */
 export type NextLiturgyResult = { liturgy: LiturgyListItem; kind: 'upcoming' | 'latest' }
 
+/** Não recebe escopo de visibilidade: o destaque nunca considera Rascunho, nem para quem
+ * tem permissão de vê-los. Destacar é selecionar, não renderizar — apontar o próximo culto
+ * para uma página que o visitante não abre engana quem planeja a visita (ver ADR-0020). */
 export async function getNextLiturgy(
-  { today, currentTime, visibility }: { today: Date; currentTime: string; visibility: LiturgyVisibility },
+  { today, currentTime }: { today: Date; currentTime: string },
   db: Database = defaultDb
 ): Promise<NextLiturgyResult | undefined> {
   const todayRows = await db
@@ -534,7 +537,7 @@ export async function getNextLiturgy(
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
     .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
-    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, today), visibleLiturgy(visibility)))
+    .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, today), visibleLiturgy('published-only')))
     .orderBy(asc(liturgies.time))
 
   const todayLiturgies = deduplicateByLiturgyId(todayRows)
@@ -546,7 +549,7 @@ export async function getNextLiturgy(
     .from(liturgies)
     .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
     .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
-    .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today), visibleLiturgy(visibility)))
+    .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today), visibleLiturgy('published-only')))
     .orderBy(desc(liturgies.date))
     .limit(20)
 
