@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { MemberTable } from '@/components/admin/MemberTable'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { listMembersForAdmin } from '@/db/queries/members'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 
@@ -17,10 +18,10 @@ export default async function AdminMembersPage() {
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Membros</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/members/new" />}>
+          <Link href="/admin/members/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Novo membro
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -29,7 +30,9 @@ export default async function AdminMembersPage() {
           <p>Nenhum membro ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/members/new" />}>Criar o primeiro membro</Button>
+              <Link href="/admin/members/new" className={cn(buttonVariants())}>
+                Criar o primeiro membro
+              </Link>
             </div>
           ) : null}
         </div>

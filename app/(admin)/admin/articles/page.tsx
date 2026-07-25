@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { DeleteArticleButton } from '@/components/admin/DeleteArticleButton'
 import Pagination from '@/components/Pagination'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { countArticles, listArticlesForAdmin } from '@/db/queries/articles'
 import { requirePageRead } from '@/lib/auth/require-page-read'
@@ -29,10 +30,10 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<'/ad
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Artigos</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/articles/new" />}>
+          <Link href="/admin/articles/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Novo artigo
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -41,7 +42,9 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<'/ad
           <p>Nenhum artigo ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/articles/new" />}>Criar o primeiro artigo</Button>
+              <Link href="/admin/articles/new" className={cn(buttonVariants())}>
+                Criar o primeiro artigo
+              </Link>
             </div>
           ) : null}
         </div>
@@ -65,13 +68,12 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<'/ad
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       {canUpdate ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          render={<Link href={`/admin/articles/${article.id}/edit`} />}
+                        <Link
+                          href={`/admin/articles/${article.id}/edit`}
+                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                         >
                           Editar
-                        </Button>
+                        </Link>
                       ) : null}
                       {canDelete ? <DeleteArticleButton article={{ id: article.id, title: article.title }} /> : null}
                     </div>

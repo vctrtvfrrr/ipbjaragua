@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { DeleteSongButton } from '@/components/admin/DeleteSongButton'
 import Pagination from '@/components/Pagination'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { countSongs, listSongsForAdmin } from '@/db/queries/songs'
 import { requirePageRead } from '@/lib/auth/require-page-read'
@@ -32,10 +33,10 @@ export default async function AdminSongsPage({ searchParams }: AdminSongsPagePro
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Músicas</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/songs/new" />}>
+          <Link href="/admin/songs/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Nova música
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -44,7 +45,9 @@ export default async function AdminSongsPage({ searchParams }: AdminSongsPagePro
           <p>Nenhuma música ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/songs/new" />}>Criar a primeira música</Button>
+              <Link href="/admin/songs/new" className={cn(buttonVariants())}>
+                Criar a primeira música
+              </Link>
             </div>
           ) : null}
         </div>
@@ -66,9 +69,12 @@ export default async function AdminSongsPage({ searchParams }: AdminSongsPagePro
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       {canUpdate ? (
-                        <Button variant="outline" size="sm" render={<Link href={`/admin/songs/${song.id}/edit`} />}>
+                        <Link
+                          href={`/admin/songs/${song.id}/edit`}
+                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                        >
                           Editar
-                        </Button>
+                        </Link>
                       ) : null}
                       {canDelete ? <DeleteSongButton song={{ id: song.id, title: song.title }} /> : null}
                     </div>

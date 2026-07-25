@@ -3,7 +3,8 @@ import { Plus } from 'lucide-react'
 import { DeleteAnnouncementButton } from '@/components/admin/DeleteAnnouncementButton'
 import Pagination from '@/components/Pagination'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { countAnnouncements, listAnnouncementsForAdmin } from '@/db/queries/announcements'
 import { requirePageRead } from '@/lib/auth/require-page-read'
@@ -31,10 +32,10 @@ export default async function AdminAnnouncementsPage({ searchParams }: PageProps
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Avisos</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/announcements/new" />}>
+          <Link href="/admin/announcements/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Novo aviso
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -43,7 +44,9 @@ export default async function AdminAnnouncementsPage({ searchParams }: PageProps
           <p>Nenhum aviso ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/announcements/new" />}>Criar o primeiro aviso</Button>
+              <Link href="/admin/announcements/new" className={cn(buttonVariants())}>
+                Criar o primeiro aviso
+              </Link>
             </div>
           ) : null}
         </div>
@@ -77,13 +80,12 @@ export default async function AdminAnnouncementsPage({ searchParams }: PageProps
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
                         {canUpdate ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            render={<Link href={`/admin/announcements/${announcement.id}/edit`} />}
+                          <Link
+                            href={`/admin/announcements/${announcement.id}/edit`}
+                            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                           >
                             Editar
-                          </Button>
+                          </Link>
                         ) : null}
                         {canDelete ? (
                           <DeleteAnnouncementButton announcement={{ id: announcement.id, title: announcement.title }} />

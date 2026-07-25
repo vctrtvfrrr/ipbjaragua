@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Eye, Plus } from 'lucide-react'
 import { DeleteBulletinButton } from '@/components/admin/DeleteBulletinButton'
 import Pagination from '@/components/Pagination'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   countBulletinsForAdmin,
@@ -38,10 +39,10 @@ export default async function AdminBulletinsPage({ searchParams }: AdminBulletin
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Boletins</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/bulletins/new" />}>
+          <Link href="/admin/bulletins/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Novo boletim
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -50,7 +51,9 @@ export default async function AdminBulletinsPage({ searchParams }: AdminBulletin
           <p>Nenhum boletim ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/bulletins/new" />}>Criar o primeiro boletim</Button>
+              <Link href="/admin/bulletins/new" className={cn(buttonVariants())}>
+                Criar o primeiro boletim
+              </Link>
             </div>
           ) : null}
         </div>
@@ -82,18 +85,21 @@ export default async function AdminBulletinsPage({ searchParams }: AdminBulletin
                     <TableCell>{bulletin.articleTitle ?? 'Nenhum'}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="outline" size="sm" render={<Link href={publicPath} target="_blank" />}>
+                        <Link
+                          href={publicPath}
+                          target="_blank"
+                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                        >
                           <Eye data-icon="inline-start" />
                           Preview
-                        </Button>
+                        </Link>
                         {canUpdate ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            render={<Link href={`/admin/bulletins/${bulletin.id}/edit`} />}
+                          <Link
+                            href={`/admin/bulletins/${bulletin.id}/edit`}
+                            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                           >
                             Editar
-                          </Button>
+                          </Link>
                         ) : null}
                         {canDelete && canCorrect ? (
                           <DeleteBulletinButton

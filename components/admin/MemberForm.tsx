@@ -6,7 +6,8 @@ import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createMemberFormAction, updateMemberFormAction } from '@/app/(admin)/admin/members/form-actions'
 import { MemberDateField, MemberSelectField, MemberTextField } from '@/components/MemberFormFields'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Form, FormActions } from '@/components/ui/form'
 import type { Member } from '@/db/queries/members'
@@ -217,9 +218,9 @@ export function MemberForm(props: Props) {
       ) : null}
 
       <FormActions>
-        <Button variant="outline" render={<Link href="/admin/members" />}>
+        <Link href="/admin/members" className={cn(buttonVariants({ variant: 'outline' }))}>
           Cancelar
-        </Button>
+        </Link>
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Salvando…' : 'Salvar'}
         </Button>

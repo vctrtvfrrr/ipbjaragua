@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Copy, Plus } from 'lucide-react'
 import { DeleteLiturgyButton } from '@/components/admin/DeleteLiturgyButton'
 import Pagination from '@/components/Pagination'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { countLiturgiesForAdmin, listLiturgiesForAdmin } from '@/db/queries/liturgies'
 import { requirePageRead } from '@/lib/auth/require-page-read'
@@ -33,10 +34,10 @@ export default async function AdminLiturgiesPage({ searchParams }: AdminLiturgie
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Liturgias</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/liturgies/new" />}>
+          <Link href="/admin/liturgies/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Nova Liturgia
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -45,7 +46,9 @@ export default async function AdminLiturgiesPage({ searchParams }: AdminLiturgie
           <p>Nenhuma Liturgia ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/liturgies/new" />}>Criar a primeira Liturgia</Button>
+              <Link href="/admin/liturgies/new" className={cn(buttonVariants())}>
+                Criar a primeira Liturgia
+              </Link>
             </div>
           ) : null}
         </div>
@@ -71,28 +74,22 @@ export default async function AdminLiturgiesPage({ searchParams }: AdminLiturgie
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       {canUpdate ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          render={<Link href={`/admin/liturgies/${liturgy.id}/edit`} />}
+                        <Link
+                          href={`/admin/liturgies/${liturgy.id}/edit`}
+                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                         >
                           Editar
-                        </Button>
+                        </Link>
                       ) : null}
                       {canCreate ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          render={
-                            <Link
-                              href={`/admin/liturgies/new?from=${liturgy.id}`}
-                              title="Repetir conteúdo desta liturgia num formulário de criação"
-                            />
-                          }
+                        <Link
+                          href={`/admin/liturgies/new?from=${liturgy.id}`}
+                          title="Repetir conteúdo desta liturgia num formulário de criação"
+                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                         >
                           <Copy data-icon="inline-start" />
                           Duplicar
-                        </Button>
+                        </Link>
                       ) : null}
                       {canDelete ? <DeleteLiturgyButton liturgy={liturgy} /> : null}
                     </div>

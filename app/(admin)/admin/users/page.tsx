@@ -2,7 +2,8 @@ import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { UserStatusActionButton } from '@/components/admin/UserStatusActionButton'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { listUsers, type UserStatus } from '@/db/queries/users'
 import { requirePageRead } from '@/lib/auth/require-page-read'
@@ -32,10 +33,10 @@ export default async function AdminUsersPage() {
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Usuários</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/users/new" />}>
+          <Link href="/admin/users/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Novo convite
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -44,7 +45,9 @@ export default async function AdminUsersPage() {
           <p>Nenhum usuário ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/users/new" />}>Criar o primeiro convite</Button>
+              <Link href="/admin/users/new" className={cn(buttonVariants())}>
+                Criar o primeiro convite
+              </Link>
             </div>
           ) : null}
         </div>
@@ -73,9 +76,12 @@ export default async function AdminUsersPage() {
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       {canUpdate ? (
-                        <Button variant="outline" size="sm" render={<Link href={`/admin/users/${user.id}/edit`} />}>
+                        <Link
+                          href={`/admin/users/${user.id}/edit`}
+                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                        >
                           Editar
-                        </Button>
+                        </Link>
                       ) : null}
                       {canDelete && user.status === 'pending' ? (
                         <UserStatusActionButton mode="cancel" user={{ id: user.id, label }} />

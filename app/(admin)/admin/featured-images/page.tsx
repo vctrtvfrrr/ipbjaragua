@@ -2,7 +2,8 @@ import Image from 'next/image'
 import { ExternalLink } from 'lucide-react'
 import { DeleteFeaturedImageButton } from '@/components/admin/DeleteFeaturedImageButton'
 import { FeaturedImageUpload } from '@/components/admin/FeaturedImageUpload'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { listFeaturedImages } from '@/db/queries/featured-images'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 import { featuredImageUrl } from '@/lib/featured-image'
@@ -24,10 +25,15 @@ export default async function FeaturedImagesPage() {
               <article key={image.id} className="grid gap-3 rounded-lg border p-3">
                 <Image className="aspect-video w-full rounded object-cover" src={url} alt="" width={480} height={270} />
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" render={<a href={url} target="_blank" rel="noreferrer" />}>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                  >
                     <ExternalLink data-icon="inline-start" />
                     Abrir
-                  </Button>
+                  </a>
                   {user.can('featured_images', 'delete') ? <DeleteFeaturedImageButton id={image.id} /> : null}
                 </div>
               </article>

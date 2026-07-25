@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { FormEvent, useActionState, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { createSongFormAction, updateSongFormAction } from '@/app/(admin)/admin/songs/form-actions'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -126,9 +127,9 @@ export function SongForm(props: Props) {
       />
 
       <FormActions>
-        <Button variant="outline" render={<Link href="/admin/songs" />}>
+        <Link href="/admin/songs" className={cn(buttonVariants({ variant: 'outline' }))}>
           Cancelar
-        </Button>
+        </Link>
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Salvando...' : 'Salvar'}
         </Button>

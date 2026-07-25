@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useActionState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createInviteFormAction, updateUserFormAction } from '@/app/(admin)/admin/users/form-actions'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -72,9 +73,9 @@ export function UserForm(props: Props) {
       </FormField>
 
       <FormActions>
-        <Button variant="outline" render={<Link href="/admin/users" />}>
+        <Link href="/admin/users" className={cn(buttonVariants({ variant: 'outline' }))}>
           Cancelar
-        </Button>
+        </Link>
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Salvando...' : 'Salvar'}
         </Button>

@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { CopyPlus, Plus } from 'lucide-react'
 import { DeleteAgendaButton } from '@/components/admin/DeleteAgendaButton'
 import Pagination from '@/components/Pagination'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { countPastAgendaItems, listFutureAgendaItems, listPastAgendaItems, type AgendaItem } from '@/db/queries/agenda'
 import { requirePageRead } from '@/lib/auth/require-page-read'
@@ -38,10 +39,10 @@ export default async function AdminAgendaPage({ searchParams }: AdminAgendaPageP
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Agenda</h2>
         {canCreate ? (
-          <Button render={<Link href="/admin/agenda/new" />}>
+          <Link href="/admin/agenda/new" className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Novo evento
-          </Button>
+          </Link>
         ) : null}
       </div>
 
@@ -50,7 +51,9 @@ export default async function AdminAgendaPage({ searchParams }: AdminAgendaPageP
           <p>Nenhum evento ainda.</p>
           {canCreate ? (
             <div>
-              <Button render={<Link href="/admin/agenda/new" />}>Criar o primeiro evento</Button>
+              <Link href="/admin/agenda/new" className={cn(buttonVariants())}>
+                Criar o primeiro evento
+              </Link>
             </div>
           ) : null}
         </div>
@@ -120,15 +123,21 @@ function AgendaRow({
       <TableCell>
         <div className="flex items-center justify-end gap-2">
           {canUpdate ? (
-            <Button variant="outline" size="sm" render={<Link href={`/admin/agenda/${item.id}/edit`} />}>
+            <Link
+              href={`/admin/agenda/${item.id}/edit`}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+            >
               Editar
-            </Button>
+            </Link>
           ) : null}
           {canCreate ? (
-            <Button variant="outline" size="sm" render={<Link href={`/admin/agenda/new?from=${item.id}`} />}>
+            <Link
+              href={`/admin/agenda/new?from=${item.id}`}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+            >
               <CopyPlus data-icon="inline-start" />
               Repetir
-            </Button>
+            </Link>
           ) : null}
           {canDelete ? <DeleteAgendaButton item={{ id: item.id, title: item.title }} /> : null}
         </div>

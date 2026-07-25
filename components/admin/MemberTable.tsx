@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { Member } from '@/db/queries/members'
 import { formatISODate } from '@/lib/date'
@@ -150,9 +151,12 @@ export function MemberTable({
               <TableCell>
                 <div className="flex items-center justify-end gap-2">
                   {canUpdate ? (
-                    <Button variant="outline" size="sm" render={<Link href={`/admin/members/${member.id}/edit`} />}>
+                    <Link
+                      href={`/admin/members/${member.id}/edit`}
+                      className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                    >
                       Editar
-                    </Button>
+                    </Link>
                   ) : null}
                   {canDelete ? <DeleteMemberButton member={member} /> : null}
                 </div>

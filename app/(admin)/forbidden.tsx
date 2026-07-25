@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function Forbidden() {
   return (
@@ -7,7 +8,9 @@ export default function Forbidden() {
       <p className="text-muted-foreground text-sm">403</p>
       <h1 className="text-2xl font-semibold tracking-normal">Sem acesso</h1>
       <p className="text-muted-foreground text-sm">Você não tem permissão para ver esta página.</p>
-      <Button render={<Link href="/admin" />}>Voltar ao painel</Button>
+      <Link href="/admin" className={cn(buttonVariants())}>
+        Voltar ao painel
+      </Link>
     </section>
   )
 }
