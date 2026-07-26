@@ -4,14 +4,14 @@ import { DeleteAnnouncementButton } from '@/components/admin/DeleteAnnouncementB
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { AnnouncementWithFeaturedImage } from '@/db/queries/announcements'
-import { featuredImageUrl } from '@/lib/featured-image'
+import type { Announcement } from '@/db/queries/announcements'
+import { announcementFlyerUrl } from '@/lib/announcement-flyer-config'
 import { formatLongDatePtBR } from '@/lib/date'
 import { resolveAnnouncementIcon } from '@/lib/announcement-icon'
 import { cn } from '@/lib/utils'
 
 type Props = {
-  announcements: AnnouncementWithFeaturedImage[]
+  announcements: Announcement[]
   todayDate: Date
   canUpdate: boolean
   canDelete: boolean
@@ -23,7 +23,7 @@ export function AnnouncementsTable({ announcements, todayDate, canUpdate, canDel
       <TableHeader>
         <TableRow>
           <TableHead>Título</TableHead>
-          <TableHead>Imagem</TableHead>
+          <TableHead>Flyer</TableHead>
           <TableHead>Exibir até</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Link</TableHead>
@@ -43,14 +43,14 @@ export function AnnouncementsTable({ announcements, todayDate, canUpdate, canDel
                 </div>
               </TableCell>
               <TableCell>
-                {announcement.featuredImagePath ? (
-                  <a href={featuredImageUrl(announcement.featuredImagePath)} target="_blank" rel="noreferrer">
+                {announcement.flyer_path ? (
+                  <a href={announcementFlyerUrl(announcement.flyer_path)} target="_blank" rel="noreferrer">
                     <Image
-                      className="aspect-video w-16 rounded object-cover"
-                      src={featuredImageUrl(announcement.featuredImagePath)}
+                      className="max-h-16 w-16 rounded object-contain"
+                      src={announcementFlyerUrl(announcement.flyer_path)}
                       alt=""
-                      width={96}
-                      height={54}
+                      width={64}
+                      height={80}
                     />
                   </a>
                 ) : (

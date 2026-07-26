@@ -17,15 +17,13 @@ import type { Announcement } from '@/db/queries/announcements'
 import { formatISODate } from '@/lib/date'
 import type { ActionState } from '@/lib/entity-action'
 import { AnnouncementIconPicker } from './AnnouncementIconPicker'
-import { AnnouncementImagePicker, type AnnouncementImageOption } from './AnnouncementImagePicker'
+import { AnnouncementFlyerField } from './AnnouncementFlyerField'
 import { FieldError, FormError } from './FormFeedback'
 import { MarkdownField } from './MarkdownField'
 
 const INITIAL_STATE: ActionState = { status: 'idle' }
 
-type Props = ({ mode: 'create'; canCreateAgenda: boolean } | { mode: 'edit'; announcement: Announcement }) & {
-  images: AnnouncementImageOption[]
-}
+type Props = { mode: 'create'; canCreateAgenda: boolean } | { mode: 'edit'; announcement: Announcement }
 
 export function AnnouncementForm(props: Props) {
   const announcement = props.mode === 'edit' ? props.announcement : undefined
@@ -88,12 +86,8 @@ export function AnnouncementForm(props: Props) {
       </FormField>
 
       <FormField>
-        <Label>Imagem Destacada</Label>
-        <AnnouncementImagePicker
-          images={props.images}
-          defaultValue={announcement?.featured_image_id}
-          errors={fieldErrors?.featured_image_id}
-        />
+        <Label htmlFor="flyer">Flyer Digital</Label>
+        <AnnouncementFlyerField flyerPath={announcement?.flyer_path} errors={fieldErrors?.flyer} />
       </FormField>
 
       {props.mode === 'create' && props.canCreateAgenda ? (

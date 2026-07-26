@@ -41,14 +41,10 @@ type EntityActionOptions<Schema extends z.ZodType, WriteResult> = {
   errorMessage?: (error: unknown) => string | undefined
 }
 
-export function parseForm(formData: FormData): Record<string, string> {
-  const parsed: Record<string, string> = {}
+export function parseForm(formData: FormData): Record<string, FormDataEntryValue> {
+  const parsed: Record<string, FormDataEntryValue> = {}
 
   for (const [name, value] of formData.entries()) {
-    if (typeof value !== 'string') {
-      throw new Error('FormData must contain only string fields')
-    }
-
     if (Object.hasOwn(parsed, name)) {
       throw new Error('FormData must contain unique fields')
     }
@@ -85,7 +81,7 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
         const formError = options.validationErrorMessage?.(fieldErrors)
         return options.parse
           ? { status: 'error', fieldErrors, formError }
-          : { status: 'error', fieldErrors, formError, values: parsedForm as Record<string, string> }
+          : { status: 'error', fieldErrors, formError, values: stringValues(parsedForm) }
       }
 
       const writeContext: WriteContext<Schema> = { user, db: context.db, data: parsedData.data }
@@ -106,6 +102,14 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
   }
 
   return { action, execute }
+}
+
+function stringValues(parsedForm: unknown): Record<string, string> | undefined {
+  if (!parsedForm || typeof parsedForm !== 'object') return undefined
+
+  return Object.fromEntries(
+    Object.entries(parsedForm).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+  )
 }
 
 async function notifyWarning<Schema extends z.ZodType, WriteResult>(

@@ -1,17 +1,16 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { AnnouncementWithFeaturedImage } from '@/db/queries/announcements'
+import type { Announcement } from '@/db/queries/announcements'
 import { AnnouncementsTable } from './AnnouncementsTable'
 
-function makeAnnouncement(overrides: Partial<AnnouncementWithFeaturedImage> = {}): AnnouncementWithFeaturedImage {
+function makeAnnouncement(overrides: Partial<Announcement> = {}): Announcement {
   return {
     id: 1,
     title: 'Ensaio do coral',
     description: 'Descrição',
     url: null,
     icon: 'Pin',
-    featured_image_id: null,
-    featuredImagePath: null,
+    flyer_path: null,
     expires_at: new Date('2026-07-12T00:00:00Z'),
     created_at: '',
     updated_at: '',
@@ -21,7 +20,7 @@ function makeAnnouncement(overrides: Partial<AnnouncementWithFeaturedImage> = {}
 }
 
 describe('AnnouncementsTable', () => {
-  it('shows a dash when there is no featured image', () => {
+  it('shows a dash when there is no flyer', () => {
     render(
       <AnnouncementsTable
         announcements={[makeAnnouncement()]}
@@ -35,10 +34,10 @@ describe('AnnouncementsTable', () => {
     expect(screen.queryByRole('link', { name: '' })).not.toBeInTheDocument()
   })
 
-  it('links the thumbnail to the full image in a new tab when a featured image is linked', () => {
+  it('links the thumbnail to the full flyer in a new tab', () => {
     render(
       <AnnouncementsTable
-        announcements={[makeAnnouncement({ featured_image_id: 5, featuredImagePath: 'abc123.webp' })]}
+        announcements={[makeAnnouncement({ flyer_path: `${'a'.repeat(48)}.png` })]}
         todayDate={new Date('2026-07-01T00:00:00Z')}
         canUpdate={true}
         canDelete={true}
@@ -46,7 +45,7 @@ describe('AnnouncementsTable', () => {
     )
 
     const link = screen.getAllByRole('link').find((element) => element.getAttribute('target') === '_blank')
-    expect(link).toHaveAttribute('href', '/media/featured-images/abc123.webp')
+    expect(link).toHaveAttribute('href', `/media/announcement-flyers/${'a'.repeat(48)}.png`)
   })
 
   it('renders the announcement icon next to the title', () => {

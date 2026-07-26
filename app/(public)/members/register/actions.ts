@@ -52,7 +52,9 @@ export async function executePublicMemberRegistration(
     return {
       status: 'error',
       fieldErrors: fieldErrorsFrom(parsedData.error.flatten().fieldErrors),
-      values: parsedForm,
+      values: Object.fromEntries(
+        Object.entries(parsedForm).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+      ),
     }
   }
 

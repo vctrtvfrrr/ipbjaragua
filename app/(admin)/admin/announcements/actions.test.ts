@@ -1,9 +1,14 @@
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { eq, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { beforeEach, describe, expect, it } from 'vitest'
+import sharp from 'sharp'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { vi } from 'vitest'
-import { agenda, announcements, featuredImages } from '@/db/schema'
+import { agenda, announcements } from '@/db/schema'
 import type { CurrentUser } from '@/lib/auth/current-user'
+import { announcementFlyersDirectory, MAX_ANNOUNCEMENT_FLYER_BYTES } from '@/lib/announcement-flyer'
 import { createTestDb, type TestDb } from '@/tests/db'
 import { seedAnnouncements } from '@/tests/seed'
 import { createAnnouncementAction, deleteAnnouncementAction, updateAnnouncementAction } from './actions'
@@ -12,20 +17,19 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-function formData(entries: [string, string][]) {
+function formData(entries: [string, FormDataEntryValue][]) {
   const data = new FormData()
   for (const [name, value] of entries) data.append(name, value)
   return data
 }
 
-function announcementForm(overrides: Partial<Record<string, string>> = {}) {
+function announcementForm(overrides: Record<string, FormDataEntryValue> = {}) {
   return formData(
     Object.entries({
       title: 'Ensaio do coral',
       description: 'O ensaio será após o culto.',
       url: '',
       icon: 'Pin',
-      featured_image_id: '',
       expires_at: '2026-07-12',
       ...overrides,
     })
@@ -41,9 +45,12 @@ function userWithPermission(canReturn: boolean | ((entity: string, action: strin
   }
 }
 
-async function seedFeaturedImage(db: TestDb, path = 'abc123.webp') {
-  const [image] = await db.insert(featuredImages).values({ path }).returning()
-  return image
+async function imageFile(width: number, height: number, type = 'image/jpeg') {
+  const format = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpeg'
+  const bytes = await sharp({ create: { width, height, channels: 3, background: '#336699' } })
+    .toFormat(format)
+    .toBuffer()
+  return new File([bytes], `flyer.${format}`, { type })
 }
 
 function expectAnnouncementRevalidation() {
@@ -56,10 +63,17 @@ function expectAnnouncementRevalidation() {
 
 describe('createAnnouncementAction.execute', () => {
   let db: TestDb
+  let storagePath: string
 
   beforeEach(async () => {
     db = await createTestDb()
+    storagePath = await mkdtemp(path.join(tmpdir(), 'announcement-flyers-'))
+    process.env.MEDIA_STORAGE_PATH = storagePath
     vi.mocked(revalidatePath).mockClear()
+  })
+
+  afterEach(() => {
+    delete process.env.MEDIA_STORAGE_PATH
   })
 
   it('denies users without announcement create permission without writing', async () => {
@@ -129,7 +143,7 @@ describe('createAnnouncementAction.execute', () => {
       description: 'O ensaio será após o culto.',
       url: null,
       icon: 'Pin',
-      featured_image_id: null,
+      flyer_path: null,
     })
     expectAnnouncementRevalidation()
   })
@@ -178,16 +192,78 @@ describe('createAnnouncementAction.execute', () => {
     expect(await db.select().from(announcements).where(isNull(announcements.deleted_at))).toEqual([])
   })
 
-  it('links an existing featured image by id', async () => {
-    const image = await seedFeaturedImage(db)
-
-    await createAnnouncementAction.execute(
+  it('stores a normalized PNG flyer with the announcement', async () => {
+    const state = await createAnnouncementAction.execute(
       { user: userWithPermission(true), db },
-      announcementForm({ featured_image_id: String(image.id) })
+      announcementForm({ flyer: await imageFile(1200, 600) })
     )
 
+    expect(state).toEqual({ status: 'success' })
     const rows = await db.select().from(announcements).where(eq(announcements.title, 'Ensaio do coral'))
-    expect(rows[0]?.featured_image_id).toBe(image.id)
+    expect(rows[0]?.flyer_path).toMatch(/^[a-f0-9]{48}\.png$/)
+    const flyer = await readFile(path.join(announcementFlyersDirectory(), rows[0]!.flyer_path!))
+    expect(await sharp(flyer).metadata()).toMatchObject({ format: 'png', width: 1080, height: 540 })
+  })
+
+  it('does not enlarge a narrow flyer', async () => {
+    await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ flyer: await imageFile(640, 800, 'image/webp') })
+    )
+
+    const [row] = await db.select().from(announcements)
+    const metadata = await sharp(path.join(announcementFlyersDirectory(), row.flyer_path!)).metadata()
+    expect(metadata).toMatchObject({ format: 'png', width: 640, height: 800 })
+  })
+
+  it.each([
+    [
+      'an unsupported type',
+      new File(['not an image'], 'flyer.gif', { type: 'image/gif' }),
+      'Envie uma imagem PNG, JPEG ou WEBP.',
+    ],
+    [
+      'a file larger than 5 MB',
+      new File([new Uint8Array(MAX_ANNOUNCEMENT_FLYER_BYTES + 1)], 'flyer.png', { type: 'image/png' }),
+      'O Flyer Digital deve ter no máximo 5 MB.',
+    ],
+  ])('rejects %s without writing a file', async (_case, flyer, message) => {
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ flyer })
+    )
+
+    expect(state.status).toBe('error')
+    if (state.status === 'error') expect(state.fieldErrors?.flyer).toEqual([message])
+    expect(await db.select().from(announcements)).toEqual([])
+    await expect(readdir(announcementFlyersDirectory())).rejects.toThrow()
+  })
+
+  it('rejects image contents that do not match an accepted format', async () => {
+    const gif = await sharp({
+      create: { width: 10, height: 10, channels: 3, background: '#336699' },
+    })
+      .gif()
+      .toBuffer()
+
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ flyer: new File([gif], 'disguised.png', { type: 'image/png' }) })
+    )
+
+    expect(state).toEqual({ status: 'error', formError: 'Envie uma imagem PNG, JPEG ou WEBP.' })
+    expect(await db.select().from(announcements)).toEqual([])
+    await expect(readdir(announcementFlyersDirectory())).rejects.toThrow()
+  })
+
+  it('does not store a valid flyer when another field is invalid', async () => {
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ title: '', flyer: await imageFile(600, 600) })
+    )
+
+    expect(state.status).toBe('error')
+    await expect(readdir(announcementFlyersDirectory())).rejects.toThrow()
   })
 
   it('creates an agenda item atomically when Adicionar à Agenda is checked and permitted', async () => {
@@ -244,10 +320,17 @@ describe('createAnnouncementAction.execute', () => {
 
 describe('updateAnnouncementAction.execute', () => {
   let db: TestDb
+  let storagePath: string
 
   beforeEach(async () => {
     db = await createTestDb()
+    storagePath = await mkdtemp(path.join(tmpdir(), 'announcement-flyers-'))
+    process.env.MEDIA_STORAGE_PATH = storagePath
     vi.mocked(revalidatePath).mockClear()
+  })
+
+  afterEach(() => {
+    delete process.env.MEDIA_STORAGE_PATH
   })
 
   it('denies users without announcement update permission without writing', async () => {
@@ -315,26 +398,73 @@ describe('updateAnnouncementAction.execute', () => {
     expect(rows[0]?.icon).toBe('Pin')
   })
 
-  it('links and later removes a featured image', async () => {
-    await seedAnnouncements(db, [{ title: 'Original', expires_at: '2026-07-12' }])
+  it('keeps the current flyer when no new file is submitted', async () => {
+    await seedAnnouncements(db, [{ title: 'Original', expires_at: '2026-07-12', flyer_path: 'a'.repeat(48) + '.png' }])
     const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Original'))
-    const image = await seedFeaturedImage(db)
 
     await updateAnnouncementAction.execute(
       { user: userWithPermission(true), db },
-      announcementForm({ id: String(announcement.id), featured_image_id: String(image.id) })
+      announcementForm({ id: String(announcement.id), title: 'Atualizado' })
     )
 
-    let rows = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
-    expect(rows[0]?.featured_image_id).toBe(image.id)
+    const [updated] = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
+    expect(updated.flyer_path).toBe(announcement.flyer_path)
+  })
+
+  it('replaces the current flyer and removes its file', async () => {
+    const oldPath = `${'a'.repeat(48)}.png`
+    await seedAnnouncements(db, [{ title: 'Original', expires_at: '2026-07-12', flyer_path: oldPath }])
+    await mkdir(announcementFlyersDirectory(), { recursive: true })
+    await writeFile(path.join(announcementFlyersDirectory(), oldPath), 'old')
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Original'))
 
     await updateAnnouncementAction.execute(
       { user: userWithPermission(true), db },
-      announcementForm({ id: String(announcement.id), featured_image_id: '' })
+      announcementForm({ id: String(announcement.id), flyer: await imageFile(500, 700) })
     )
 
-    rows = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
-    expect(rows[0]?.featured_image_id).toBeNull()
+    const [updated] = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
+    expect(updated.flyer_path).not.toBe(oldPath)
+    await expect(readFile(path.join(announcementFlyersDirectory(), oldPath))).rejects.toThrow()
+  })
+
+  it('removes the current flyer only when explicitly requested', async () => {
+    const oldPath = `${'a'.repeat(48)}.png`
+    await seedAnnouncements(db, [{ title: 'Original', expires_at: '2026-07-12', flyer_path: oldPath }])
+    const directory = announcementFlyersDirectory()
+    await mkdir(directory, { recursive: true })
+    await writeFile(path.join(directory, oldPath), 'old')
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Original'))
+
+    await updateAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ id: String(announcement.id), remove_flyer: 'on' })
+    )
+
+    const [updated] = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
+    expect(updated.flyer_path).toBeNull()
+    await expect(readFile(path.join(directory, oldPath))).rejects.toThrow()
+  })
+
+  it('uses a submitted replacement instead of leaving it orphaned when removal is also requested', async () => {
+    const oldPath = `${'a'.repeat(48)}.png`
+    await seedAnnouncements(db, [{ title: 'Original', expires_at: '2026-07-12', flyer_path: oldPath }])
+    await mkdir(announcementFlyersDirectory(), { recursive: true })
+    await writeFile(path.join(announcementFlyersDirectory(), oldPath), 'old')
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Original'))
+
+    await updateAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({
+        id: String(announcement.id),
+        flyer: await imageFile(500, 700),
+        remove_flyer: 'on',
+      })
+    )
+
+    const [updated] = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
+    expect(updated.flyer_path).toMatch(/^[a-f0-9]{48}\.png$/)
+    expect(await readdir(announcementFlyersDirectory())).toEqual([updated.flyer_path])
   })
 })
 
@@ -375,5 +505,23 @@ describe('deleteAnnouncementAction.execute', () => {
     const rows = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
     expect(rows[0]?.deleted_at).not.toBeNull()
     expectAnnouncementRevalidation()
+  })
+
+  it('keeps the flyer file when soft-deleting an announcement', async () => {
+    const storagePath = await mkdtemp(path.join(tmpdir(), 'announcement-flyers-'))
+    process.env.MEDIA_STORAGE_PATH = storagePath
+    const flyerPath = `${'a'.repeat(48)}.png`
+    await seedAnnouncements(db, [{ title: 'Com Flyer', expires_at: '2026-07-12', flyer_path: flyerPath }])
+    await mkdir(announcementFlyersDirectory(), { recursive: true })
+    await writeFile(path.join(announcementFlyersDirectory(), flyerPath), 'flyer')
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Com Flyer'))
+
+    await deleteAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      formData([['id', String(announcement.id)]])
+    )
+
+    expect(await readFile(path.join(announcementFlyersDirectory(), flyerPath), 'utf8')).toBe('flyer')
+    delete process.env.MEDIA_STORAGE_PATH
   })
 })

@@ -1,10 +1,9 @@
-import { and, count, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm'
+import { and, count, desc, eq, isNull, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { announcements, featuredImages } from '@/db/schema'
+import { announcements } from '@/db/schema'
 import type { AnnouncementIconName } from '@/lib/announcement-icon'
 
 export type Announcement = typeof announcements.$inferSelect
-export type AnnouncementWithFeaturedImage = Announcement & { featuredImagePath: string | null }
 
 export class AnnouncementNotFoundError extends Error {
   constructor(id: number) {
@@ -18,7 +17,7 @@ export type CreateAnnouncementInput = {
   description: string
   url: string | null
   icon: AnnouncementIconName
-  featured_image_id: number | null
+  flyer_path: string | null
   expires_at: Date
 }
 
@@ -70,11 +69,10 @@ export async function getAnnouncementById(id: number, db: Database = defaultDb):
 export async function listAnnouncementsForAdmin(
   { page, pageSize }: { page: number; pageSize: number },
   db: Database = defaultDb
-): Promise<AnnouncementWithFeaturedImage[]> {
+): Promise<Announcement[]> {
   return db
-    .select({ ...getTableColumns(announcements), featuredImagePath: featuredImages.path })
+    .select()
     .from(announcements)
-    .leftJoin(featuredImages, eq(announcements.featured_image_id, featuredImages.id))
     .where(isNull(announcements.deleted_at))
     .orderBy(desc(announcements.expires_at), desc(announcements.id))
     .limit(pageSize)

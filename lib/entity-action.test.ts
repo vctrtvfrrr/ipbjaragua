@@ -32,8 +32,8 @@ describe('parseForm', () => {
     ).toEqual({ title: ' Café ', author: '' })
   })
 
-  it('rejects files and repeated field names', () => {
-    expect(() => parseForm(formData([['photo', new Blob(['x'])]]))).toThrow('FormData must contain only string fields')
+  it('keeps files and rejects repeated field names', () => {
+    expect(parseForm(formData([['photo', new Blob(['x'])]]))).toMatchObject({ photo: expect.any(File) })
     expect(() =>
       parseForm(
         formData([

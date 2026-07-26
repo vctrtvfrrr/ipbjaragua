@@ -112,6 +112,13 @@ function daysFromToday(days: number): Date {
 export const E2E_ANNOUNCEMENT = {
   title: 'Retiro de Jovens',
   description: 'Inscrições abertas até sexta.\n\n| Item | Valor |\n| --- | --- |\n| Inscrição | R$ 80 |\n',
+  flyer_path: `${'a'.repeat(48)}.png`,
+  expires_at: daysFromToday(30),
+}
+
+export const E2E_ANNOUNCEMENT_WITHOUT_FLYER = {
+  title: 'Reunião de oração',
+  description: 'Participe conosco nesta semana.',
   expires_at: daysFromToday(30),
 }
 
@@ -275,7 +282,7 @@ export async function seedE2eDatabase() {
     })
   }
 
-  await db.insert(announcements).values(E2E_ANNOUNCEMENT)
+  await db.insert(announcements).values([E2E_ANNOUNCEMENT, E2E_ANNOUNCEMENT_WITHOUT_FLYER])
   await db.insert(members).values({ ...E2E_MEMBER, birth_date: parseISODate(E2E_MEMBER.birth_date) })
 
   const [adminUser] = await db.insert(users).values(E2E_ADMIN_USER).returning({ id: users.id })

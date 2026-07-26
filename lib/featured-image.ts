@@ -1,9 +1,4 @@
-import { randomBytes } from 'node:crypto'
-import { createReadStream } from 'node:fs'
-import { access, mkdir, unlink, writeFile } from 'node:fs/promises'
-import path from 'node:path'
-import { Readable } from 'node:stream'
-import sharp from 'sharp'
+import { normalizeAndStoreMediaFile, removeMediaFile, storageDirectory, streamMediaFile } from '@/lib/media-file'
 
 export const ARTICLE_FALLBACK_IMAGE = '/images/article-fallback.webp'
 export const MAX_FEATURED_IMAGE_BYTES = 15 * 1024 * 1024
@@ -14,7 +9,7 @@ export function featuredImageUrl(imagePath: string | null): string {
 }
 
 export function featuredImagesDirectory(): string {
-  return path.join('/app/data', 'featured-images')
+  return storageDirectory('featured-images')
 }
 
 export async function normalizeAndStoreFeaturedImage(file: File): Promise<string> {
@@ -22,33 +17,17 @@ export async function normalizeAndStoreFeaturedImage(file: File): Promise<string
   if (file.size === 0) throw new Error('Selecione uma imagem.')
   if (file.size > MAX_FEATURED_IMAGE_BYTES) throw new Error('A imagem deve ter no máximo 15 MB.')
 
-  const filename = `${randomBytes(24).toString('hex')}.webp`
-  const directory = featuredImagesDirectory()
-  await mkdir(directory, { recursive: true })
-  const normalized = await sharp(await file.arrayBuffer())
-    .rotate()
-    .resize({ width: 1600, withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toBuffer()
-  await writeFile(path.join(directory, filename), normalized, { flag: 'wx' })
-  return filename
+  return normalizeAndStoreMediaFile(file, {
+    directory: featuredImagesDirectory(),
+    extension: 'webp',
+    maxWidth: 1600,
+  })
 }
 
 export async function streamFeaturedImage(imagePath: string): Promise<ReadableStream | null> {
-  if (!/^[a-f0-9]{48}\.webp$/.test(imagePath)) return null
-  try {
-    const filePath = path.join(featuredImagesDirectory(), imagePath)
-    await access(filePath)
-    return Readable.toWeb(createReadStream(filePath)) as ReadableStream
-  } catch {
-    return null
-  }
+  return streamMediaFile(imagePath, { directory: featuredImagesDirectory(), extension: 'webp' })
 }
 
 export async function removeFeaturedImageFile(imagePath: string): Promise<void> {
-  try {
-    await unlink(path.join(featuredImagesDirectory(), imagePath))
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-  }
+  return removeMediaFile(imagePath, featuredImagesDirectory())
 }

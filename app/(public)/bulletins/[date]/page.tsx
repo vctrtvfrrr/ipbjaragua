@@ -6,6 +6,9 @@ import Markdown from '@/components/Markdown'
 import DraftBadge from '@/components/public/DraftBadge'
 import PageHeader from '@/components/public/PageHeader'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from '@/db/queries/bulletin-sections'
+import { resolveAnnouncementIcon } from '@/lib/announcement-icon'
+import { announcementFlyerUrl } from '@/lib/announcement-flyer-config'
+import IconTile from '@/components/public/IconTile'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { getCurrentUser } from '@/lib/auth/current-user'
@@ -113,21 +116,46 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
             <section className={sectionCard}>
               <h2 className={sectionTitle}>Avisos gerais</h2>
               <ul className="space-y-6">
-                {announcements.map((ann) => (
-                  <li key={ann.id}>
-                    <h3 className="text-brand-deep font-bold">{ann.title}</h3>
-                    {ann.description ? (
-                      <div className="prose prose-sm mt-1 max-w-none">
-                        <Markdown content={ann.description} />
+                {announcements.map((ann) => {
+                  const Icon = resolveAnnouncementIcon(ann.icon)
+                  return (
+                    <li key={ann.id} className="flex gap-4">
+                      <IconTile icon={Icon} className="rounded-full" iconClassName="text-brand-ridge" />
+                      <div className="min-w-0">
+                        <h3 className="text-brand-deep font-bold">{ann.title}</h3>
+                        {ann.flyer_path ? (
+                          <a
+                            href={announcementFlyerUrl(ann.flyer_path)}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Abrir Flyer Digital de ${ann.title}`}
+                            className="mt-2 block w-fit"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={announcementFlyerUrl(ann.flyer_path)}
+                              alt=""
+                              width={160}
+                              height={200}
+                              loading="lazy"
+                              className="max-h-[200px] max-w-[160px] rounded object-contain"
+                            />
+                          </a>
+                        ) : null}
+                        {ann.description ? (
+                          <div className="prose prose-sm mt-1 max-w-none">
+                            <Markdown content={ann.description} />
+                          </div>
+                        ) : null}
+                        {ann.url ? (
+                          <Link href={ann.url} className="text-brand-current underline-offset-4 hover:underline">
+                            Acesse<span className="sr-only"> {ann.title}</span>
+                          </Link>
+                        ) : null}
                       </div>
-                    ) : null}
-                    {ann.url ? (
-                      <Link href={ann.url} className="text-brand-current underline-offset-4 hover:underline">
-                        Acesse<span className="sr-only"> {ann.title}</span>
-                      </Link>
-                    ) : null}
-                  </li>
-                ))}
+                    </li>
+                  )
+                })}
               </ul>
             </section>
           ) : null}

@@ -12,6 +12,7 @@ import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bullet
 import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
 import { getNextLiturgy, type NextLiturgyResult } from '@/db/queries/liturgies'
 import { resolveAnnouncementIcon } from '@/lib/announcement-icon'
+import { announcementFlyerUrl } from '@/lib/announcement-flyer-config'
 import { publicAuthorName } from '@/lib/article'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
 import {
@@ -238,6 +239,25 @@ export default async function Home() {
                         <IconTile icon={Icon} className="rounded-full" iconClassName="text-brand-ridge" />
                         <div className="min-w-0">
                           <h3 className="text-brand-deep font-bold">{ann.title}</h3>
+                          {ann.flyer_path ? (
+                            <a
+                              href={announcementFlyerUrl(ann.flyer_path)}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={`Abrir Flyer Digital de ${ann.title}`}
+                              className="mt-2 block w-fit"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={announcementFlyerUrl(ann.flyer_path)}
+                                alt=""
+                                width={160}
+                                height={200}
+                                loading="lazy"
+                                className="max-h-[200px] max-w-[160px] rounded object-contain"
+                              />
+                            </a>
+                          ) : null}
                           {ann.description ? (
                             <div className="prose prose-sm mt-1 max-w-none">
                               <Markdown content={ann.description} />

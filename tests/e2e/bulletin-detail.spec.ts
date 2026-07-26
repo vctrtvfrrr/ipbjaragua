@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { E2E_ANNOUNCEMENT, E2E_LITURGY, E2E_MEMBER, FEATURED } from './seed-db'
+import { E2E_ANNOUNCEMENT, E2E_ANNOUNCEMENT_WITHOUT_FLYER, E2E_LITURGY, E2E_MEMBER, FEATURED } from './seed-db'
 
 const BULLETIN_DATE = '2026-06-07'
 const BULLETIN_FLAGS_OFF = '2026-05-31'
@@ -46,6 +46,33 @@ test('shows agenda, announcements and birthdays sections when flags are on', asy
   await expect(page.getByRole('table').filter({ hasText: 'Inscrição' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Aniversariantes' })).toBeVisible()
   await expect(page.getByText(new RegExp(E2E_MEMBER.full_name))).toBeVisible()
+})
+
+test('shows an announcement flyer linked to the full file', async ({ page }) => {
+  await page.goto(`/bulletins/${BULLETIN_DATE}`)
+
+  const link = page.getByRole('link', { name: `Abrir Flyer Digital de ${E2E_ANNOUNCEMENT.title}` })
+  await expect(link).toHaveAttribute('href', `/media/announcement-flyers/${E2E_ANNOUNCEMENT.flyer_path}`)
+  await expect(link).toHaveAttribute('target', '_blank')
+  await expect(link.locator('img')).toHaveAttribute('loading', 'lazy')
+  const item = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: E2E_ANNOUNCEMENT.title }) })
+  await expect(item.locator('svg')).toBeVisible()
+  expect(
+    await item.evaluate((element) => {
+      const heading = element.querySelector('h3')!
+      const flyer = element.querySelector('a[aria-label^="Abrir Flyer"]')!
+      const description = element.querySelector('.prose')!
+      return (
+        Boolean(heading.compareDocumentPosition(flyer) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+        Boolean(flyer.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING)
+      )
+    })
+  ).toBe(true)
+
+  const itemWithoutFlyer = page
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('heading', { name: E2E_ANNOUNCEMENT_WITHOUT_FLYER.title }) })
+  await expect(itemWithoutFlyer.locator('img')).toHaveCount(0)
 })
 
 test('omits sections when flags are off', async ({ page }) => {
