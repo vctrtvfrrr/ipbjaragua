@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, getTableColumns, gt, gte, isNull, lte, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, lte, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { liturgyActs, liturgyMoments, liturgies, type LiturgyStatus, type ScripturePassage, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
@@ -129,25 +129,14 @@ export async function listLiturgies(
   db: Database = defaultDb
 ): Promise<LiturgyListItem[]> {
   const rows = await db
-    .select({
-      id: liturgies.id,
-      date: liturgies.date,
-      theme: liturgies.theme,
-      time: liturgies.time,
-      status: liturgies.status,
-      description: liturgies.description,
-      sermonDescription: liturgyMoments.description,
-      sermonSpeaker: liturgyMoments.sermon_speaker,
-    })
+    .select(liturgyCardColumns)
     .from(liturgies)
-    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
-    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
     .where(and(isNull(liturgies.deleted_at), visibleLiturgy(visibility)))
     .orderBy(desc(liturgies.date))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
 
-  return deduplicateByLiturgyId(rows)
+  return withSermons(rows, db)
 }
 
 export async function listLiturgiesByDate(
@@ -513,55 +502,67 @@ function addMinutesToHHMM(time: string, minutes: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
 }
 
-function deduplicateByLiturgyId(
-  rows: Array<{
-    id: number
-    date: Date
-    theme: string
-    time: string | null
-    status: LiturgyStatus
-    description: string | null
-    sermonDescription: string | null
-    sermonSpeaker: string | null
-  }>
-): LiturgyListItem[] {
-  const byId = new Map<number, LiturgyListItem>()
-  const result: LiturgyListItem[] = []
-  for (const row of rows) {
-    const seen = byId.get(row.id)
-    if (seen) {
-      // O join traz uma linha por Ato e só a do Ato do sermão carrega seus campos:
-      // ficar com a primeira linha perde o pregador sempre que ele não abre o culto.
-      seen.sermonDescription ??= row.sermonDescription ?? null
-      seen.sermonSpeaker ??= row.sermonSpeaker ?? null
-      continue
-    }
-    const item: LiturgyListItem = {
-      id: row.id,
-      date: row.date,
-      theme: row.theme,
-      time: hhmm(row.time)!,
-      status: row.status,
-      description: row.description ?? null,
-      sermonDescription: row.sermonDescription ?? null,
-      sermonSpeaker: row.sermonSpeaker ?? null,
-    }
-    byId.set(row.id, item)
-    result.push(item)
-  }
-  return result
-}
-
-const liturgyCardFields = {
+const liturgyCardColumns = {
   id: liturgies.id,
   date: liturgies.date,
   theme: liturgies.theme,
   time: liturgies.time,
   status: liturgies.status,
   description: liturgies.description,
-  sermonDescription: liturgyMoments.description,
-  sermonSpeaker: liturgyMoments.sermon_speaker,
 } as const
+
+type LiturgyCardRow = {
+  id: number
+  date: Date
+  theme: string
+  time: string | null
+  status: LiturgyStatus
+  description: string | null
+}
+
+/** O sermão vive num Momento dentro de um Ato, então buscá-lo por join multiplicaria cada
+ * Liturgia pelo número de Atos — e qualquer `limit` passaria a contar linhas de Ato em vez de
+ * Liturgias, cortando a página e perdendo o sermão que caísse fora do corte. Por isso a busca
+ * é uma segunda consulta, já sobre o recorte de Liturgias escolhido. */
+async function withSermons(rows: LiturgyCardRow[], db: Database): Promise<LiturgyListItem[]> {
+  const sermons =
+    rows.length === 0
+      ? []
+      : await db
+          .select({
+            liturgyId: liturgyActs.liturgy_id,
+            description: liturgyMoments.description,
+            speaker: liturgyMoments.sermon_speaker,
+          })
+          .from(liturgyMoments)
+          .innerJoin(liturgyActs, eq(liturgyActs.id, liturgyMoments.act_id))
+          .where(
+            and(
+              eq(liturgyMoments.type, 'sermon'),
+              inArray(
+                liturgyActs.liturgy_id,
+                rows.map((row) => row.id)
+              )
+            )
+          )
+          .orderBy(asc(liturgyActs.position), asc(liturgyMoments.position))
+
+  const firstSermon = new Map<number, (typeof sermons)[number]>()
+  for (const sermon of sermons) {
+    if (!firstSermon.has(sermon.liturgyId)) firstSermon.set(sermon.liturgyId, sermon)
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    date: row.date,
+    theme: row.theme,
+    time: hhmm(row.time)!,
+    status: row.status,
+    description: row.description ?? null,
+    sermonDescription: firstSermon.get(row.id)?.description ?? null,
+    sermonSpeaker: firstSermon.get(row.id)?.speaker ?? null,
+  }))
+}
 
 /** `today` é uma Liturgia de hoje que ainda não passou; `future` é a mais próxima em data
  * futura, sem teto de antecedência; `last-held` é a mais recente já realizada, usada quando
@@ -577,38 +578,29 @@ export async function getNextLiturgy(
   db: Database = defaultDb
 ): Promise<NextLiturgyResult | undefined> {
   const todayRows = await db
-    .select(liturgyCardFields)
+    .select(liturgyCardColumns)
     .from(liturgies)
-    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
-    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
     .where(and(isNull(liturgies.deleted_at), eq(liturgies.date, today), visibleLiturgy('published-only')))
     .orderBy(asc(liturgies.time))
 
-  const todayLiturgies = deduplicateByLiturgyId(todayRows)
-  const upcoming = todayLiturgies.find((l) => l.time !== null && currentTime <= addMinutesToHHMM(l.time, 60))
-  if (upcoming) return { liturgy: upcoming, kind: 'today' }
+  const upcoming = todayRows.find((row) => row.time !== null && currentTime <= addMinutesToHHMM(hhmm(row.time)!, 60))
+  if (upcoming) return { liturgy: (await withSermons([upcoming], db))[0], kind: 'today' }
 
-  const futureRows = await db
-    .select(liturgyCardFields)
+  const [future] = await db
+    .select(liturgyCardColumns)
     .from(liturgies)
-    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
-    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
     .where(and(isNull(liturgies.deleted_at), gt(liturgies.date, today), visibleLiturgy('published-only')))
     .orderBy(asc(liturgies.date), asc(liturgies.time))
-    .limit(20)
+    .limit(1)
+  if (future) return { liturgy: (await withSermons([future], db))[0], kind: 'future' }
 
-  const future = deduplicateByLiturgyId(futureRows)[0]
-  if (future) return { liturgy: future, kind: 'future' }
-
-  const fallbackRows = await db
-    .select(liturgyCardFields)
+  const [fallback] = await db
+    .select(liturgyCardColumns)
     .from(liturgies)
-    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
-    .leftJoin(liturgyMoments, and(eq(liturgyMoments.act_id, liturgyActs.id), eq(liturgyMoments.type, 'sermon')))
     .where(and(isNull(liturgies.deleted_at), lte(liturgies.date, today), visibleLiturgy('published-only')))
-    .orderBy(desc(liturgies.date))
-    .limit(20)
+    .orderBy(desc(liturgies.date), desc(liturgies.time))
+    .limit(1)
+  if (!fallback) return undefined
 
-  const fallback = deduplicateByLiturgyId(fallbackRows)[0]
-  return fallback ? { liturgy: fallback, kind: 'last-held' } : undefined
+  return { liturgy: (await withSermons([fallback], db))[0], kind: 'last-held' }
 }

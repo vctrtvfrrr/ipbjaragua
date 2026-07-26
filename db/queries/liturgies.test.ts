@@ -237,6 +237,44 @@ describe('listLiturgies', () => {
     expect(result[0].sermonSpeaker).toBe('João Calvino')
   })
 
+  it('fills a page with liturgies, not with act rows', async () => {
+    const ids = await seedLiturgies(
+      db,
+      Array.from({ length: 3 }, (_, i) => ({ date: `2026-06-0${i + 1}`, theme: `Culto ${i + 1}` }))
+    )
+    for (const id of ids) {
+      for (let position = 1; position <= 6; position++) {
+        await db.insert(liturgyActs).values({ liturgy_id: id, position, name: `Ato ${position}` })
+      }
+    }
+
+    const result = await listLiturgies({ page: 1, pageSize: 3, visibility: 'published-only' }, db)
+
+    expect(result.map((r) => r.theme)).toEqual(['Culto 3', 'Culto 2', 'Culto 1'])
+  })
+
+  it('returns the sermon of a liturgy whose acts outnumber the page size', async () => {
+    const [id] = await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    for (let position = 1; position <= 5; position++) {
+      await db.insert(liturgyActs).values({ liturgy_id: id, position, name: `Ato ${position}` })
+    }
+    const [act] = await db
+      .insert(liturgyActs)
+      .values({ liturgy_id: id, position: 6, name: 'Mensagem' })
+      .returning({ id: liturgyActs.id })
+    await db.insert(liturgyMoments).values({
+      act_id: act.id,
+      position: 1,
+      type: 'sermon',
+      description: 'A Graça Soberana',
+      sermon_speaker: 'João Calvino',
+    })
+
+    const result = await listLiturgies({ page: 1, pageSize: 1, visibility: 'published-only' }, db)
+
+    expect(result[0].sermonSpeaker).toBe('João Calvino')
+  })
+
   it('returns null sermon fields when no sermon moment exists', async () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 
