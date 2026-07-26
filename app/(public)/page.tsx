@@ -1,9 +1,9 @@
-import { CalendarIcon, ChevronRightIcon } from 'lucide-react'
+import { CalendarIcon, FileTextIcon, NewspaperIcon } from 'lucide-react'
 import Link from 'next/link'
 import ArticleGrid from '@/components/ArticleGrid'
 import HeroScene from '@/components/brand/HeroScene'
-import PublicationTile from '@/components/brand/PublicationTile'
 import Markdown from '@/components/Markdown'
+import ArrowLink from '@/components/public/ArrowLink'
 import ArticleVisual from '@/components/public/ArticleVisual'
 import SectionHead from '@/components/public/SectionHead'
 import { buttonVariants } from '@/components/ui/button'
@@ -36,18 +36,6 @@ const NEXT_LITURGY_EYEBROW: Record<NextLiturgyResult['kind'], string> = {
   today: 'Culto de hoje',
   future: 'Próximo culto',
   'last-held': 'Último culto',
-}
-
-function VisitLink() {
-  return (
-    <Link
-      href="/location"
-      className="text-brand-deep inline-flex min-h-11 items-center gap-1.5 font-bold underline-offset-4 hover:underline"
-    >
-      Planeje sua visita
-      <ChevronRightIcon aria-hidden="true" className="size-4" />
-    </Link>
-  )
 }
 
 function NextService({ next }: { next: NextLiturgyResult }) {
@@ -84,7 +72,7 @@ function NextService({ next }: { next: NextLiturgyResult }) {
         >
           Ver a ordem do culto
         </Link>
-        <VisitLink />
+        <ArrowLink href="/location">Planeje sua visita</ArrowLink>
       </div>
     </>
   )
@@ -97,7 +85,7 @@ function NoService() {
       <h1 className="text-display text-brand-ridge mt-4 font-serif">{CHURCH_NAME}</h1>
       <p className="text-brand-deep mt-5 text-xl font-bold">A ordem do próximo culto será publicada em breve</p>
       <div className="mt-8">
-        <VisitLink />
+        <ArrowLink href="/location">Planeje sua visita</ArrowLink>
       </div>
     </>
   )
@@ -135,41 +123,60 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
       </section>
 
       {latest || dominicalBulletin ? (
-        <section className="container mx-auto px-5 pt-6 pb-16 md:px-8">
-          <div className="grid gap-10 md:grid-cols-5 md:gap-8">
+        <section className="container mx-auto px-5 py-12 md:px-8">
+          <div className="grid gap-6 md:grid-cols-5">
             {latest ? (
-              <article className="md:col-span-3">
-                <SectionHead>Artigo recente</SectionHead>
-                <Link href={`/articles/${latest.slug}`} className="group block">
-                  <ArticleVisual
-                    featuredImagePath={latest.featuredImagePath}
-                    slug={latest.slug}
-                    alt=""
-                    className="h-56 w-full object-cover md:h-64"
-                  />
-                  <h3 className="text-editorial text-brand-ridge mt-5 font-serif group-hover:underline">
-                    {latest.title}
-                  </h3>
-                </Link>
-                <p className="text-muted-foreground mt-3 text-sm">
-                  {publicAuthorName(latest)} · {formatLongDatePtBR(latest.date)}
-                </p>
-                {latest.excerpt ? <p className="mt-4 max-w-prose">{latest.excerpt}</p> : null}
+              <article className="bg-brand-sky flex items-end overflow-hidden rounded-xl md:col-span-3">
+                <div className="flex-1 p-6 md:p-8">
+                  <p className="text-muted-foreground flex items-center gap-3 text-sm">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white">
+                      <NewspaperIcon aria-hidden="true" className="text-brand-ridge size-5" />
+                    </span>
+                    Artigo em destaque
+                  </p>
+                  <h2 className="text-brand-ridge mt-4 font-serif text-3xl leading-tight">
+                    <Link href={`/articles/${latest.slug}`} className="underline-offset-4 hover:underline">
+                      {latest.title}
+                    </Link>
+                  </h2>
+                  <p className="text-muted-foreground mt-2 text-sm">
+                    {publicAuthorName(latest)} · {formatLongDatePtBR(latest.date)}
+                  </p>
+                  <ArrowLink href={`/articles/${latest.slug}`} className="text-brand-ridge mt-2">
+                    Ler artigo
+                  </ArrowLink>
+                </div>
+                <ArticleVisual
+                  featuredImagePath={latest.featuredImagePath}
+                  slug={latest.slug}
+                  alt=""
+                  className="hidden aspect-video w-1/2 shrink-0 object-cover sm:block"
+                />
               </article>
             ) : null}
 
             {dominicalBulletin ? (
-              <article className="md:col-span-2">
-                <SectionHead>Boletim dominical</SectionHead>
-                <Link href={`/bulletins/${formatISODate(dominicalBulletin.date)}`} className="group block">
-                  <PublicationTile kind="bulletin" className="h-40 w-full" />
-                  <h3 className="font-narrow text-brand-deep mt-5 text-3xl leading-tight group-hover:underline">
+              <article className="border-border flex gap-4 self-start rounded-xl border p-6 md:col-span-2 md:p-8">
+                <span className="bg-brand-sky flex size-10 shrink-0 items-center justify-center rounded-lg">
+                  <FileTextIcon aria-hidden="true" className="text-brand-deep size-5" />
+                </span>
+                <div>
+                  <h2 className="text-brand-deep text-xl font-bold">
+                    <Link
+                      href={`/bulletins/${formatISODate(dominicalBulletin.date)}`}
+                      className="underline-offset-4 hover:underline"
+                    >
+                      Boletim Dominical
+                    </Link>
+                  </h2>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {formatBulletinSubtitle(dominicalBulletin.edition, dominicalBulletin.date)} ·{' '}
                     {formatLongDatePtBR(dominicalBulletin.date)}
-                  </h3>
-                </Link>
-                <p className="text-muted-foreground mt-3 text-sm">
-                  {formatBulletinSubtitle(dominicalBulletin.edition, dominicalBulletin.date)}
-                </p>
+                  </p>
+                  <ArrowLink href={`/bulletins/${formatISODate(dominicalBulletin.date)}`} className="mt-1">
+                    Ver boletim
+                  </ArrowLink>
+                </div>
               </article>
             ) : null}
           </div>
