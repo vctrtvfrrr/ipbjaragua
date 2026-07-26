@@ -1,6 +1,7 @@
+import { CalendarIcon, ChevronRightIcon } from 'lucide-react'
 import Link from 'next/link'
 import ArticleGrid from '@/components/ArticleGrid'
-import Horizon from '@/components/brand/Horizon'
+import HeroScene from '@/components/brand/HeroScene'
 import PublicationTile from '@/components/brand/PublicationTile'
 import Markdown from '@/components/Markdown'
 import ArticleVisual from '@/components/public/ArticleVisual'
@@ -37,6 +38,18 @@ const NEXT_LITURGY_EYEBROW: Record<NextLiturgyResult['kind'], string> = {
   'last-held': 'Último culto',
 }
 
+function VisitLink() {
+  return (
+    <Link
+      href="/location"
+      className="text-brand-deep inline-flex min-h-11 items-center gap-1.5 font-bold underline-offset-4 hover:underline"
+    >
+      Planeje sua visita
+      <ChevronRightIcon aria-hidden="true" className="size-4" />
+    </Link>
+  )
+}
+
 function NextService({ next }: { next: NextLiturgyResult }) {
   const { liturgy, kind } = next
   const lastHeld = kind === 'last-held'
@@ -45,31 +58,33 @@ function NextService({ next }: { next: NextLiturgyResult }) {
   return (
     <>
       <p className="eyebrow text-brand-ridge">{NEXT_LITURGY_EYEBROW[kind]}</p>
-      <h1 className="text-display text-brand-ridge mt-6 font-serif">{liturgy.theme}</h1>
-      <p className="font-narrow text-brand-deep mt-6 text-2xl tracking-[0.06em] uppercase sm:text-3xl">
-        {when} às {formatTimePtBR(liturgy.time)}
+      <h1 className="text-display text-brand-ridge mt-4 font-serif">{liturgy.theme}</h1>
+      <p className="text-brand-deep mt-5 flex items-center gap-2.5 text-xl font-bold">
+        <CalendarIcon aria-hidden="true" className="size-5 shrink-0" />
+        <span>
+          {when} · {formatTimePtBR(liturgy.time)}
+        </span>
       </p>
-      {liturgy.sermonSpeaker ? <p className="text-muted-foreground mt-3">Pregação: {liturgy.sermonSpeaker}</p> : null}
+      {liturgy.sermonDescription || liturgy.sermonSpeaker ? (
+        <p className="text-muted-foreground mt-3 max-w-prose">
+          {liturgy.sermonDescription}
+          {liturgy.sermonDescription && liturgy.sermonSpeaker ? ' ' : null}
+          {liturgy.sermonSpeaker ? <em>– {liturgy.sermonSpeaker}</em> : null}
+        </p>
+      ) : null}
       {lastHeld ? (
-        <p className="text-muted-foreground mt-4 max-w-prose">
+        <p className="text-muted-foreground mt-3 max-w-prose">
           A ordem do próximo culto ainda não foi publicada. A programação da semana está na Agenda, mais abaixo.
         </p>
       ) : null}
-      <div className="mt-10 flex flex-wrap gap-3">
+      <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">
         <Link
           href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}
           className={cn(buttonVariants({ size: 'lg' }), 'h-12 px-6 text-base')}
         >
           Ver a ordem do culto
         </Link>
-        {lastHeld ? (
-          <Link
-            href="/location"
-            className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-12 px-6 text-base')}
-          >
-            Visite-nos
-          </Link>
-        ) : null}
+        <VisitLink />
       </div>
     </>
   )
@@ -79,13 +94,11 @@ function NoService() {
   return (
     <>
       <p className="eyebrow text-brand-ridge">Próximo culto</p>
-      <h1 className="text-display text-brand-ridge mt-6 font-serif">{CHURCH_NAME}</h1>
-      <p className="font-narrow text-brand-deep mt-6 text-2xl tracking-[0.06em] uppercase">
-        A ordem do próximo culto será publicada em breve
-      </p>
-      <Link href="/location" className={cn(buttonVariants({ size: 'lg' }), 'mt-10 h-12 px-6 text-base')}>
-        Visite-nos
-      </Link>
+      <h1 className="text-display text-brand-ridge mt-4 font-serif">{CHURCH_NAME}</h1>
+      <p className="text-brand-deep mt-5 text-xl font-bold">A ordem do próximo culto será publicada em breve</p>
+      <div className="mt-8">
+        <VisitLink />
+      </div>
     </>
   )
 }
@@ -114,12 +127,12 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
     <main>
       <section className="bg-brand-sky">
         <div className="container mx-auto px-5 md:px-8">
-          <div className="max-w-3xl py-20 md:py-32 lg:pr-24">
-            {nextLiturgy ? <NextService next={nextLiturgy} /> : <NoService />}
+          <div className="grid items-center gap-6 py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:gap-10 md:py-20">
+            <div>{nextLiturgy ? <NextService next={nextLiturgy} /> : <NoService />}</div>
+            <HeroScene className="order-first h-40 w-full sm:h-56 md:order-none md:h-72" />
           </div>
         </div>
       </section>
-      <Horizon className="block h-16 w-full md:h-28" />
 
       {latest || dominicalBulletin ? (
         <section className="container mx-auto px-5 pt-6 pb-16 md:px-8">
