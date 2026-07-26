@@ -24,7 +24,7 @@ export default function HeroScene({ className }: { className?: string }) {
       preserveAspectRatio="xMidYMax meet"
       className={className}
     >
-      <path d={SKY_DOME} fill="#ffffff" opacity="0.75" />
+      <path d={SKY_DOME} fill="#ffffff" />
       <path d={HILL_FAR} fill="var(--brand-accent)" />
       <path d={HILL_NEAR} fill="var(--brand-ridge)" />
       <path d={CHURCH_BODY} fill="#ffffff" stroke="var(--brand-ridge)" strokeWidth="2" />

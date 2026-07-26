@@ -5,6 +5,7 @@ import HeroScene from '@/components/brand/HeroScene'
 import Markdown from '@/components/Markdown'
 import ArrowLink from '@/components/public/ArrowLink'
 import ArticleVisual from '@/components/public/ArticleVisual'
+import IconTile from '@/components/public/IconTile'
 import { buttonVariants } from '@/components/ui/button'
 import { getLatestArticle, listArticles } from '@/db/queries/articles'
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
@@ -131,9 +132,11 @@ export default async function Home() {
               <article className="bg-brand-sky flex items-end overflow-hidden rounded-xl md:col-span-3">
                 <div className="flex-1 p-6 md:p-8">
                   <p className="text-muted-foreground flex items-center gap-3 text-sm">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white">
-                      <NewspaperIcon aria-hidden="true" className="text-brand-ridge size-5" />
-                    </span>
+                    <IconTile
+                      icon={NewspaperIcon}
+                      className="size-10 rounded-full bg-white"
+                      iconClassName="text-brand-ridge"
+                    />
                     Artigo em destaque
                   </p>
                   <h2 className="text-brand-ridge mt-4 font-serif text-3xl leading-tight">
@@ -159,9 +162,7 @@ export default async function Home() {
 
             {dominicalBulletin ? (
               <article className="border-border flex gap-4 self-start rounded-xl border p-6 md:col-span-2 md:p-8">
-                <span className="bg-brand-sky flex size-10 shrink-0 items-center justify-center rounded-lg">
-                  <FileTextIcon aria-hidden="true" className="text-brand-deep size-5" />
-                </span>
+                <IconTile icon={FileTextIcon} className="size-10" />
                 <div>
                   <h2 className="text-brand-deep text-xl font-bold">
                     <Link
@@ -197,12 +198,7 @@ export default async function Home() {
                 <ol className="divide-border mt-6 divide-y">
                   {agendaDays.map((day) => (
                     <li key={day.weekday} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                      <span
-                        aria-hidden="true"
-                        className="bg-brand-sky flex size-11 shrink-0 items-center justify-center rounded-lg"
-                      >
-                        <CalendarIcon className="text-brand-deep size-5" />
-                      </span>
+                      <IconTile icon={CalendarIcon} />
                       <div className="w-16 shrink-0">
                         <h3 className="eyebrow text-brand-deep">{day.label.slice(0, 3)}</h3>
                         <p className="text-muted-foreground mt-1.5 text-sm tabular-nums">
@@ -235,12 +231,7 @@ export default async function Home() {
                     const Icon = resolveAnnouncementIcon(ann.icon)
                     return (
                       <li key={ann.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                        <span
-                          aria-hidden="true"
-                          className="bg-brand-accent/15 flex size-11 shrink-0 items-center justify-center rounded-full"
-                        >
-                          <Icon className="text-brand-ridge size-5" />
-                        </span>
+                        <IconTile icon={Icon} className="rounded-full" iconClassName="text-brand-ridge" />
                         <div className="min-w-0">
                           <h3 className="text-brand-deep font-bold">{ann.title}</h3>
                           {ann.description ? (
@@ -267,12 +258,7 @@ export default async function Home() {
             <ul className="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
               {recentBulletins.map((b) => (
                 <li key={b.id} className="flex gap-4">
-                  <span
-                    aria-hidden="true"
-                    className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white"
-                  >
-                    <FileTextIcon className="text-brand-deep size-5" />
-                  </span>
+                  <IconTile icon={FileTextIcon} className="bg-white" />
                   <div>
                     <h3 className="text-brand-deep font-bold">
                       <Link href={`/bulletins/${formatISODate(b.date)}`} className="underline-offset-4 hover:underline">
