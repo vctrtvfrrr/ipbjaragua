@@ -38,8 +38,8 @@ export const scripturePassageSchema = z.object({
   version: requiredTrimmedString('Campo obrigatório'),
 })
 
-// A rascunho pode ter uma passagem parcialmente preenchida (ex.: só a referência) — o banco não
-// exige completude, apenas a publicação (ver ADR-0020).
+// A draft may hold a half-filled passage (a reference with no text): completeness is a
+// publication rule, not a storage one (see ADR-0020).
 export const draftScripturePassageSchema = z.object({
   reference: nullableTrimmedString,
   text: nullableTrimmedString,
@@ -123,8 +123,8 @@ export const liturgyTreeSchema = z.object({
   acts: z.array(liturgyActSchema).min(1, 'Liturgia exige ao menos um Ato'),
 })
 
-// Rascunho relaxa a validação de completude, mas mantém data, horário e tipo de culto — o que o
-// banco já exige — além do tipo de sacramento, via draftLiturgyActSchema/draftLiturgyMomentSchema.
+// A draft relaxes completeness but still requires what the database does: date, time, service
+// type and, for a sacrament, its kind.
 export const draftLiturgyTreeSchema = z.object({
   date: liturgyTreeSchema.shape.date,
   theme: liturgyTreeSchema.shape.theme,

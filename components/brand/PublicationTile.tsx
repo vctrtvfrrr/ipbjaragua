@@ -17,17 +17,15 @@ const DEEP = 'var(--brand-deep)'
 
 export type PublicationKind = 'article' | 'bulletin' | 'liturgy'
 
-/** Recorte da geometria do símbolo, por natureza de publicação: cume para Artigo,
- * ondas para Boletim, templo para Liturgia. Substitui a Imagem Destacada quando ela
- * não existe e distingue os três tipos de conteúdo sem etiqueta colorida. */
+/** Stands in for a missing Imagem Destacada, and tells the three kinds of publication
+ * apart without a coloured label. */
 const CROPS: Record<PublicationKind, string> = {
   article: '0 140 430 210',
   bulletin: '0 300 430 110',
   liturgy: '80 18 270 200',
 }
 
-/** Trechos distintos do cume, para que uma grade de Artigos sem Imagem Destacada
- * não repita o mesmo desenho em todos os cartões. */
+/** A grid of identical tiles reads as a broken placeholder, so articles vary the crop. */
 const ARTICLE_CROPS = [
   '80 130 300 170',
   '140 170 290 165',

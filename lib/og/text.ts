@@ -10,9 +10,7 @@ const FONT_STEPS = [
 
 const OG_TITLE_MIN_SIZE = 32
 
-// Progressively shrinks the title as it gets longer so short and unusually long
-// titles both stay contained; the card clamps to OG_TITLE_MAX_LINES with an
-// ellipsis as a last resort for anything that still overflows.
+// Keeps both short and unusually long titles inside the card, which cannot reflow.
 export function fitTitleFontSize(title: string): number {
   const length = title.trim().length
   for (const step of FONT_STEPS) {

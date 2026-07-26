@@ -14,7 +14,6 @@ function pdfPageSizes(pdf: Buffer): Array<{ width: number; height: number }> {
   }))
 }
 
-/** Reproduz o que o navegador faz ao imprimir: troca a mídia e emite `beforeprint`. */
 async function enterPrintMode(page: Page) {
   await page.emulateMedia({ media: 'print' })
   await page.waitForFunction(() => {

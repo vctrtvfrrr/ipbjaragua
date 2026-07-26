@@ -28,9 +28,8 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
     listLiturgies({ page, pageSize: PAGE_SIZE, visibility }),
     countFutureOrTodayLiturgies({ visibility, fromDate: todayDate }),
   ])
-  // Índice absoluto (na sequência ordenada por data desc) do último item futuro/hoje; -1 quando
-  // não há fronteira nesta lista (tudo futuro ou tudo passado), para não depender de dois itens
-  // adjacentes caírem na mesma página.
+  // Absolute index of the last upcoming item across the whole date-desc sequence, so the seam is
+  // found without needing both sides of it to land on the same page; -1 when there is no seam.
   const boundaryIndex = futureCount > 0 && futureCount < total ? futureCount - 1 : -1
   const pageStart = (page - 1) * PAGE_SIZE
 

@@ -7,8 +7,7 @@ type Props = {
   iconClassName?: string
 }
 
-/** Marca de natureza de um item de lista — Boletim, Liturgia, dia da Agenda, Aviso.
- * É decorativo: o que o item é já está no texto ao lado, então nunca é anunciado. */
+/** Decorative: the text beside it already names what the item is, so it stays unannounced. */
 export default function IconTile({ icon: Icon, className, iconClassName }: Props) {
   return (
     <span

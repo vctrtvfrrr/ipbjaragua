@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react'
 
-/** Um `<details>` fechado não imprime seu conteúdo, e nenhuma regra de CSS o abre.
- * Sem isto, os Atos recolhidos saem do papel — a folha do culto ficaria incompleta. */
+/** A closed `<details>` prints nothing and no CSS rule can open it, so without this the
+ * collapsed Atos would be missing from the sheet. */
 export default function OpenDetailsOnPrint() {
   useEffect(() => {
     let opened: HTMLDetailsElement[] = []

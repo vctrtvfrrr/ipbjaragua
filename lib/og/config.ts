@@ -4,9 +4,8 @@ export const OG_CONTENT_TYPE = 'image/png'
 
 export const CHURCH_NAME = 'IPB de Jaraguá do Sul'
 
-/** Espelha os tokens da marca. Não há variável CSS aqui: o cartão é renderizado fora do
- * documento, então os valores são literais. `draft` é o único fora da paleta — sinaliza
- * um Rascunho, e a paleta não tem cor de alerta. */
+/** Literals, not CSS variables: the card renders outside the document. `draft` is the one
+ * colour off the palette, which has no alert tone to flag a Rascunho with. */
 export const OG_COLORS = {
   background: '#ffffff',
   ridge: '#386641',

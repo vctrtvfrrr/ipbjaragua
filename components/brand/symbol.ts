@@ -1,7 +1,6 @@
-/** Geometria da matriz vetorial do símbolo (`public/images/brand/logo-symbol.svg`),
- * no mesmo sistema de coordenadas do arquivo: viewBox 0 0 430 407. Existe para que
- * cena do herói e ladrilhos de publicação recortem a mesma marca, e não desenhos
- * parecidos que divergem quando a matriz muda. */
+/** Geometry lifted from `public/images/brand/logo-symbol.svg`, in that file's own
+ * coordinate system, so every piece of brand art crops the one vector matrix instead
+ * of a lookalike that drifts when the matrix changes. */
 
 export const SYMBOL_VIEWBOX = { width: 430, height: 407 } as const
 

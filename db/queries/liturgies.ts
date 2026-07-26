@@ -110,9 +110,8 @@ export async function countLiturgies(
   return row?.value ?? 0
 }
 
-/** Conta liturgias com data >= `fromDate`, independente de paginação — usada para localizar
- * a fronteira futuro/passado na sequência ordenada por data desc sem depender de quais dois
- * itens caem juntos na mesma página. */
+/** Locates the upcoming/past seam across the whole date-desc sequence, so a listing can mark it
+ * without both sides of the seam landing on the same page. */
 export async function countFutureOrTodayLiturgies(
   { visibility, fromDate }: { visibility: LiturgyVisibility; fromDate: Date },
   db: Database = defaultDb
@@ -520,10 +519,9 @@ type LiturgyCardRow = {
   description: string | null
 }
 
-/** O sermão vive num Momento dentro de um Ato, então buscá-lo por join multiplicaria cada
- * Liturgia pelo número de Atos — e qualquer `limit` passaria a contar linhas de Ato em vez de
- * Liturgias, cortando a página e perdendo o sermão que caísse fora do corte. Por isso a busca
- * é uma segunda consulta, já sobre o recorte de Liturgias escolhido. */
+/** The sermon lives in a Momento inside an Ato, so joining for it would multiply each liturgy by
+ * its acts and make any `limit` count act rows instead of liturgies. Hence a second query, run
+ * over the page of liturgies already chosen. */
 async function withSermons(rows: LiturgyCardRow[], db: Database): Promise<LiturgyListItem[]> {
   const sermons =
     rows.length === 0
@@ -564,15 +562,12 @@ async function withSermons(rows: LiturgyCardRow[], db: Database): Promise<Liturg
   }))
 }
 
-/** `today` é uma Liturgia de hoje que ainda não passou; `future` é a mais próxima em data
- * futura, sem teto de antecedência; `last-held` é a mais recente já realizada, usada quando
- * não há nada à frente. Quem exibe decide as palavras — a distinção importa porque anunciar
- * uma `last-held` como se fosse o próximo culto engana quem planeja a visita. */
+/** The caller must word each kind differently: announcing a `last-held` as if it were the next
+ * service misleads whoever is planning a visit. */
 export type NextLiturgyResult = { liturgy: LiturgyListItem; kind: 'today' | 'future' | 'last-held' }
 
-/** Não recebe escopo de visibilidade: o destaque nunca considera Rascunho, nem para quem
- * tem permissão de vê-los. Destacar é selecionar, não renderizar — apontar o próximo culto
- * para uma página que o visitante não abre engana quem planeja a visita (ver ADR-0020). */
+/** Takes no visibility scope on purpose: highlighting is selecting, not rendering, so a Rascunho
+ * never wins the spot even for an operator who could open it (see ADR-0020). */
 export async function getNextLiturgy(
   { today, currentTime }: { today: Date; currentTime: string },
   db: Database = defaultDb

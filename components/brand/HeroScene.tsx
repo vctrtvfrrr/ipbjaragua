@@ -10,11 +10,8 @@ import {
   WAVE_MID,
 } from '@/components/brand/symbol'
 
-/**
- * A paisagem do símbolo sem o recorte circular da marca: a cúpula fica como campo
- * claro atrás do templo enquanto cumes e ondas seguem além dela, para a composição
- * respirar na largura do herói. Não é o logo — é a mesma matriz aberta em cena.
- */
+/** The symbol's landscape released from its circular crop, so it can span the hero.
+ * This is not the logo: never use it where the brand mark belongs. */
 export default function HeroScene({ className }: { className?: string }) {
   return (
     <svg

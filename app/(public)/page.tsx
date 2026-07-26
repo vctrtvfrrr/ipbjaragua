@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 
 export const metadata = institutionalMetadata('home')
 
-/** A home é vitrine, não arquivo: a listagem paginada completa vive em /articles. */
+/** The home is a showcase, not an archive: the full paginated listing lives at /articles. */
 const SHOWCASE_SIZE = 12
 
 const NEXT_LITURGY_EYEBROW: Record<NextLiturgyResult['kind'], string> = {

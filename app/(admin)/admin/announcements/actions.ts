@@ -24,7 +24,7 @@ const optionalAbsoluteHttpUrl = z
       const url = new URL(value)
       if (url.protocol === 'http:' || url.protocol === 'https:') return url.toString()
     } catch {
-      // Fall through to the single domain error below.
+      // Swallowed: every rejection ends at the single domain error below.
     }
 
     context.addIssue({ code: 'custom', message: 'URL deve ser absoluta e começar com http:// ou https://' })

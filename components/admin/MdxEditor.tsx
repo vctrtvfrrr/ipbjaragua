@@ -36,7 +36,7 @@ export default function MdxEditor({ markdown, onChange }: Props) {
       markdown={markdown}
       onChange={onChange}
       contentEditableClassName="prose max-w-none min-h-64"
-      // A barra do editor não encolhe: sem rolagem própria ela empurra a largura da página no celular.
+      // The toolbar does not shrink: without its own scroll it widens the whole page on mobile.
       className="min-w-0 rounded-lg border [&_.mdxeditor-toolbar]:flex-nowrap [&_.mdxeditor-toolbar]:overflow-x-auto"
       plugins={[
         headingsPlugin({ allowedHeadingLevels: [2, 3] }),

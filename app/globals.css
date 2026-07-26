@@ -63,9 +63,9 @@
 }
 
 :root {
-  /* Cores da marca. Contraste medido sobre branco: ridge 6,67:1, current 4,64:1,
-     deep 9,25:1. accent fica em 3,34:1 — só texto grande e elementos não textuais.
-     Sobre a água (deep), accent cai a 2,77:1, por isso accent-on-deep existe. */
+  /* Measured contrast on white: ridge 6.67:1, current 4.64:1, deep 9.25:1. accent reaches
+     only 3.34:1, so it is limited to large text and non-text elements; on deep it falls to
+     2.77:1, which is why accent-on-deep exists. */
   --brand-ridge: #386641;
   --brand-accent: #6a994e;
   --brand-accent-on-deep: #9dc47f;
@@ -158,8 +158,8 @@
 }
 
 @layer components {
-  /* Voz estrutural da marca: sobrelinhas, cabeças de seção, horários e rótulos.
-     É a tipografia dos boletins impressos, não um estilo decorativo. */
+  /* The brand's structural voice — eyebrows, times, labels. It is the typography of the
+     printed bulletins, not decoration. */
   .eyebrow {
     font-family: var(--font-narrow);
     font-weight: 700;
@@ -177,7 +177,7 @@
   }
 
   html {
-    /* Corpo em pontos: no papel a medida de referência é tipográfica, não o viewport. */
+    /* Points, not rem: on paper the reference measure is typographic, not the viewport. */
     font-size: 11pt;
   }
 
@@ -187,7 +187,7 @@
     widows: 2;
   }
 
-  /* Sublinhado em toda ligação vira ruído numa folha que ninguém vai clicar. */
+  /* Underlines are noise on a sheet nobody will click. */
   a {
     text-decoration: none;
   }

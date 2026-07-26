@@ -90,8 +90,8 @@ export const E2E_AGENDA = [
   { title: 'Reunião de Células', event_date: '2026-06-10' },
 ]
 
-// A validade é relativa ao dia da semeadura: uma data fixa expira e o aviso
-// desaparece da home, quebrando o teste muito depois de escrito.
+// Relative to the seeding day: a fixed date would expire and silently drop the notice from the
+// home long after this was written.
 function daysFromToday(days: number): Date {
   const date = new Date()
   date.setUTCHours(0, 0, 0, 0)
@@ -184,7 +184,7 @@ export async function seedE2eDatabase() {
     .insert(liturgies)
     .values({ ...E2E_LITURGY, date: parseISODate(E2E_LITURGY.date) })
     .returning({ id: liturgies.id })
-  // Dois Atos: a folha impressa só prova algo se houver um Ato recolhido na tela.
+  // Two acts: the printed sheet only proves anything if one act is collapsed on screen.
   for (const act of E2E_LITURGY_ACTS) {
     const [inserted] = await db
       .insert(liturgyActs)
