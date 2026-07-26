@@ -43,8 +43,8 @@ O texto curto que sintetiza uma publicação para o leitor e para os buscadores 
 _Avoid_: meta description (é o uso técnico do texto, não o conceito), SEO text, legenda.
 
 **Imagem Destacada** (`featured_images`):
-Imagem **decorativa** de um banco compartilhado, associável a recursos do site. O operador a envia pelo painel e ela é normalizada (WEBP, máx. 1600px de largura); os bytes vivem em disco, a linha guarda só o `id` e um `path` opaco (token aleatório). No **Artigo**, o vínculo é sorteado uma vez na criação e depois estável; sem imagem vinculada, o Artigo usa uma imagem de fallback estática. No **Aviso**, o vínculo é opcional e escolhido pelo operador, sem fallback. Excluir uma Imagem desfaz seus vínculos sem excluir os recursos associados. O banco é genérico por design, não pertence a um tipo específico de recurso.
-_Avoid_: Thumbnail, capa, banner, imagem de artigo (o banco não pertence a um recurso específico), imagem informativa (é decorativa — o `alt` vem do contexto do recurso, não da imagem).
+Imagem **decorativa** de um banco compartilhado, associável a recursos do site. O operador a envia pelo painel e ela é normalizada (WEBP, máx. 1600px de largura); os bytes vivem em disco, a linha guarda só o `id` e um `path` opaco (token aleatório). No **Artigo** — hoje seu único consumidor —, o vínculo é sorteado uma vez na criação e depois estável; sem imagem vinculada, o Artigo usa uma imagem de fallback estática. Excluir uma Imagem desfaz seus vínculos sem excluir os recursos associados. O banco é genérico por design, não pertence a um tipo específico de recurso. Não confundir com o **Flyer Digital**, que é conteúdo de um único **Aviso** e não vive neste banco.
+_Avoid_: Thumbnail, capa, banner, imagem de artigo (o banco não pertence a um recurso específico), imagem informativa (é decorativa — o `alt` vem do contexto do recurso, não da imagem), Flyer Digital.
 
 ### Culto
 
@@ -69,23 +69,23 @@ Uma divisão ordenada de uma **Liturgia** ("Adoração ao Rei", "Confissão ao R
 _Avoid_: Parte, seção.
 
 **Momento** (`liturgy_moments`):
-A menor unidade de uma **Liturgia**, dentro de um **Ato**, com um tipo: leitura bíblica, cântico, oração, sermão, sacramento ou outro. Conforme o tipo, carrega dados próprios (um cântico referencia uma **Música**; um sermão tem pregador; uma leitura tem passagens; um **Sacramento** tem seu tipo).
+A menor unidade de uma **Liturgia**, dentro de um **Ato**, com um tipo: leitura bíblica, cântico, oração, sermão, sacramento ou outro. Conforme o tipo, carrega dados próprios (um Momento de cântico referencia um **Cântico**; um sermão tem pregador; uma leitura tem passagens; um **Sacramento** tem seu tipo).
 _Avoid_: Etapa, item.
 
 **Sacramento**:
 Um **Momento** do tipo sacramento, que deve especificar qual: batismo ou eucaristia. A regra "sacramento exige tipo" é garantida por restrição no banco.
 _Avoid_: Ordenança.
 
-**Música** (`songs`):
-Uma peça do repertório musical (hinos, cânticos), com letra estruturada e quatro campos de catálogo: `track` (índice no hinário), `album` (nome do hinário), `performer` e `songwriter`. Referenciada por **Momentos** de cântico.
-_Avoid_: Hino (hino é uma espécie de Música, não sinônimo), canção, faixa.
+**Cântico** (`songs`):
+Uma peça do repertório musical (hinos, cânticos), com letra estruturada e quatro campos de catálogo: `track` (índice no hinário), `album` (nome do hinário), `performer` e `songwriter`. Referenciada por **Momentos** de cântico. O nome é deliberadamente compartilhado com o tipo de Momento que executa a peça.
+_Avoid_: Música (termo aposentado; use Cântico), Hino (hino é uma espécie de Cântico, não sinônimo), canção, faixa.
 
 **Bloco de Letra** (estrutura interna de `songs.lyrics`, JSON):
 A unidade de uma **Letra**: um objeto `{ type, number, content }`. `type` é `verse` (estrofe) ou `chorus` (refrão). `verse` tem `number` inteiro ≥ 1; `chorus` tem `number: null`.
 _Avoid_: Estrofe (é apenas um tipo de Bloco; não nomeia o conceito geral).
 
 **Referência** (campo calculado, não armazenado):
-A atribuição de uma **Música** para exibição, derivada dos campos de catálogo por ordem de prioridade: (1) `track` + `album` → `"<track>. <album>"` (ex: `"45. Novo Cântico"`); (2) `performer`; (3) `songwriter`; (4) `null` se nenhum estiver preenchido. Hinos têm `track`+`album`; músicas contemporâneas têm `performer`; composições sem intérprete têm apenas `songwriter`.
+A atribuição de um **Cântico** para exibição, derivada dos campos de catálogo por ordem de prioridade: (1) `track` + `album` → `"<track>. <album>"` (ex: `"45. Novo Cântico"`); (2) `performer`; (3) `songwriter`; (4) `null` se nenhum estiver preenchido. Hinos têm `track`+`album`; cânticos contemporâneos têm `performer`; composições sem intérprete têm apenas `songwriter`.
 _Avoid_: Autor, intérprete (são campos individuais; Referência é o campo calculado de exibição), crédito.
 
 ### Comunidade
@@ -123,12 +123,16 @@ A ação de duplicar um **Evento** como um novo, sem recorrência armazenada. Ab
 _Avoid_: Recorrência, agendamento (não há regra automática; cada Evento é uma entrada avulsa).
 
 **Aviso** (`announcements`):
-Mensagem com prazo de validade (`expires_at`, o último dia em que ainda é exibida), opcionalmente com link. Todo Aviso possui um **Ícone de Aviso**. Exibida no **Boletim** e na home (seção "Avisos Gerais"). É uma mensagem **viva, não um instantâneo**: cada Boletim mostra os Avisos vigentes na _sua_ data (não na data de hoje), e o vínculo é derivado da data, não uma referência guardada — por isso editar ou excluir um Aviso altera retroativamente o que Boletins passados exibem. Essa retroatividade é conhecida e aceita. Somente na criação, pode gerar um **Evento** independente contendo apenas seu título e usando o último dia de exibição como data; mudanças posteriores em qualquer dos dois não se propagam ao outro, e editar o Aviso não permite gerar outro Evento.
+Mensagem com prazo de validade (`expires_at`, o último dia em que ainda é exibida), opcionalmente com link. Todo Aviso possui um **Ícone de Aviso** e, opcionalmente, um **Flyer Digital**. Exibida no **Boletim** e na home (seção "Avisos Gerais"). É uma mensagem **viva, não um instantâneo**: cada Boletim mostra os Avisos vigentes na _sua_ data (não na data de hoje), e o vínculo é derivado da data, não uma referência guardada — por isso editar ou excluir um Aviso altera retroativamente o que Boletins passados exibem. Essa retroatividade é conhecida e aceita. Somente na criação, pode gerar um **Evento** independente contendo apenas seu título e usando o último dia de exibição como data; mudanças posteriores em qualquer dos dois não se propagam ao outro, e editar o Aviso não permite gerar outro Evento.
 _Avoid_: Anúncio (termo anterior), notificação, comunicado.
 
 **Ícone de Aviso**:
-O símbolo da biblioteca visual associado a um **Aviso**. É obrigatório; na ausência de escolha explícita do operador, usa **Pin**.
-_Avoid_: Emoji, ilustração.
+O símbolo da biblioteca visual associado a um **Aviso**, escolhido num catálogo curado. É obrigatório; na ausência de escolha explícita do operador, usa **Pin**. É o **marcador do Aviso na lista** — presente em todo Aviso, de tamanho fixo, dando ritmo à coluna —, função distinta da do **Flyer Digital**, que é conteúdo. Por isso os dois convivem: um Aviso com Flyer continua exibindo seu Ícone.
+_Avoid_: Emoji, ilustração, Flyer Digital.
+
+**Flyer Digital** (`announcements.flyer_path`):
+A Descrição de um **Aviso** em formato de imagem compartilhável** — o cartaz que se manda no WhatsApp. É **conteúdo do Aviso, não decoração**: pertence a um único Aviso, é enviado no próprio formulário do Aviso e não vem de banco compartilhado nem é reaproveitável (contraste com **Imagem Destacada**). É opcional; quando existe, aparece no site público logo acima da Descrição, tanto na home quanto no **Boletim**, envolto num link para o próprio arquivo — o leitor abre a imagem em cheio e daí copia a URL ou baixa o arquivo para repostar. O Aviso **não tem página própria**: o que circula é o endereço do arquivo. Como o Flyer duplica em imagem o que a Descrição diz em texto, a informação essencial do Aviso deve continuar existindo na Descrição.
+_Avoid_: Imagem Destacada (banco decorativo compartilhado, outro conceito), banner, cartaz, arte, anexo.
 
 ### Acesso ao painel
 
