@@ -8,7 +8,8 @@ import PageHeader from '@/components/public/PageHeader'
 import { countFutureOrTodayLiturgies, countLiturgies, listLiturgies } from '@/db/queries/liturgies'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { liturgySlug } from '@/lib/bulletin'
-import { formatLongDatePtBR, formatTimePtBR, today } from '@/lib/date'
+import { formatLongDatePtBR, today } from '@/lib/date'
+import { liturgySermonSummary } from '@/lib/liturgy'
 import { liturgyVisibilityForUser } from '@/lib/liturgy-visibility'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { resolvePage, totalPages } from '@/lib/pagination'
@@ -41,7 +42,7 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
           <>
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {liturgiesList.map((liturgy, index) => {
-                const subtitle = liturgy.description ?? liturgy.sermonDescription ?? liturgy.sermonSpeaker
+                const sermon = liturgySermonSummary(liturgy.sermonDescription, liturgy.sermonSpeaker)
                 const isBoundary = pageStart + index === boundaryIndex
                 return (
                   <Fragment key={liturgy.id}>
@@ -58,9 +59,21 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
                           {liturgy.status === 'draft' ? <DraftBadge /> : null}
                         </h2>
                         <p className="text-brand-deep mt-1 font-bold">
-                          {formatLongDatePtBR(liturgy.date)} às {formatTimePtBR(liturgy.time)}
+                          {formatLongDatePtBR(liturgy.date)} às {liturgy.time}
                         </p>
-                        {subtitle ? <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p> : null}
+                        {sermon?.speaker ? (
+                          <p className="text-foreground mt-3">
+                            {sermon.theme}
+                            {sermon.theme ? ' ' : null}
+                            <em className="text-muted-foreground">
+                              {sermon.theme ? `– ${sermon.speakerText}` : sermon.speakerText}
+                            </em>
+                          </p>
+                        ) : null}
+                        {sermon?.speaker && liturgy.description ? <hr className="border-border my-3" /> : null}
+                        {liturgy.description ? (
+                          <p className="text-muted-foreground mt-3 text-sm">{liturgy.description}</p>
+                        ) : null}
                       </div>
                     </li>
                     {isBoundary ? (

@@ -21,10 +21,10 @@ import {
   formatISODate,
   formatLongDatePtBR,
   formatShortDatePtBR,
-  formatTimePtBR,
   formatWeekdayPtBR,
   today,
 } from '@/lib/date'
+import { liturgySermonSummary } from '@/lib/liturgy'
 import { CHURCH_NAME } from '@/lib/og/config'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { cn } from '@/lib/utils'
@@ -44,6 +44,7 @@ function NextService({ next }: { next: NextLiturgyResult }) {
   const { liturgy, kind } = next
   const lastHeld = kind === 'last-held'
   const when = [formatWeekdayPtBR(liturgy.date), formatLongDatePtBR(liturgy.date)].join(', ')
+  const sermon = liturgySermonSummary(liturgy.sermonDescription, liturgy.sermonSpeaker)
 
   return (
     <>
@@ -57,15 +58,15 @@ function NextService({ next }: { next: NextLiturgyResult }) {
             <span aria-hidden="true" className="hidden sm:inline">
               {' · '}
             </span>
-            {formatTimePtBR(liturgy.time)}
+            {liturgy.time}
           </span>
         </span>
       </p>
-      {liturgy.sermonDescription || liturgy.sermonSpeaker ? (
+      {sermon?.speaker ? (
         <p className="text-muted-foreground mt-3 max-w-prose">
-          {liturgy.sermonDescription}
-          {liturgy.sermonDescription && liturgy.sermonSpeaker ? ' ' : null}
-          {liturgy.sermonSpeaker ? <em>– {liturgy.sermonSpeaker}</em> : null}
+          {sermon.theme}
+          {sermon.theme ? ' ' : null}
+          <em>{sermon.theme ? `– ${sermon.speakerText}` : sermon.speakerText}</em>
         </p>
       ) : null}
       {lastHeld ? (
@@ -78,7 +79,7 @@ function NextService({ next }: { next: NextLiturgyResult }) {
           href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}
           className={cn(buttonVariants({ size: 'lg' }), 'h-12 px-6 text-base')}
         >
-          Ver a ordem do culto
+          Ver liturgia completa
         </Link>
         <ArrowLink href="/location">Planeje sua visita</ArrowLink>
       </div>
@@ -215,7 +216,7 @@ export default async function Home() {
                           <li key={`${item.time ?? ''}-${item.title}`}>
                             <span className="text-brand-deep block font-bold">{item.title}</span>
                             <span className="text-muted-foreground block text-sm">
-                              {item.time ? <time>{formatTimePtBR(item.time)}</time> : null}
+                              {item.time ? <time dateTime={item.time}>{item.time}</time> : null}
                               {item.time && item.description ? ' · ' : null}
                               {item.description}
                             </span>

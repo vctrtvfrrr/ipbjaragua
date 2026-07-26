@@ -52,15 +52,6 @@ export type LiturgyDetail = {
   }>
 }
 
-export type LiturgyForAdmin = {
-  id: number
-  date: Date
-  theme: string
-  time: string
-  status: LiturgyStatus
-  actsCount: number
-}
-
 export type LiturgyEditorData = {
   id: number
   date: Date
@@ -162,21 +153,16 @@ export async function countLiturgiesForAdmin(db: Database = defaultDb): Promise<
 export async function listLiturgiesForAdmin(
   { page, pageSize }: { page: number; pageSize: number },
   db: Database = defaultDb
-): Promise<LiturgyForAdmin[]> {
+): Promise<LiturgyListItem[]> {
   const rows = await db
-    .select({
-      ...getTableColumns(liturgies),
-      actsCount: count(liturgyActs.id),
-    })
+    .select(liturgyCardColumns)
     .from(liturgies)
-    .leftJoin(liturgyActs, eq(liturgyActs.liturgy_id, liturgies.id))
     .where(isNull(liturgies.deleted_at))
-    .groupBy(liturgies.id)
     .orderBy(desc(liturgies.date), asc(liturgies.time), desc(liturgies.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
 
-  return rows.map((row) => ({ ...row, time: hhmm(row.time)! }))
+  return withSermons(rows, db)
 }
 
 export async function getLiturgyForEditor(

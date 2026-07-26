@@ -166,6 +166,18 @@ export function liturgyActLabel(act: { name: string }, index: number): string {
   return act.name.trim() || `Ato ${index + 1}`
 }
 
+export function liturgySermonSummary(theme: string | null, speaker: string | null) {
+  const normalizedTheme = theme?.trim() || null
+  const normalizedSpeaker = speaker?.trim() || null
+  if (!normalizedTheme && !normalizedSpeaker) return null
+
+  return {
+    theme: normalizedTheme,
+    speaker: normalizedSpeaker,
+    speakerText: normalizedSpeaker ? (normalizedTheme ? normalizedSpeaker : `Pregador: ${normalizedSpeaker}`) : null,
+  }
+}
+
 export function buildLiturgyActErrorSummary(
   errors: Readonly<Record<string, string[]>>,
   acts: ReadonlyArray<{ name: string }>

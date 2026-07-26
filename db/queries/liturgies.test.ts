@@ -10,6 +10,7 @@ import {
   getLiturgyBySlug,
   getNextLiturgy,
   listLiturgies,
+  listLiturgiesForAdmin,
   listLiturgiesByDate,
 } from './liturgies'
 
@@ -296,6 +297,46 @@ describe('listLiturgies', () => {
 
     expect(result[0].sermonDescription).toBeNull()
     expect(result[0].sermonSpeaker).toBeNull()
+  })
+})
+
+describe('listLiturgiesForAdmin', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('returns the first sermon theme and speaker in liturgy order', async () => {
+    const [id] = await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene', status: 'draft' }])
+    const [firstAct, secondAct] = await db
+      .insert(liturgyActs)
+      .values([
+        { liturgy_id: id, position: 1, name: 'Mensagem' },
+        { liturgy_id: id, position: 2, name: 'Conclusão' },
+      ])
+      .returning({ id: liturgyActs.id })
+    await db.insert(liturgyMoments).values([
+      {
+        act_id: secondAct.id,
+        position: 1,
+        type: 'sermon',
+        description: 'Segundo tema',
+        sermon_speaker: 'Segundo pregador',
+      },
+      {
+        act_id: firstAct.id,
+        position: 2,
+        type: 'sermon',
+        description: 'Primeiro tema',
+        sermon_speaker: 'Primeiro pregador',
+      },
+    ])
+
+    const result = await listLiturgiesForAdmin({ page: 1, pageSize: 10 }, db)
+
+    expect(result[0].sermonDescription).toBe('Primeiro tema')
+    expect(result[0].sermonSpeaker).toBe('Primeiro pregador')
   })
 })
 

@@ -72,6 +72,10 @@ _Avoid_: Parte, seção.
 A menor unidade de uma **Liturgia**, dentro de um **Ato**, com um tipo: leitura bíblica, cântico, oração, sermão, sacramento ou outro. Conforme o tipo, carrega dados próprios (um Momento de cântico referencia um **Cântico**; um sermão tem pregador; uma leitura tem passagens; um **Sacramento** tem seu tipo).
 _Avoid_: Etapa, item.
 
+**Tema do Sermão**:
+A frase-tese da mensagem pregada — "O Senhor da Igreja é benigno e nos concede valiosos antídotos contra o desânimo". Pertence ao **Momento** de sermão, não ao culto: não confundir com o **Tipo de Culto**. Junto do pregador, é o que identifica o culto para o leitor, e por isso aparece no destaque da home, na listagem de **Liturgias** e na listagem do painel. Mora na Descrição do Momento (ver _Ambiguidades sinalizadas_); um Momento de sermão não carrega anotação livre além do Tema. Havendo mais de um Momento de sermão, o Tema e o pregador da Liturgia são os do primeiro. No site, Tema e pregador só aparecem juntos: sem pregador, nada é exibido — é ele quem confirma o Tema.
+_Avoid_: Tema (sozinho é ambíguo com o Tipo de Culto), título do sermão, assunto.
+
 **Sacramento**:
 Um **Momento** do tipo sacramento, que deve especificar qual: batismo ou eucaristia. A regra "sacramento exige tipo" é garantida por restrição no banco.
 _Avoid_: Ordenança.
@@ -159,6 +163,7 @@ _Avoid_: Papel/role (a alçada é uma lista de Permissões por Usuário, não um
 ## Ambiguidades sinalizadas
 
 - **`liturgies.theme` guarda o Tipo de Culto, não um tema.** A coluna se chama `theme`, mas seu conteúdo ("Culto Solene") é a designação do culto, não o assunto do sermão. O termo de domínio é **Tipo de Culto**; o nome da coluna é um resíduo a ser corrigido num futuro rename, não um conceito novo.
+- **A Descrição do Momento é polimórfica.** `liturgy_moments.description` significa coisas diferentes por tipo: no sermão é o **Tema do Sermão**; no Momento de tipo _outro_ é o próprio rótulo exibido; nos demais é anotação livre. Por isso o formulário rotula esse campo conforme o tipo. Não há coluna própria para o Tema porque um sermão não carrega Tema e anotação ao mesmo tempo.
 - **A tabela `announcements` guarda Avisos.** O termo de domínio é **Aviso**; `announcements` (tradução de "Anúncio") é resíduo do código, a ser reconciliado num futuro rename, não um conceito distinto.
 - **Dominical vs Excepcional não é coluna.** O tipo do **Boletim** é derivado do dia da semana da data (domingo = Dominical), não um campo armazenado. Se um dia surgir um boletim de domingo que não seja Dominical (ou vice-versa), será preciso modelar o tipo explicitamente.
 

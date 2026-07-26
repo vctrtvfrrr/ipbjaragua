@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { countLiturgiesForAdmin, listLiturgiesForAdmin } from '@/db/queries/liturgies'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 import { formatLongDatePtBR } from '@/lib/date'
+import { liturgySermonSummary } from '@/lib/liturgy'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 20
@@ -57,47 +58,52 @@ export default async function AdminLiturgiesPage({ searchParams }: AdminLiturgie
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo de Culto</TableHead>
+                <TableHead>Culto</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Horário</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Atos</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {liturgies.map((liturgy) => (
-                <TableRow key={liturgy.id}>
-                  <TableCell className="font-medium whitespace-normal">{liturgy.theme}</TableCell>
-                  <TableCell>{formatLongDatePtBR(liturgy.date)}</TableCell>
-                  <TableCell>{liturgy.time}</TableCell>
-                  <TableCell>{liturgy.status === 'published' ? 'Publicada' : 'Rascunho'}</TableCell>
-                  <TableCell>{liturgy.actsCount}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      {canUpdate ? (
-                        <Link
-                          href={`/admin/liturgies/${liturgy.id}/edit`}
-                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-                        >
-                          Editar
-                        </Link>
-                      ) : null}
-                      {canCreate ? (
-                        <Link
-                          href={`/admin/liturgies/new?from=${liturgy.id}`}
-                          title="Repetir conteúdo desta liturgia num formulário de criação"
-                          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-                        >
-                          <Copy data-icon="inline-start" />
-                          Duplicar
-                        </Link>
-                      ) : null}
-                      {canDelete ? <DeleteLiturgyButton liturgy={liturgy} /> : null}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {liturgies.map((liturgy) => {
+                const sermon = liturgySermonSummary(liturgy.sermonDescription, liturgy.sermonSpeaker)
+                return (
+                  <TableRow key={liturgy.id}>
+                    <TableCell className="whitespace-normal">
+                      <p className="font-medium">{liturgy.theme}</p>
+                      {sermon?.theme ? <p>{sermon.theme}</p> : null}
+                      {sermon?.speaker ? <p className="text-muted-foreground italic">{sermon.speaker}</p> : null}
+                    </TableCell>
+                    <TableCell>{formatLongDatePtBR(liturgy.date)}</TableCell>
+                    <TableCell>{liturgy.time}</TableCell>
+                    <TableCell>{liturgy.status === 'published' ? 'Publicada' : 'Rascunho'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-2">
+                        {canUpdate ? (
+                          <Link
+                            href={`/admin/liturgies/${liturgy.id}/edit`}
+                            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                          >
+                            Editar
+                          </Link>
+                        ) : null}
+                        {canCreate ? (
+                          <Link
+                            href={`/admin/liturgies/new?from=${liturgy.id}`}
+                            title="Repetir conteúdo desta liturgia num formulário de criação"
+                            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                          >
+                            <Copy data-icon="inline-start" />
+                            Duplicar
+                          </Link>
+                        ) : null}
+                        {canDelete ? <DeleteLiturgyButton liturgy={liturgy} /> : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
 

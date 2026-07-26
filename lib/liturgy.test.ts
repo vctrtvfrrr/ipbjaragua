@@ -3,6 +3,7 @@ import {
   buildLiturgyActErrorSummary,
   buildLiturgyDuplicationDefaults,
   draftLiturgyTreeSchema,
+  liturgySermonSummary,
   liturgyTreeSchema,
 } from './liturgy'
 
@@ -172,6 +173,36 @@ describe('buildLiturgyActErrorSummary', () => {
     )
 
     expect(summary).toEqual([])
+  })
+})
+
+describe('liturgySermonSummary', () => {
+  it('returns the sermon theme and speaker', () => {
+    expect(liturgySermonSummary('A graça soberana', 'João Calvino')).toEqual({
+      theme: 'A graça soberana',
+      speaker: 'João Calvino',
+      speakerText: 'João Calvino',
+    })
+  })
+
+  it('identifies the speaker when there is no sermon theme', () => {
+    expect(liturgySermonSummary(null, 'João Calvino')).toEqual({
+      theme: null,
+      speaker: 'João Calvino',
+      speakerText: 'Pregador: João Calvino',
+    })
+  })
+
+  it('keeps a partial sermon theme available to the admin', () => {
+    expect(liturgySermonSummary('A graça soberana', null)).toEqual({
+      theme: 'A graça soberana',
+      speaker: null,
+      speakerText: null,
+    })
+  })
+
+  it('returns null without sermon data', () => {
+    expect(liturgySermonSummary(null, null)).toBeNull()
   })
 })
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { formatBulletinSubtitle } from '@/lib/bulletin'
-import { formatLongDatePtBR, formatTimePtBR } from '@/lib/date'
+import { formatLongDatePtBR } from '@/lib/date'
 import { CHURCH_NAME, OG_SIZE } from './config'
 import { INSTITUTIONAL_PAGES, type InstitutionalPageKey } from './pages'
 
@@ -115,7 +115,7 @@ export type LiturgyMeta = { slug: string; theme: string; time: string; date: Dat
 
 export function liturgyMetadata(liturgy: LiturgyMeta, options: { draft?: boolean } = {}): Metadata {
   const longDate = formatLongDatePtBR(liturgy.date)
-  const title = `${liturgy.theme} — ${longDate} às ${formatTimePtBR(liturgy.time)}`
+  const title = `${liturgy.theme} — ${longDate} às ${liturgy.time}`
 
   return socialMetadata({
     title,

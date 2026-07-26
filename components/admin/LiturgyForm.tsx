@@ -81,6 +81,7 @@ export function LiturgyForm(props: Props) {
     liturgy ? fromEditorData(liturgy) : defaults ? fromDefaults(defaults) : [emptyAct()]
   )
   const [openActKey, setOpenActKey] = useState<string | null>(acts[0]?.key ?? null)
+  const [openMomentKey, setOpenMomentKey] = useState<string | null>(null)
   const [description, setDescription] = useState(liturgy?.description ?? defaults?.description ?? '')
   const [isGenerating, startGeneration] = useTransition()
   const [attemptedIntent, setAttemptedIntent] = useState<LiturgyStatus | null>(null)
@@ -243,7 +244,10 @@ export function LiturgyForm(props: Props) {
                     />
                   </div>
 
-                  <div className="grid gap-3">
+                  <Accordion
+                    value={openMomentKey ? [openMomentKey] : []}
+                    onValueChange={(value) => setOpenMomentKey((value[0] as string | undefined) ?? null)}
+                  >
                     {act.moments.map((moment, momentIndex) => (
                       <MomentFields
                         key={moment.key}
@@ -256,9 +260,12 @@ export function LiturgyForm(props: Props) {
                         onMove={(direction) => moveMoment(actIndex, momentIndex, direction)}
                         length={act.moments.length}
                         onRemove={() => removeMoment(actIndex, momentIndex)}
+                        hasError={Object.keys(clientErrors).some((path) =>
+                          path.startsWith(`acts.${actIndex}.moments.${momentIndex}.`)
+                        )}
                       />
                     ))}
-                  </div>
+                  </Accordion>
 
                   <div>
                     <Button type="button" variant="outline" size="sm" onClick={() => addMoment(actIndex)}>
@@ -331,7 +338,9 @@ export function LiturgyForm(props: Props) {
   )
 
   function addMoment(actIndex: number) {
-    updateAct(actIndex, { moments: [...acts[actIndex].moments, emptyMoment()] })
+    const moment = emptyMoment()
+    updateAct(actIndex, { moments: [...acts[actIndex].moments, moment] })
+    setOpenMomentKey(moment.key)
   }
 
   function moveMoment(actIndex: number, momentIndex: number, direction: -1 | 1) {
@@ -346,12 +355,14 @@ export function LiturgyForm(props: Props) {
     if (act.key === openActKey) {
       setOpenActKey(acts[actIndex - 1]?.key ?? acts.find((_, index) => index !== actIndex)?.key ?? null)
     }
+    if (act.moments.some((moment) => moment.key === openMomentKey)) setOpenMomentKey(null)
     setActs((current) => current.filter((_, i) => i !== actIndex))
   }
 
   function removeMoment(actIndex: number, momentIndex: number) {
     const moment = acts[actIndex].moments[momentIndex]
     if (momentHasContent(moment) && !window.confirm('Remover este Momento?')) return
+    if (moment.key === openMomentKey) setOpenMomentKey(acts[actIndex].moments[momentIndex - 1]?.key ?? null)
     updateAct(actIndex, { moments: acts[actIndex].moments.filter((_, i) => i !== momentIndex) })
   }
 
@@ -411,6 +422,7 @@ function MomentFields({
   onMove,
   length,
   onRemove,
+  hasError,
 }: {
   actIndex: number
   momentIndex: number
@@ -421,89 +433,115 @@ function MomentFields({
   onMove: (direction: -1 | 1) => void
   length: number
   onRemove: () => void
+  hasError: boolean
 }) {
   const base = `acts.${actIndex}.moments.${momentIndex}`
+  const descriptionField = (
+    <FormField>
+      <Label>{moment.type === 'sermon' ? 'Tema do Sermão' : 'Descrição'}</Label>
+      <Textarea
+        rows={1}
+        className="min-h-0"
+        value={moment.description}
+        onChange={(event) => onUpdate({ description: event.target.value })}
+      />
+      <FieldError messages={errors[`${base}.description`]} />
+    </FormField>
+  )
 
   return (
-    <div id={`moment-${actIndex}-${momentIndex}`} className="bg-muted/20 grid gap-3 rounded-lg border p-3">
-      <div className="flex flex-wrap items-end gap-3">
-        <FormField className="min-w-48 flex-1">
-          <Label>Tipo</Label>
-          <Select value={moment.type} onValueChange={(value) => onUpdate({ type: value as MomentType })}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MOMENT_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {MOMENT_TYPE_LABELS[type]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-        <ReorderButtons
-          index={momentIndex}
-          length={length}
-          onMove={onMove}
-          onRemove={onRemove}
-          removeLabel="Remover momento"
-        />
-      </div>
+    <AccordionItem value={moment.key} id={`moment-${actIndex}-${momentIndex}`}>
+      <AccordionTrigger>
+        <span>
+          Momento {momentIndex + 1} — {MOMENT_TYPE_LABELS[moment.type]}
+        </span>
+        {hasError ? (
+          <>
+            <span aria-hidden="true" className="bg-destructive size-2 shrink-0 rounded-full" />
+            <span className="sr-only">Momento com erro de validação</span>
+          </>
+        ) : null}
+      </AccordionTrigger>
+      <AccordionContent className="grid gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <FormField className="min-w-48 flex-1">
+            <Label>Tipo de Momento</Label>
+            <Select value={moment.type} onValueChange={(value) => onUpdate({ type: value as MomentType })}>
+              <SelectTrigger className="w-full">
+                <SelectValue>{(value) => MOMENT_TYPE_LABELS[value as MomentType]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {MOMENT_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {MOMENT_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <ReorderButtons
+            index={momentIndex}
+            length={length}
+            onMove={onMove}
+            onRemove={onRemove}
+            removeLabel="Remover momento"
+          />
+        </div>
 
-      <FormField>
-        <Label>Descrição</Label>
-        <Textarea value={moment.description} onChange={(event) => onUpdate({ description: event.target.value })} />
-        <FieldError messages={errors[`${base}.description`]} />
-      </FormField>
+        {moment.type === 'sermon' ? descriptionField : null}
 
-      {moment.type === 'song' ? (
-        <SongCombobox
-          songs={songs}
-          value={moment.song_id}
-          onChange={(song_id) => onUpdate({ song_id })}
-          error={errors[`${base}.song_id`]}
-        />
-      ) : null}
+        {moment.type === 'song' ? (
+          <SongCombobox
+            songs={songs}
+            value={moment.song_id}
+            onChange={(song_id) => onUpdate({ song_id })}
+            error={errors[`${base}.song_id`]}
+          />
+        ) : null}
 
-      {moment.type === 'sermon' ? (
-        <FormField>
-          <Label>Pregador</Label>
-          <Input value={moment.sermon_speaker} onChange={(event) => onUpdate({ sermon_speaker: event.target.value })} />
-        </FormField>
-      ) : null}
+        {moment.type === 'sermon' ? (
+          <FormField>
+            <Label>Pregador</Label>
+            <Input
+              value={moment.sermon_speaker}
+              onChange={(event) => onUpdate({ sermon_speaker: event.target.value })}
+            />
+          </FormField>
+        ) : null}
 
-      {moment.type === 'sacrament' ? (
-        <FormField>
-          <Label>Tipo de sacramento</Label>
-          <Select
-            value={moment.sacrament_type ?? ''}
-            onValueChange={(value) => onUpdate({ sacrament_type: value as SacramentType })}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(SACRAMENT_TYPE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FieldError messages={errors[`${base}.sacrament_type`]} />
-        </FormField>
-      ) : null}
+        {moment.type === 'sacrament' ? (
+          <FormField>
+            <Label>Tipo de sacramento</Label>
+            <Select
+              value={moment.sacrament_type ?? ''}
+              onValueChange={(value) => onUpdate({ sacrament_type: value as SacramentType })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue>{(value) => SACRAMENT_TYPE_LABELS[value as SacramentType]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(SACRAMENT_TYPE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldError messages={errors[`${base}.sacrament_type`]} />
+          </FormField>
+        ) : null}
 
-      {moment.type === 'bible_reading' || moment.type === 'sermon' ? (
-        <PassagesEditor
-          passages={moment.scripture_passages}
-          errors={errors}
-          base={base}
-          onChange={(scripture_passages) => onUpdate({ scripture_passages })}
-        />
-      ) : null}
-    </div>
+        {moment.type === 'bible_reading' || moment.type === 'sermon' ? (
+          <PassagesEditor
+            passages={moment.scripture_passages}
+            errors={errors}
+            base={base}
+            onChange={(scripture_passages) => onUpdate({ scripture_passages })}
+          />
+        ) : null}
+        {moment.type !== 'sermon' ? descriptionField : null}
+      </AccordionContent>
+    </AccordionItem>
   )
 }
 

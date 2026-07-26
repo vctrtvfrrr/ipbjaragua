@@ -14,14 +14,7 @@ import { listLiturgiesByDate } from '@/db/queries/liturgies'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
 import { liturgyVisibilityForUser } from '@/lib/liturgy-visibility'
-import {
-  bulletinSectionWindows,
-  formatLongDatePtBR,
-  formatShortDatePtBR,
-  formatTimePtBR,
-  parseISODate,
-  today,
-} from '@/lib/date'
+import { bulletinSectionWindows, formatLongDatePtBR, formatShortDatePtBR, parseISODate, today } from '@/lib/date'
 import { bulletinMetadata } from '@/lib/og/metadata'
 
 const loadBulletin = cache((date: string, preview: boolean) =>
@@ -93,7 +86,10 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
                         <li key={item.id}>
                           {item.time ? (
                             <>
-                              <time className="font-narrow text-brand-deep">{formatTimePtBR(item.time)}</time> –{' '}
+                              <time dateTime={item.time} className="font-narrow text-brand-deep">
+                                {item.time}
+                              </time>{' '}
+                              –{' '}
                             </>
                           ) : null}
                           {item.title}
@@ -203,7 +199,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
                     >
                       <h3 className="text-brand-deep font-bold group-hover:underline">
                         {l.theme}
-                        {` · ${formatTimePtBR(l.time)}`}
+                        {` · ${l.time}`}
                         {l.status === 'draft' ? <DraftBadge /> : null}
                       </h3>
                     </Link>

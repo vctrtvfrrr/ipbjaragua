@@ -6,7 +6,8 @@ import OpenDetailsOnPrint from '@/components/public/OpenDetailsOnPrint'
 import PageHeader from '@/components/public/PageHeader'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
 import { getCurrentUser } from '@/lib/auth/current-user'
-import { formatLongDatePtBR, formatTimePtBR } from '@/lib/date'
+import { formatLongDatePtBR } from '@/lib/date'
+import { liturgySermonSummary } from '@/lib/liturgy'
 import { liturgyVisibilityForUser } from '@/lib/liturgy-visibility'
 import { liturgyMetadata } from '@/lib/og/metadata'
 
@@ -47,7 +48,7 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
       <PageHeader
         eyebrow="Liturgia"
         title={liturgy.theme}
-        meta={`${formatLongDatePtBR(liturgy.date)} às ${formatTimePtBR(liturgy.time)}`}
+        meta={`${formatLongDatePtBR(liturgy.date)} às ${liturgy.time}`}
       />
 
       <div className="container mx-auto px-5 pt-6 pb-20 md:px-8 print:px-0 print:pt-7 print:pb-0">
@@ -88,11 +89,17 @@ function MomentLabel({ children }: { children: React.ReactNode }) {
   return <h3 className="font-narrow text-brand-ridge text-xl font-bold print:break-after-avoid">{children}</h3>
 }
 
-function PassagesView({ passages }: { passages: NonNullable<Moment['scripture_passages']> }) {
+function PassagesCard({
+  passages,
+  description,
+}: {
+  passages: NonNullable<Moment['scripture_passages']>
+  description?: string | null
+}) {
   return (
-    <>
+    <div className="mt-2 space-y-4 rounded-xl bg-neutral-100 p-6 print:bg-transparent print:px-0">
       {passages.map((passage, i) => (
-        <div key={i} className="mt-2">
+        <div key={i}>
           <MomentLabel>
             {passage.reference}{' '}
             <small className="text-muted-foreground font-sans text-sm font-normal italic">({passage.version})</small>
@@ -100,7 +107,8 @@ function PassagesView({ passages }: { passages: NonNullable<Moment['scripture_pa
           <p className="mt-2 font-serif whitespace-pre-line">{passage.text}</p>
         </div>
       ))}
-    </>
+      {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
+    </div>
   )
 }
 
@@ -109,8 +117,7 @@ function MomentView({ moment }: { moment: Moment }) {
     return (
       <>
         <p className="eyebrow text-brand-ridge print:break-after-avoid">Leitura bíblica</p>
-        <PassagesView passages={moment.scripture_passages} />
-        {moment.description ? <p className="text-muted-foreground mt-2 text-sm">{moment.description}</p> : null}
+        <PassagesCard passages={moment.scripture_passages} description={moment.description} />
       </>
     )
   }
@@ -156,21 +163,18 @@ function MomentView({ moment }: { moment: Moment }) {
   }
 
   if (moment.type === 'sermon') {
+    const sermon = liturgySermonSummary(moment.description, moment.sermon_speaker)
     return (
       <>
-        {moment.scripture_passages ? <PassagesView passages={moment.scripture_passages} /> : null}
-        {moment.description ? (
-          <p className="text-brand-ridge mt-2 font-serif text-2xl leading-snug">
-            {moment.description}
-            {moment.sermon_speaker ? (
-              <cite className="text-muted-foreground mt-1 block font-sans text-sm font-normal not-italic">
-                {moment.sermon_speaker}
-              </cite>
-            ) : null}
+        {sermon?.speaker ? (
+          <p className="text-brand-ridge font-serif text-2xl leading-snug">
+            {sermon.theme}
+            <cite className="text-muted-foreground mt-1 block font-sans text-sm font-normal not-italic">
+              {sermon.speakerText}
+            </cite>
           </p>
-        ) : moment.sermon_speaker ? (
-          <p className="text-muted-foreground">{moment.sermon_speaker}</p>
         ) : null}
+        {moment.scripture_passages ? <PassagesCard passages={moment.scripture_passages} /> : null}
       </>
     )
   }
