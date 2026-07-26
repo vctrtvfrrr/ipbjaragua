@@ -5,7 +5,6 @@ import BulletinArticle from '@/components/BulletinArticle'
 import Markdown from '@/components/Markdown'
 import DraftBadge from '@/components/public/DraftBadge'
 import PageHeader from '@/components/public/PageHeader'
-import SectionHead from '@/components/public/SectionHead'
 import { listActiveAnnouncements, listAgendaInWindow, listAnniversariesInWindow } from '@/db/queries/bulletin-sections'
 import { getBulletinByDate } from '@/db/queries/bulletins'
 import { listLiturgiesByDate } from '@/db/queries/liturgies'
@@ -38,7 +37,8 @@ export async function generateMetadata({ params, searchParams }: PageProps<'/bul
   )
 }
 
-const sectionCard = 'bg-brand-sky mb-8 break-inside-avoid p-6 print:bg-transparent print:px-0'
+const sectionCard = 'bg-brand-sky mb-8 break-inside-avoid rounded-xl p-6 print:bg-transparent print:px-0'
+const sectionTitle = 'text-brand-deep mb-5 font-serif text-2xl'
 
 export default async function BulletinDetailPage({ params, searchParams }: PageProps<'/bulletins/[date]'>) {
   const { date } = await params
@@ -78,7 +78,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
         <div className="mb-10 lg:columns-3 lg:gap-8 print:columns-1">
           {bulletin.show_agenda && agendaDays.length > 0 ? (
             <section className={sectionCard}>
-              <SectionHead>Agenda da semana</SectionHead>
+              <h2 className={sectionTitle}>Agenda da semana</h2>
               <p className="text-muted-foreground -mt-4 mb-5 text-sm">
                 {formatShortDatePtBR(windows.agenda.from)} a {formatShortDatePtBR(windows.agenda.to)}
               </p>
@@ -112,11 +112,11 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
 
           {bulletin.show_announcements && announcements.length > 0 ? (
             <section className={sectionCard}>
-              <SectionHead>Avisos gerais</SectionHead>
+              <h2 className={sectionTitle}>Avisos gerais</h2>
               <ul className="space-y-6">
                 {announcements.map((ann) => (
                   <li key={ann.id}>
-                    <h3 className="text-brand-ridge font-serif text-xl leading-snug">{ann.title}</h3>
+                    <h3 className="text-brand-deep font-bold">{ann.title}</h3>
                     {ann.description ? (
                       <div className="prose prose-sm mt-1 max-w-none">
                         <Markdown content={ann.description} />
@@ -135,7 +135,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
 
           {bulletin.show_birthdays && anniversaries.length > 0 ? (
             <section className={sectionCard}>
-              <SectionHead>Aniversariantes</SectionHead>
+              <h2 className={sectionTitle}>Aniversariantes</h2>
               <div className="space-y-4">
                 {anniversaries.map((day) => (
                   <div key={day.md}>
@@ -166,7 +166,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
 
           {liturgiesOfDay.length > 0 ? (
             <section className={sectionCard}>
-              <SectionHead>Liturgia</SectionHead>
+              <h2 className={sectionTitle}>Liturgia</h2>
               <ul className="space-y-1">
                 {liturgiesOfDay.map((l) => (
                   <li key={l.id}>
@@ -174,7 +174,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
                       href={`/liturgies/${liturgySlug(l.date, l.theme, l.time)}`}
                       className="group block underline-offset-4"
                     >
-                      <h3 className="font-narrow text-brand-deep text-xl group-hover:underline">
+                      <h3 className="text-brand-deep font-bold group-hover:underline">
                         {l.theme}
                         {` · ${formatTimePtBR(l.time)}`}
                         {l.status === 'draft' ? <DraftBadge /> : null}

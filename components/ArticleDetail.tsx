@@ -21,7 +21,7 @@ export default function ArticleDetail({ article }: { article: ArticleWithAuthor 
             featuredImagePath={article.featuredImagePath}
             slug={article.slug}
             alt=""
-            className="h-56 w-full object-cover md:h-72"
+            className="h-56 w-full rounded-xl object-cover md:h-72"
           />
 
           <article className="prose prose-lg prose-headings:font-serif prose-headings:text-brand-ridge mt-10">

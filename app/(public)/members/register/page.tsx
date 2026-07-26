@@ -12,7 +12,7 @@ export default function PublicMemberRegistrationPage() {
       </PageHeader>
 
       <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
-        <div className="max-w-3xl">
+        <div className="border-border max-w-3xl rounded-xl border p-6 md:p-8">
           <PublicMemberRegistrationForm />
         </div>
       </div>
