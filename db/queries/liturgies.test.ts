@@ -216,6 +216,27 @@ describe('listLiturgies', () => {
     expect(result[0].sermonSpeaker).toBe('João Calvino')
   })
 
+  it('returns the sermon even when it is not in the first act', async () => {
+    const [id] = await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
+    await db.insert(liturgyActs).values({ liturgy_id: id, position: 1, name: 'Adoração' })
+    const [act] = await db
+      .insert(liturgyActs)
+      .values({ liturgy_id: id, position: 2, name: 'Mensagem' })
+      .returning({ id: liturgyActs.id })
+    await db.insert(liturgyMoments).values({
+      act_id: act.id,
+      position: 1,
+      type: 'sermon',
+      description: 'A Graça Soberana',
+      sermon_speaker: 'João Calvino',
+    })
+
+    const result = await listLiturgies({ page: 1, pageSize: 10, visibility: 'published-only' }, db)
+
+    expect(result[0].sermonDescription).toBe('A Graça Soberana')
+    expect(result[0].sermonSpeaker).toBe('João Calvino')
+  })
+
   it('returns null sermon fields when no sermon moment exists', async () => {
     await seedLiturgies(db, [{ date: '2026-06-07', theme: 'Culto Solene' }])
 

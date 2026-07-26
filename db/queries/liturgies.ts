@@ -147,24 +147,7 @@ export async function listLiturgies(
     .limit(pageSize)
     .offset((page - 1) * pageSize)
 
-  const seen = new Set<number>()
-  const result: LiturgyListItem[] = []
-  for (const row of rows) {
-    if (!seen.has(row.id)) {
-      seen.add(row.id)
-      result.push({
-        id: row.id,
-        date: row.date,
-        theme: row.theme,
-        time: hhmm(row.time)!,
-        status: row.status,
-        description: row.description ?? null,
-        sermonDescription: row.sermonDescription ?? null,
-        sermonSpeaker: row.sermonSpeaker ?? null,
-      })
-    }
-  }
-  return result
+  return deduplicateByLiturgyId(rows)
 }
 
 export async function listLiturgiesByDate(
@@ -542,22 +525,29 @@ function deduplicateByLiturgyId(
     sermonSpeaker: string | null
   }>
 ): LiturgyListItem[] {
-  const seen = new Set<number>()
+  const byId = new Map<number, LiturgyListItem>()
   const result: LiturgyListItem[] = []
   for (const row of rows) {
-    if (!seen.has(row.id)) {
-      seen.add(row.id)
-      result.push({
-        id: row.id,
-        date: row.date,
-        theme: row.theme,
-        time: hhmm(row.time)!,
-        status: row.status,
-        description: row.description ?? null,
-        sermonDescription: row.sermonDescription ?? null,
-        sermonSpeaker: row.sermonSpeaker ?? null,
-      })
+    const seen = byId.get(row.id)
+    if (seen) {
+      // O join traz uma linha por Ato e só a do Ato do sermão carrega seus campos:
+      // ficar com a primeira linha perde o pregador sempre que ele não abre o culto.
+      seen.sermonDescription ??= row.sermonDescription ?? null
+      seen.sermonSpeaker ??= row.sermonSpeaker ?? null
+      continue
     }
+    const item: LiturgyListItem = {
+      id: row.id,
+      date: row.date,
+      theme: row.theme,
+      time: hhmm(row.time)!,
+      status: row.status,
+      description: row.description ?? null,
+      sermonDescription: row.sermonDescription ?? null,
+      sermonSpeaker: row.sermonSpeaker ?? null,
+    }
+    byId.set(row.id, item)
+    result.push(item)
   }
   return result
 }
