@@ -1,4 +1,4 @@
-import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { songs } from '@/db/schema'
 import type { LyricsBlock } from '@/lib/song'
@@ -84,24 +84,14 @@ export async function getSongById(id: number, db: Database = defaultDb): Promise
   return rows[0]
 }
 
-export async function listSongsForAdmin(
-  { page, pageSize }: { page: number; pageSize: number },
-  db: Database = defaultDb
-): Promise<SongForAdmin[]> {
+export async function listSongsForAdmin(db: Database = defaultDb): Promise<SongForAdmin[]> {
   const rows = await db
     .select(getTableColumns(songs))
     .from(songs)
     .where(isNull(songs.deleted_at))
     .orderBy(asc(songs.title), asc(songs.id))
-    .limit(pageSize)
-    .offset((page - 1) * pageSize)
 
   return rows.map((song) => ({ ...song, songReference: songReference(song) }))
-}
-
-export async function countSongs(db: Database = defaultDb): Promise<number> {
-  const [row] = await db.select({ value: count() }).from(songs).where(isNull(songs.deleted_at))
-  return row?.value ?? 0
 }
 
 async function getActiveSongById(id: number, db: Database): Promise<Song> {

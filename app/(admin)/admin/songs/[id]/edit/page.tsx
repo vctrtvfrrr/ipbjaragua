@@ -20,7 +20,7 @@ export default async function EditSongPage({ params }: EditSongPageProps) {
 
   return (
     <section className="grid gap-6">
-      <h2 className="text-xl font-semibold tracking-normal">Editar música</h2>
+      <h2 className="text-xl font-semibold tracking-normal">Editar cântico</h2>
       <SongForm mode="edit" song={song} />
     </section>
   )

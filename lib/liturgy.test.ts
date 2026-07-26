@@ -115,7 +115,7 @@ describe('buildLiturgyActErrorSummary', () => {
     const summary = buildLiturgyActErrorSummary(
       {
         'acts.0.name': ['Campo obrigatório'],
-        'acts.0.moments.0.description': ['Cântico exige música ou descrição'],
+        'acts.0.moments.0.description': ['Momento de cântico exige cântico ou descrição'],
         'acts.1.moments.0.sacrament_type': ['Sacramento exige tipo'],
       },
       [{ name: 'Adoração' }, { name: 'Consagração' }]
@@ -125,7 +125,7 @@ describe('buildLiturgyActErrorSummary', () => {
       {
         actIndex: 0,
         label: 'Adoração',
-        messages: ['Campo obrigatório', 'Cântico exige música ou descrição'],
+        messages: ['Campo obrigatório', 'Momento de cântico exige cântico ou descrição'],
       },
       { actIndex: 1, label: 'Consagração', messages: ['Sacramento exige tipo'] },
     ])
@@ -311,9 +311,13 @@ describe('liturgyTreeSchema', () => {
     expect(withIncompleteAct.success).toBe(false)
     if (!withIncompleteAct.success) {
       const paths = withIncompleteAct.error.issues.map((issue) => issue.path.join('.'))
+      const songIssue = withIncompleteAct.error.issues.find(
+        (issue) => issue.path.join('.') === 'acts.0.moments.0.description'
+      )
       expect(paths).toContain('acts.0.name')
       expect(paths).toContain('acts.0.moments.0.description')
       expect(paths).toContain('acts.0.moments.1.scripture_passages')
+      expect(songIssue?.message).toBe('Momento de cântico exige cântico ou descrição')
     }
   })
 })

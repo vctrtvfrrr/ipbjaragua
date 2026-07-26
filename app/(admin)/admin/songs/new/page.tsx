@@ -8,7 +8,7 @@ export default async function NewSongPage() {
 
   return (
     <section className="grid gap-6">
-      <h2 className="text-xl font-semibold tracking-normal">Nova música</h2>
+      <h2 className="text-xl font-semibold tracking-normal">Novo cântico</h2>
       <SongForm mode="create" />
     </section>
   )

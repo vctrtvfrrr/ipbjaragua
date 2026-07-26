@@ -42,7 +42,7 @@ function formatMoment(moment: Moment, index: number): string {
     moment.description?.trim() ? `Descrição: ${moment.description.trim()}` : null,
     moment.scripture_passages?.length ? `Leituras:\n${moment.scripture_passages.map(formatPassage).join('\n')}` : null,
     moment.sermon_speaker?.trim() ? `Pregador: ${moment.sermon_speaker.trim()}` : null,
-    moment.song_title?.trim() ? `Música: ${moment.song_title.trim()}` : null,
+    moment.song_title?.trim() ? `Cântico: ${moment.song_title.trim()}` : null,
     moment.sacrament_type ? `Sacramento: ${moment.sacrament_type}` : null,
   ]
     .filter(Boolean)

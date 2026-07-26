@@ -75,7 +75,7 @@ export const liturgyMomentSchema = liturgyMomentFields.superRefine((moment, cont
     context.addIssue({
       code: 'custom',
       path: ['description'],
-      message: 'Cântico exige música ou descrição',
+      message: 'Momento de cântico exige cântico ou descrição',
     })
   }
 

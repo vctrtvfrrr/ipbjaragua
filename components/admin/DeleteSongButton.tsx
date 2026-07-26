@@ -29,7 +29,7 @@ export function DeleteSongButton({ song }: { song: { id: number; title: string }
 
   useEffect(() => {
     if (state.status !== 'success') return
-    toast.success('Música excluída')
+    toast.success('Cântico excluído')
     router.refresh()
   }, [state.status, router])
 
@@ -41,7 +41,7 @@ export function DeleteSongButton({ song }: { song: { id: number; title: string }
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Excluir música</DialogTitle>
+          <DialogTitle>Excluir cântico</DialogTitle>
           <DialogDescription>Tem certeza que deseja excluir «{song.title}»?</DialogDescription>
         </DialogHeader>
         <FormError message={formError} />

@@ -524,7 +524,7 @@ function SongCombobox({
 
   return (
     <FormField>
-      <Label>Música</Label>
+      <Label>Cântico</Label>
       <Input
         role="combobox"
         aria-expanded={visible.length > 0}
@@ -553,7 +553,7 @@ function SongCombobox({
             </button>
           ))}
           {visible.length === 0 ? (
-            <p className="text-muted-foreground px-2 py-1 text-sm">Nenhuma música encontrada.</p>
+            <p className="text-muted-foreground px-2 py-1 text-sm">Nenhum cântico encontrado.</p>
           ) : null}
         </div>
       ) : null}
@@ -568,7 +568,7 @@ function SongCombobox({
               setQuery('')
             }}
           >
-            Limpar música
+            Limpar cântico
           </Button>
         </div>
       ) : null}

@@ -61,6 +61,17 @@ test('drops the interface from the liturgy sheet', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Culto Solene' })).toBeVisible()
 })
 
+test('prints the song heading without the panel background', async ({ page }) => {
+  await page.goto(LITURGY_PATH)
+  await enterPrintMode(page)
+
+  const label = page.getByText('Cântico', { exact: true })
+  const panel = label.locator('+ div')
+
+  await expect(label).toBeVisible()
+  await expect(panel).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+})
+
 test('prints the bulletin on A4 with the article unclamped', async ({ page }) => {
   await page.goto(BULLETIN_PATH)
   const sizes = pdfPageSizes(await page.pdf({ format: 'A4', printBackground: true }))

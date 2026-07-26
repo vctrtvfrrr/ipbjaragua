@@ -11,7 +11,7 @@ const ENTITY_LABELS: Record<Entity, string> = {
   articles: 'Artigos',
   liturgies: 'Liturgias',
   announcements: 'Avisos',
-  songs: 'Músicas',
+  songs: 'Cânticos',
   members: 'Membros',
   agenda: 'Agenda',
   users: 'Usuários',

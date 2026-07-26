@@ -11,6 +11,7 @@ import {
   liturgyActs,
   liturgyMoments,
   members,
+  songs,
   userPermissions,
   users,
 } from '../../db/schema'
@@ -66,11 +67,23 @@ export const E2E_LITURGY_DRAFT = {
   status: 'draft' as const,
 }
 
+export const E2E_SONG = {
+  slug: 'castelo-forte',
+  title: 'Castelo Forte',
+  album: 'Novo Cântico',
+  track: 155,
+  lyrics: [
+    { type: 'verse' as const, number: 1, content: 'Castelo forte é nosso Deus, espada e bom escudo.' },
+    { type: 'chorus' as const, number: null, content: 'Com força e com furor, nos prova o tentador.' },
+  ],
+}
+
 export const E2E_LITURGY_ACTS = [
   {
     name: 'Adoração',
     position: 1,
     moment: 'Chamada à adoração',
+    song: E2E_SONG,
     scripture: {
       reference: 'Salmo 119.1–48',
       version: 'NAA',
@@ -180,6 +193,7 @@ export async function seedE2eDatabase() {
     .insert(liturgies)
     .values({ ...E2E_LITURGY, date: parseISODate(E2E_LITURGY.date) })
     .returning({ id: liturgies.id })
+  const [seededSong] = await db.insert(songs).values(E2E_SONG).returning({ id: songs.id })
   for (const act of E2E_LITURGY_ACTS) {
     const [inserted] = await db
       .insert(liturgyActs)
@@ -195,6 +209,14 @@ export async function seedE2eDatabase() {
           }
         : { act_id: inserted.id, type: 'other', position: 1, description: act.moment }
     )
+    if ('song' in act) {
+      await db.insert(liturgyMoments).values({
+        act_id: inserted.id,
+        type: 'song',
+        position: 2,
+        song_id: seededSong.id,
+      })
+    }
   }
 
   const [draftLiturgy] = await db

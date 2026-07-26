@@ -36,7 +36,7 @@ describe('description generation input', () => {
         },
       ])
     ).toBe(
-      'Ato: Adoração\nMomento 1 (prayer)\nDescrição: Oração\nPregador: Ana\nMomento 2 (song)\nDescrição: Santo, Santo\nMúsica: Castelo Forte'
+      'Ato: Adoração\nMomento 1 (prayer)\nDescrição: Oração\nPregador: Ana\nMomento 2 (song)\nDescrição: Santo, Santo\nCântico: Castelo Forte'
     )
   })
 })

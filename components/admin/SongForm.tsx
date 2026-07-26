@@ -46,7 +46,7 @@ export function SongForm(props: Props) {
 
   useEffect(() => {
     if (state.status !== 'success') return
-    toast.success(props.mode === 'edit' ? 'Música atualizada' : 'Música criada')
+    toast.success(props.mode === 'edit' ? 'Cântico atualizado' : 'Cântico criado')
     router.push('/admin/songs')
   }, [state.status, props.mode, router])
 

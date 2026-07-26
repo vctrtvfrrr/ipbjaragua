@@ -118,36 +118,39 @@ function MomentView({ moment }: { moment: Moment }) {
   if (moment.type === 'song') {
     return (
       <>
-        <MomentLabel>
-          {moment.song?.title ?? moment.description}
-          {moment.song?.songReference ? (
-            <small className="text-muted-foreground block font-sans text-sm font-normal normal-case italic">
-              {moment.song.songReference}
-            </small>
+        <p className="eyebrow text-brand-ridge print:break-after-avoid">Cântico</p>
+        <div className="bg-brand-sky mt-2 rounded-xl p-6 print:bg-transparent print:px-0">
+          <MomentLabel>
+            {moment.song?.title ?? moment.description}
+            {moment.song?.songReference ? (
+              <small className="text-muted-foreground block font-sans text-sm font-normal normal-case italic">
+                {moment.song.songReference}
+              </small>
+            ) : null}
+          </MomentLabel>
+          {moment.song?.lyrics ? (
+            <div className="mt-3 space-y-3 font-serif">
+              {moment.song.lyrics.map((block, i) => {
+                if (block.type === 'verse')
+                  return (
+                    <p key={i} className="whitespace-pre-line print:break-inside-avoid">
+                      {block.number ? <strong>{block.number}. </strong> : null}
+                      {block.content}
+                    </p>
+                  )
+                if (block.type === 'chorus')
+                  return (
+                    <p
+                      key={i}
+                      className="border-brand-accent border-l-2 pl-4 whitespace-pre-line italic print:break-inside-avoid"
+                    >
+                      {block.content}
+                    </p>
+                  )
+              })}
+            </div>
           ) : null}
-        </MomentLabel>
-        {moment.song?.lyrics ? (
-          <div className="mt-3 space-y-3 font-serif">
-            {moment.song.lyrics.map((block, i) => {
-              if (block.type === 'verse')
-                return (
-                  <p key={i} className="whitespace-pre-line print:break-inside-avoid">
-                    {block.number ? <strong>{block.number}. </strong> : null}
-                    {block.content}
-                  </p>
-                )
-              if (block.type === 'chorus')
-                return (
-                  <p
-                    key={i}
-                    className="border-brand-accent border-l-2 pl-4 whitespace-pre-line italic print:break-inside-avoid"
-                  >
-                    {block.content}
-                  </p>
-                )
-            })}
-          </div>
-        ) : null}
+        </div>
       </>
     )
   }

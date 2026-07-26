@@ -5,7 +5,6 @@ import { seedSongs } from '@/tests/seed'
 import {
   SongNotFoundError,
   SongSlugCollisionError,
-  countSongs,
   createSong,
   getSongById,
   listSongsForAdmin,
@@ -157,8 +156,7 @@ describe('softDeleteSong', () => {
 
     expect(song.deleted_at).not.toBeNull()
     expect(await getSongById(id, db)).toBeUndefined()
-    expect(await listSongsForAdmin({ page: 1, pageSize: 20 }, db)).toEqual([])
-    expect(await countSongs(db)).toBe(0)
+    expect(await listSongsForAdmin(db)).toEqual([])
   })
 })
 
@@ -169,17 +167,25 @@ describe('listSongsForAdmin', () => {
     db = await createTestDb()
   })
 
-  it('returns active songs with derived references ordered by title', async () => {
-    await seedSongs(db, [
-      { slug: 'b', title: 'B', album: 'Hinário', track: 2 },
-      { slug: 'a', title: 'A', performer: 'Coral' },
-    ])
+  it('returns every active song with derived references ordered by title', async () => {
+    const seededIds = await seedSongs(
+      db,
+      Array.from({ length: 25 }, (_, index) => ({
+        slug: `cantico-${index + 1}`,
+        title: `Cântico ${String(25 - index).padStart(2, '0')}`,
+        performer: index === 24 ? 'Coral' : null,
+      }))
+    )
+    await db.execute(sql`UPDATE songs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ${seededIds[12]}`)
 
-    const rows = await listSongsForAdmin({ page: 1, pageSize: 20 }, db)
+    const rows = await listSongsForAdmin(db)
 
-    expect(rows.map((song) => [song.title, song.songReference])).toEqual([
-      ['A', 'Coral'],
-      ['B', '2. Hinário'],
-    ])
+    expect(rows).toHaveLength(24)
+    expect(rows.map((song) => song.title)).toEqual(
+      Array.from({ length: 25 }, (_, index) => `Cântico ${String(index + 1).padStart(2, '0')}`).filter(
+        (title) => title !== 'Cântico 13'
+      )
+    )
+    expect(rows[0].songReference).toBe('Coral')
   })
 })

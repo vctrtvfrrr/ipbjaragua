@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { E2E_LITURGY_ACTS } from './seed-db'
+import { E2E_LITURGY_ACTS, E2E_SONG } from './seed-db'
 
 const LITURGY_PATH = '/liturgies/2026-06-07-0900-culto-solene'
 
@@ -38,6 +38,16 @@ test('an open act cannot be closed with mouse or keyboard', async ({ page }) => 
   await summary.focus()
   await summary.press('Enter')
   await expect(details).toHaveAttribute('open', '')
+})
+
+test('frames each song with a heading and its own panel', async ({ page }) => {
+  await page.goto(LITURGY_PATH)
+
+  const label = page.getByText('Cântico', { exact: true })
+  const panel = label.locator('+ div')
+
+  await expect(label).toBeVisible()
+  await expect(panel.getByRole('heading', { name: E2E_SONG.title })).toBeVisible()
 })
 
 test.describe('without JavaScript', () => {
