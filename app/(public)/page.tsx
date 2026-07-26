@@ -50,7 +50,13 @@ function NextService({ next }: { next: NextLiturgyResult }) {
       <p className="text-brand-deep mt-5 flex items-center gap-2.5 text-xl font-bold">
         <CalendarIcon aria-hidden="true" className="size-5 shrink-0" />
         <span>
-          {when} · {formatTimePtBR(liturgy.time)}
+          <span className="block sm:inline">{when}</span>
+          <span className="block sm:inline">
+            <span aria-hidden="true" className="hidden sm:inline">
+              {' · '}
+            </span>
+            {formatTimePtBR(liturgy.time)}
+          </span>
         </span>
       </p>
       {liturgy.sermonDescription || liturgy.sermonSpeaker ? (
