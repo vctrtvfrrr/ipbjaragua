@@ -1,6 +1,7 @@
+import { MapPinIcon } from 'lucide-react'
 import Link from 'next/link'
+import IconTile from '@/components/public/IconTile'
 import PageHeader from '@/components/public/PageHeader'
-import SectionHead from '@/components/public/SectionHead'
 import { CHURCH_ADDRESS, CHURCH_MAP_EMBED_URL } from '@/lib/church'
 import { institutionalMetadata } from '@/lib/og/metadata'
 
@@ -20,24 +21,27 @@ export default function Location() {
       </PageHeader>
 
       <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1fr_2fr] lg:gap-12">
-          <div>
-            <SectionHead>Endereço</SectionHead>
-            <address className="space-y-1 text-lg not-italic">
-              <p>{CHURCH_ADDRESS.street}</p>
-              <p>{CHURCH_ADDRESS.district}</p>
-              <p>
-                {CHURCH_ADDRESS.city} — {CHURCH_ADDRESS.state}
-              </p>
-              <p className="text-muted-foreground">CEP {CHURCH_ADDRESS.postalCode}</p>
-            </address>
+        <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
+          <div className="border-border self-start rounded-xl border p-6 md:p-8">
+            <h2 className="text-brand-deep font-serif text-2xl">Endereço</h2>
+            <div className="mt-6 flex gap-4">
+              <IconTile icon={MapPinIcon} />
+              <address className="space-y-1 text-lg not-italic">
+                <p>{CHURCH_ADDRESS.street}</p>
+                <p>{CHURCH_ADDRESS.district}</p>
+                <p>
+                  {CHURCH_ADDRESS.city} — {CHURCH_ADDRESS.state}
+                </p>
+                <p className="text-muted-foreground">CEP {CHURCH_ADDRESS.postalCode}</p>
+              </address>
+            </div>
           </div>
 
-          <div>
-            <SectionHead>Mapa</SectionHead>
+          <div className="border-border rounded-xl border p-6 md:p-8">
+            <h2 className="text-brand-deep font-serif text-2xl">Mapa</h2>
             <iframe
               src={CHURCH_MAP_EMBED_URL}
-              className="block h-96 w-full border-0"
+              className="mt-6 block h-96 w-full rounded-lg border-0"
               title="Mapa da localização da igreja"
               loading="lazy"
               allowFullScreen
