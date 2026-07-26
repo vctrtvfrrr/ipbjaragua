@@ -34,9 +34,9 @@ export default function SiteHeader() {
       ref={headerRef}
       className="data-scrolled:shadow-[0_1px_0_var(--border),0_6px_16px_-12px_rgb(6_71_137/0.35)] sticky top-0 z-40 bg-white transition-shadow duration-200 print:hidden"
     >
-      <div className="container mx-auto flex h-24 items-center justify-between gap-6 px-5 md:px-8">
+      <div className="container mx-auto flex h-20 items-center justify-between gap-6 px-5 md:px-8">
         <Link href="/" aria-label={`${CHURCH_NAME} — Início`} className="flex items-center">
-          <BrandMark variant="horizontal" className="hidden h-20 w-auto md:block" priority />
+          <BrandMark variant="horizontal" className="hidden h-14 w-auto md:block" priority />
           <BrandMark variant="symbol" className="h-9 w-auto md:hidden" priority />
         </Link>
 
@@ -50,7 +50,7 @@ export default function SiteHeader() {
                     href={item.href}
                     aria-current={current ? 'page' : undefined}
                     className={cn(
-                      'eyebrow text-lg hover:text-brand-ridge flex min-h-11 items-center border-b-2 px-3 pt-1 transition-colors',
+                      'hover:text-brand-ridge flex min-h-11 items-center border-b-2 px-3 pt-1 font-bold transition-colors',
                       current ? 'border-brand-accent text-brand-ridge' : 'text-brand-deep border-transparent'
                     )}
                   >
