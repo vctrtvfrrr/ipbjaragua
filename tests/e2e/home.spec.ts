@@ -5,13 +5,12 @@ test('features the latest article linking to its detail', async ({ page }) => {
   await page.goto('/')
 
   await expect(page.locator(`a[href="/articles/${FEATURED.slug}"]`).first()).toBeVisible()
-  const nav = page.getByRole('navigation', { name: 'Paginação' })
-  await expect(nav.getByRole('link', { name: /próxima/i })).toBeVisible()
   await expect(page.getByRole('table').filter({ hasText: 'Inscrição' })).toBeVisible()
 })
 
-test('paginates the home article grid', async ({ page }) => {
-  await page.goto('/?page=2')
+test('sends the reader to the full listing instead of paginating the home', async ({ page }) => {
+  await page.goto('/')
 
-  await expect(page.getByRole('link', { name: /Artigo 14/ })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Paginação' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Ver todos os artigos' })).toHaveAttribute('href', '/articles')
 })

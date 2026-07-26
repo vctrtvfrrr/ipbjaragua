@@ -19,7 +19,7 @@ export default async function ArticlesPage({ searchParams }: PageProps<'/article
     <main>
       <PageHeader eyebrow="Publicações" title="Artigos" />
       <section className="container mx-auto px-5 pt-6 pb-20 md:px-8">
-        <ArticleGrid articles={articles} page={page} totalPages={pages} basePath="/articles" />
+        <ArticleGrid articles={articles} pagination={{ page, totalPages: pages, basePath: '/articles' }} />
       </section>
     </main>
   )

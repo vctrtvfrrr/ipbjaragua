@@ -5,9 +5,8 @@ import HeroScene from '@/components/brand/HeroScene'
 import Markdown from '@/components/Markdown'
 import ArrowLink from '@/components/public/ArrowLink'
 import ArticleVisual from '@/components/public/ArticleVisual'
-import SectionHead from '@/components/public/SectionHead'
 import { buttonVariants } from '@/components/ui/button'
-import { countArticles, getLatestArticle, listArticles } from '@/db/queries/articles'
+import { getLatestArticle, listArticles } from '@/db/queries/articles'
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
 import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
 import { getNextLiturgy, type NextLiturgyResult } from '@/db/queries/liturgies'
@@ -26,12 +25,12 @@ import {
 } from '@/lib/date'
 import { CHURCH_NAME } from '@/lib/og/config'
 import { institutionalMetadata } from '@/lib/og/metadata'
-import { resolvePage, totalPages } from '@/lib/pagination'
 import { cn } from '@/lib/utils'
 
 export const metadata = institutionalMetadata('home')
 
-const PAGE_SIZE = 12
+/** A home é vitrine, não arquivo: a listagem paginada completa vive em /articles. */
+const SHOWCASE_SIZE = 12
 
 const NEXT_LITURGY_EYEBROW: Record<NextLiturgyResult['kind'], string> = {
   today: 'Culto de hoje',
@@ -92,24 +91,20 @@ function NoService() {
   )
 }
 
-export default async function Home({ searchParams }: PageProps<'/'>) {
-  const { page: rawPage } = await searchParams
+export default async function Home() {
   const todayDate = today()
   const currentTime = currentTimeHHMM()
   const weekWindow = currentWeekWindow(todayDate)
-  const [latest, total, agendaItems, announcements, recentBulletins, dominicalBulletin, nextLiturgy] =
+  const [latest, articles, agendaItems, announcements, recentBulletins, dominicalBulletin, nextLiturgy] =
     await Promise.all([
       getLatestArticle(),
-      countArticles(),
+      listArticles({ page: 1, pageSize: SHOWCASE_SIZE }),
       listAgendaInWindow(weekWindow.from, weekWindow.to),
       listActiveAnnouncements(todayDate),
       listRecentBulletins({ today: todayDate, limit: 5 }),
       getLatestDominicalBulletin(todayDate),
       getNextLiturgy({ today: todayDate, currentTime }),
     ])
-  const pages = totalPages(total, PAGE_SIZE)
-  const page = resolvePage(rawPage, pages)
-  const articles = await listArticles({ page, pageSize: PAGE_SIZE })
   const agendaDays = groupAgendaByWeekday(agendaItems)
 
   return (
@@ -291,8 +286,11 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
       ) : null}
 
       <section className="container mx-auto px-5 pb-20 md:px-8">
-        <SectionHead>Artigos</SectionHead>
-        <ArticleGrid articles={articles} page={page} totalPages={pages} basePath="/" />
+        <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-6">
+          <h2 className="text-brand-ridge font-serif text-3xl">Artigos</h2>
+          <ArrowLink href="/articles">Ver todos os artigos</ArrowLink>
+        </div>
+        <ArticleGrid articles={articles} />
       </section>
     </main>
   )

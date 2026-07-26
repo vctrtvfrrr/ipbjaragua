@@ -7,12 +7,10 @@ import { formatLongDatePtBR } from '@/lib/date'
 
 type Props = {
   articles: ArticleWithAuthor[]
-  page: number
-  totalPages: number
-  basePath: string
+  pagination?: { page: number; totalPages: number; basePath: string }
 }
 
-export default function ArticleGrid({ articles, page, totalPages, basePath }: Props) {
+export default function ArticleGrid({ articles, pagination }: Props) {
   if (articles.length === 0) {
     return <p className="text-muted-foreground">Nenhum artigo publicado ainda.</p>
   }
@@ -31,7 +29,7 @@ export default function ArticleGrid({ articles, page, totalPages, basePath }: Pr
                   featuredImagePath={article.featuredImagePath}
                   slug={article.slug}
                   alt=""
-                  className="h-48 w-full object-cover"
+                  className="h-48 w-full rounded-lg object-cover"
                 />
                 <h3 className="text-brand-ridge mt-4 font-serif text-2xl leading-snug group-hover:underline">
                   {article.title}
@@ -44,7 +42,9 @@ export default function ArticleGrid({ articles, page, totalPages, basePath }: Pr
         })}
       </div>
 
-      {totalPages > 1 ? <Pagination page={page} totalPages={totalPages} basePath={basePath} /> : null}
+      {pagination && pagination.totalPages > 1 ? (
+        <Pagination page={pagination.page} totalPages={pagination.totalPages} basePath={pagination.basePath} />
+      ) : null}
     </>
   )
 }
