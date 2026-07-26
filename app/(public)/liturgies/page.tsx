@@ -1,7 +1,9 @@
+import { ChurchIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Fragment } from 'react'
 import Pagination from '@/components/Pagination'
 import DraftBadge from '@/components/public/DraftBadge'
+import IconTile from '@/components/public/IconTile'
 import PageHeader from '@/components/public/PageHeader'
 import { countFutureOrTodayLiturgies, countLiturgies, listLiturgies } from '@/db/queries/liturgies'
 import { getCurrentUser } from '@/lib/auth/current-user'
@@ -40,26 +42,29 @@ export default async function LiturgiesPage({ searchParams }: PageProps<'/liturg
           <p className="text-muted-foreground">Nenhuma liturgia publicada ainda.</p>
         ) : (
           <>
-            <ul className="grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {liturgiesList.map((liturgy, index) => {
                 const subtitle = liturgy.description ?? liturgy.sermonDescription ?? liturgy.sermonSpeaker
                 const isBoundary = pageStart + index === boundaryIndex
                 return (
                   <Fragment key={liturgy.id}>
-                    <li className="border-border border-b pb-5">
-                      <Link
-                        href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}
-                        className="group block"
-                      >
-                        <h2 className="text-brand-ridge font-serif text-2xl leading-snug group-hover:underline">
-                          {liturgy.theme}
+                    <li className="border-border flex gap-4 rounded-xl border p-5">
+                      <IconTile icon={ChurchIcon} />
+                      <div className="min-w-0">
+                        <h2 className="text-brand-ridge font-serif text-2xl leading-snug">
+                          <Link
+                            href={`/liturgies/${liturgySlug(liturgy.date, liturgy.theme, liturgy.time)}`}
+                            className="underline-offset-4 hover:underline"
+                          >
+                            {liturgy.theme}
+                          </Link>
                           {liturgy.status === 'draft' ? <DraftBadge /> : null}
                         </h2>
-                        <p className="font-narrow text-brand-deep mt-2 tracking-[0.06em] uppercase">
+                        <p className="text-brand-deep mt-1 font-bold">
                           {formatLongDatePtBR(liturgy.date)} às {formatTimePtBR(liturgy.time)}
                         </p>
-                      </Link>
-                      {subtitle ? <p className="text-muted-foreground mt-2 text-sm">{subtitle}</p> : null}
+                        {subtitle ? <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p> : null}
+                      </div>
                     </li>
                     {isBoundary ? (
                       <li className="sm:col-span-2 lg:col-span-3">
