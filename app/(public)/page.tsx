@@ -239,7 +239,11 @@ export default async function Home() {
                               <Markdown content={ann.description} />
                             </div>
                           ) : null}
-                          {ann.url ? <ArrowLink href={ann.url}>Acesse</ArrowLink> : null}
+                          {ann.url ? (
+                            <ArrowLink href={ann.url}>
+                              Acesse<span className="sr-only"> {ann.title}</span>
+                            </ArrowLink>
+                          ) : null}
                         </div>
                       </li>
                     )

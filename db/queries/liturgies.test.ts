@@ -237,6 +237,21 @@ describe('listLiturgies', () => {
     expect(result[0].sermonSpeaker).toBe('João Calvino')
   })
 
+  it('splits liturgies sharing a date across pages without repeating or losing one', async () => {
+    await seedLiturgies(db, [
+      { date: '2026-06-07', theme: 'Culto Matutino', time: '09:00' },
+      { date: '2026-06-07', theme: 'Culto Vespertino', time: '18:00' },
+      { date: '2026-06-07', theme: 'Culto de Oração', time: '20:00' },
+    ])
+
+    const [page1, page2] = await Promise.all([
+      listLiturgies({ page: 1, pageSize: 2, visibility: 'published-only' }, db),
+      listLiturgies({ page: 2, pageSize: 2, visibility: 'published-only' }, db),
+    ])
+
+    expect([...page1, ...page2].map((r) => r.theme)).toEqual(['Culto de Oração', 'Culto Vespertino', 'Culto Matutino'])
+  })
+
   it('fills a page with liturgies, not with act rows', async () => {
     const ids = await seedLiturgies(
       db,

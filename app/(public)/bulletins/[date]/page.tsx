@@ -124,7 +124,7 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
                     ) : null}
                     {ann.url ? (
                       <Link href={ann.url} className="text-brand-current underline-offset-4 hover:underline">
-                        Acesse
+                        Acesse<span className="sr-only"> {ann.title}</span>
                       </Link>
                     ) : null}
                   </li>

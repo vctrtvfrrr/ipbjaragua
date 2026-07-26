@@ -131,7 +131,9 @@ export async function listLiturgies(
     .select(liturgyCardColumns)
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), visibleLiturgy(visibility)))
-    .orderBy(desc(liturgies.date))
+    // Ties broken all the way down to the id: without a total order, offset paging can repeat
+    // a liturgy on one page and drop it from the next.
+    .orderBy(desc(liturgies.date), desc(liturgies.time), desc(liturgies.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
 

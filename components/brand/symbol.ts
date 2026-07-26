@@ -2,8 +2,6 @@
  * coordinate system, so every piece of brand art crops the one vector matrix instead
  * of a lookalike that drifts when the matrix changes. */
 
-export const SYMBOL_VIEWBOX = { width: 430, height: 407 } as const
-
 export const SKY_DOME =
   'M17.29,334.83v-132.7C17.29,94.73,103.99,2.63,210.09.93c109.8-1.8,199.3,88.8,199.3,199.5v134.5H17.29v-.1Z'
 

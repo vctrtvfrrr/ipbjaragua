@@ -1,27 +1,15 @@
-import {
-  CHURCH_BODY,
-  CHURCH_DOOR,
-  CHURCH_SPIRE,
-  CHURCH_WINDOW,
-  HILL_FAR,
-  HILL_NEAR,
-  WAVE_DEEP,
-  WAVE_MID,
-} from '@/components/brand/symbol'
+import { CHURCH_BODY, CHURCH_DOOR, CHURCH_SPIRE, CHURCH_WINDOW, HILL_FAR, HILL_NEAR } from '@/components/brand/symbol'
 
 const SKY = 'var(--brand-sky)'
 const RIDGE = 'var(--brand-ridge)'
 const ACCENT = 'var(--brand-accent)'
-const CURRENT = 'var(--brand-current)'
-const DEEP = 'var(--brand-deep)'
 
-export type PublicationKind = 'article' | 'bulletin' | 'liturgy'
+export type PublicationKind = 'article' | 'liturgy'
 
-/** Stands in for a missing Imagem Destacada, and tells the three kinds of publication
+/** Stands in for a missing Imagem Destacada, and tells the kinds of publication
  * apart without a coloured label. */
 const CROPS: Record<PublicationKind, string> = {
   article: '0 140 430 210',
-  bulletin: '0 300 430 110',
   liturgy: '80 18 270 200',
 }
 
@@ -55,14 +43,8 @@ export default function PublicationTile({ kind, seed, className }: Props) {
       className={className}
     >
       <rect x="0" y="0" width="430" height="410" fill={SKY} />
-      {kind === 'bulletin' ? null : <path d={HILL_FAR} fill={ACCENT} />}
+      <path d={HILL_FAR} fill={ACCENT} />
       <path d={HILL_NEAR} fill={RIDGE} />
-      {kind === 'bulletin' ? (
-        <>
-          <path d={WAVE_MID} fill={CURRENT} />
-          <path d={WAVE_DEEP} fill={DEEP} />
-        </>
-      ) : null}
       {kind === 'liturgy' ? (
         <>
           <path d={CHURCH_BODY} fill="#ffffff" stroke={RIDGE} strokeWidth="2" />
