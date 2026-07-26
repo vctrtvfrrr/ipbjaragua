@@ -1,7 +1,6 @@
 import { CalendarIcon, FileTextIcon, NewspaperIcon } from 'lucide-react'
 import Link from 'next/link'
 import ArticleGrid from '@/components/ArticleGrid'
-import HeroScene from '@/components/brand/HeroScene'
 import Markdown from '@/components/Markdown'
 import ArrowLink from '@/components/public/ArrowLink'
 import ArticleVisual from '@/components/public/ArticleVisual'
@@ -27,10 +26,10 @@ import {
 import { CHURCH_NAME } from '@/lib/og/config'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { cn } from '@/lib/utils'
+import BrandMark from '@/components/brand/BrandMark'
 
 export const metadata = institutionalMetadata('home')
 
-/** The home is a showcase, not an archive: the full paginated listing lives at /articles. */
 const SHOWCASE_SIZE = 12
 
 const NEXT_LITURGY_EYEBROW: Record<NextLiturgyResult['kind'], string> = {
@@ -120,7 +119,7 @@ export default async function Home() {
         <div className="container mx-auto px-5 md:px-8">
           <div className="grid items-center gap-6 py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:gap-10 md:py-20">
             <div>{nextLiturgy ? <NextService next={nextLiturgy} /> : <NoService />}</div>
-            <HeroScene className="order-first h-40 w-full sm:h-56 md:order-none md:h-72" />
+            <BrandMark variant="symbol" className="order-first h-40 w-full sm:h-56 md:order-0 md:h-72 hidden" priority />
           </div>
         </div>
       </section>

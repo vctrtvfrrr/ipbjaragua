@@ -2,10 +2,6 @@
 
 import { useEffect } from 'react'
 
-/**
- * A controlled accordion could unmount collapsed acts and omit them from print.
- * Named details would close each other during beforeprint and still allow every act to close.
- */
 export default function KeepOneLiturgyActOpen({ listId }: { listId: string }) {
   useEffect(() => {
     const list = document.getElementById(listId)

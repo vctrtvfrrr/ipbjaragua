@@ -2,8 +2,6 @@
 
 import { useEffect } from 'react'
 
-/** A closed `<details>` prints nothing and no CSS rule can open it, so without this the
- * collapsed Atos would be missing from the sheet. */
 export default function OpenDetailsOnPrint() {
   useEffect(() => {
     let opened: HTMLDetailsElement[] = []

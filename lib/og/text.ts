@@ -10,7 +10,6 @@ const FONT_STEPS = [
 
 const OG_TITLE_MIN_SIZE = 32
 
-// Keeps both short and unusually long titles inside the card, which cannot reflow.
 export function fitTitleFontSize(title: string): number {
   const length = title.trim().length
   for (const step of FONT_STEPS) {

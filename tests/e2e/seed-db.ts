@@ -59,7 +59,6 @@ export const E2E_LITURGY = {
   status: 'published' as const,
 }
 
-// Same date as E2E_LITURGY, so it also surfaces in the Boletim's Liturgia section.
 export const E2E_LITURGY_DRAFT = {
   date: '2026-06-07',
   theme: 'Culto Vespertino',
@@ -90,8 +89,6 @@ export const E2E_AGENDA = [
   { title: 'Reunião de Células', event_date: '2026-06-10' },
 ]
 
-// Relative to the seeding day: a fixed date would expire and silently drop the notice from the
-// home long after this was written.
 function daysFromToday(days: number): Date {
   const date = new Date()
   date.setUTCHours(0, 0, 0, 0)
@@ -125,7 +122,6 @@ export const E2E_ADMIN_PERMISSIONS = [
   { entity: 'liturgies', action: 'read' },
 ] as const
 
-// A logged-in user without liturgies.read must see exactly what an anonymous visitor sees.
 export const E2E_LIMITED_USER = {
   email: 'sem-permissao-e2e@example.com',
   name: 'Sem Permissão E2E',
@@ -184,7 +180,6 @@ export async function seedE2eDatabase() {
     .insert(liturgies)
     .values({ ...E2E_LITURGY, date: parseISODate(E2E_LITURGY.date) })
     .returning({ id: liturgies.id })
-  // Two acts: the printed sheet only proves anything if one act is collapsed on screen.
   for (const act of E2E_LITURGY_ACTS) {
     const [inserted] = await db
       .insert(liturgyActs)

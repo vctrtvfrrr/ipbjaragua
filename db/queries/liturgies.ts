@@ -110,8 +110,6 @@ export async function countLiturgies(
   return row?.value ?? 0
 }
 
-/** Locates the upcoming/past seam across the whole date-desc sequence, so a listing can mark it
- * without both sides of the seam landing on the same page. */
 export async function countFutureOrTodayLiturgies(
   { visibility, fromDate }: { visibility: LiturgyVisibility; fromDate: Date },
   db: Database = defaultDb
@@ -131,8 +129,6 @@ export async function listLiturgies(
     .select(liturgyCardColumns)
     .from(liturgies)
     .where(and(isNull(liturgies.deleted_at), visibleLiturgy(visibility)))
-    // Ties broken all the way down to the id: without a total order, offset paging can repeat
-    // a liturgy on one page and drop it from the next.
     .orderBy(desc(liturgies.date), desc(liturgies.time), desc(liturgies.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
@@ -521,9 +517,6 @@ type LiturgyCardRow = {
   description: string | null
 }
 
-/** The sermon lives in a Momento inside an Ato, so joining for it would multiply each liturgy by
- * its acts and make any `limit` count act rows instead of liturgies. Hence a second query, run
- * over the page of liturgies already chosen. */
 async function withSermons(rows: LiturgyCardRow[], db: Database): Promise<LiturgyListItem[]> {
   const sermons =
     rows.length === 0
@@ -564,12 +557,8 @@ async function withSermons(rows: LiturgyCardRow[], db: Database): Promise<Liturg
   }))
 }
 
-/** The caller must word each kind differently: announcing a `last-held` as if it were the next
- * service misleads whoever is planning a visit. */
 export type NextLiturgyResult = { liturgy: LiturgyListItem; kind: 'today' | 'future' | 'last-held' }
 
-/** Takes no visibility scope on purpose: highlighting is selecting, not rendering, so a Rascunho
- * never wins the spot even for an operator who could open it (see ADR-0020). */
 export async function getNextLiturgy(
   { today, currentTime }: { today: Date; currentTime: string },
   db: Database = defaultDb

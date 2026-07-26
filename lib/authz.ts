@@ -20,7 +20,6 @@ export const PERMISSION_CATALOG = PERMISSION_ENTITIES.flatMap((entity) =>
   PERMISSION_ACTIONS.map((action) => ({ entity, action }))
 ) satisfies Permission[]
 
-// Floor a user can't strip from itself, so nobody locks themselves out of user management.
 export const USER_MANAGEMENT_PERMISSIONS: Permission[] = [
   { entity: 'users', action: 'read' },
   { entity: 'users', action: 'update' },

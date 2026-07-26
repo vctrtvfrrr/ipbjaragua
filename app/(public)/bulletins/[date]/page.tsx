@@ -50,7 +50,6 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
 
   const { bulletin, article } = result
   const windows = bulletinSectionWindows(bulletin.date)
-  // The Preview never leaks a draft Liturgia through an anonymous URL, regardless of session.
   const liturgyVisibility = isPreview ? 'published-only' : liturgyVisibilityForUser(await getCurrentUser())
 
   const [agendaItems, announcements, anniversaries, liturgiesOfDay] = await Promise.all([

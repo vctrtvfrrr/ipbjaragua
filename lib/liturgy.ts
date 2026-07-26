@@ -38,8 +38,6 @@ export const scripturePassageSchema = z.object({
   version: requiredTrimmedString('Campo obrigatório'),
 })
 
-// A draft may hold a half-filled passage (a reference with no text): completeness is a
-// publication rule, not a storage one (see ADR-0020).
 export const draftScripturePassageSchema = z.object({
   reference: nullableTrimmedString,
   text: nullableTrimmedString,
@@ -62,9 +60,6 @@ const draftLiturgyMomentFields = liturgyMomentFields.extend({
 
 type IssueSink = { addIssue: (issue: { code: 'custom'; path: PropertyKey[]; message: string }) => void }
 
-// The DB check constraint `sacrament_type_required` applies regardless of draft/publish, so both
-// variants below enforce it; the draft variant skips the completeness rules a half-built moment
-// hasn't earned yet (see ADR-0020).
 function requireSacramentType(moment: { type: MomentType; sacrament_type?: SacramentType | null }, context: IssueSink) {
   if (moment.type === 'sacrament' && !moment.sacrament_type) {
     context.addIssue({
@@ -123,8 +118,6 @@ export const liturgyTreeSchema = z.object({
   acts: z.array(liturgyActSchema).min(1, 'Liturgia exige ao menos um Ato'),
 })
 
-// A draft relaxes completeness but still requires what the database does: date, time, service
-// type and, for a sacrament, its kind.
 export const draftLiturgyTreeSchema = z.object({
   date: liturgyTreeSchema.shape.date,
   theme: liturgyTreeSchema.shape.theme,
@@ -215,8 +208,6 @@ export function normalizeMomentForType(moment: LiturgyMomentInput) {
   }
 }
 
-// The submit button that triggered the form carries the save intent as a `status` field
-// (see LiturgyForm) — only that button's name/value pair reaches FormData, per the HTML spec.
 export function parseSerializedLiturgyPayload(formData: FormData): unknown {
   const payload = formData.get('payload')
   if (typeof payload !== 'string') throw new Error('payload is required')

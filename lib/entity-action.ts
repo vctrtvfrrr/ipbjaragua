@@ -83,8 +83,6 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
       if (!parsedData.success) {
         const fieldErrors = fieldErrorsFrom(parsedData.error.flatten().fieldErrors)
         const formError = options.validationErrorMessage?.(fieldErrors)
-        // React 19 resets uncontrolled form fields after the action, so echo the
-        // submitted values back for the form to restore them on validation failure.
         return options.parse
           ? { status: 'error', fieldErrors, formError }
           : { status: 'error', fieldErrors, formError, values: parsedForm as Record<string, string> }

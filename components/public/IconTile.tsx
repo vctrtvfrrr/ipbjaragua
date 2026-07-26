@@ -7,7 +7,6 @@ type Props = {
   iconClassName?: string
 }
 
-/** Decorative: the text beside it already names what the item is, so it stays unannounced. */
 export default function IconTile({ icon: Icon, className, iconClassName }: Props) {
   return (
     <span

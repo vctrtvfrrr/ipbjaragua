@@ -106,7 +106,6 @@ describe('countFutureOrTodayLiturgies', () => {
 
     expect(futureCount).toBe(50)
     expect(total).toBe(52)
-    // The boundary (index `futureCount - 1`) falls on the last item of page 1: the seam.
     expect(page1).toHaveLength(50)
     expect(formatISODate(page1[49].date) >= todayDate).toBe(true)
     expect(formatISODate(page2[0].date) < todayDate).toBe(true)

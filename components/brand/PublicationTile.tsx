@@ -6,14 +6,11 @@ const ACCENT = 'var(--brand-accent)'
 
 export type PublicationKind = 'article' | 'liturgy'
 
-/** Stands in for a missing Imagem Destacada, and tells the kinds of publication
- * apart without a coloured label. */
 const CROPS: Record<PublicationKind, string> = {
   article: '0 140 430 210',
   liturgy: '80 18 270 200',
 }
 
-/** A grid of identical tiles reads as a broken placeholder, so articles vary the crop. */
 const ARTICLE_CROPS = [
   '80 130 300 170',
   '140 170 290 165',

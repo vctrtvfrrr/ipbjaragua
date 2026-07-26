@@ -1,8 +1,6 @@
 const NEAR_RIDGE = 'M0,66 C168,62 268,34 452,38 C636,42 748,12 936,16 C1124,20 1272,52 1440,44'
 const FAR_RIDGE = 'M0,50 C200,46 296,20 476,26 C620,31 726,10 852,12'
 
-/** Closes a sky band with the symbol's ridgeline. Appears once per page, on the
- * sky-to-content crossing — repeating it would break the brand's stratigraphy. */
 export default function Horizon({ className }: { className?: string }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 1440 100" preserveAspectRatio="none" className={className} role="presentation">
