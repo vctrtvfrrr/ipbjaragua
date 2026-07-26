@@ -1,5 +1,6 @@
 import { CalendarIcon, FileTextIcon, NewspaperIcon } from 'lucide-react'
 import Link from 'next/link'
+import BrandMark from '@/components/brand/BrandMark'
 import ArticleGrid from '@/components/ArticleGrid'
 import Markdown from '@/components/Markdown'
 import ArrowLink from '@/components/public/ArrowLink'
@@ -26,9 +27,9 @@ import {
 import { CHURCH_NAME } from '@/lib/og/config'
 import { institutionalMetadata } from '@/lib/og/metadata'
 import { cn } from '@/lib/utils'
-import BrandMark from '@/components/brand/BrandMark'
 
 export const metadata = institutionalMetadata('home')
+export const dynamic = 'force-dynamic'
 
 const SHOWCASE_SIZE = 12
 
@@ -119,7 +120,11 @@ export default async function Home() {
         <div className="container mx-auto px-5 md:px-8">
           <div className="grid items-center gap-6 py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:gap-10 md:py-20">
             <div>{nextLiturgy ? <NextService next={nextLiturgy} /> : <NoService />}</div>
-            <BrandMark variant="symbol" className="order-first h-40 w-full sm:h-56 md:order-0 md:h-72 hidden" priority />
+            <BrandMark
+              variant="symbol"
+              className="order-first hidden h-40 w-full sm:h-56 md:order-0 md:h-72"
+              priority
+            />
           </div>
         </div>
       </section>
