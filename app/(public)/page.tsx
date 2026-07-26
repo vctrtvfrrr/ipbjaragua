@@ -11,6 +11,7 @@ import { countArticles, getLatestArticle, listArticles } from '@/db/queries/arti
 import { listActiveAnnouncements, listAgendaInWindow } from '@/db/queries/bulletin-sections'
 import { getLatestDominicalBulletin, listRecentBulletins } from '@/db/queries/bulletins'
 import { getNextLiturgy, type NextLiturgyResult } from '@/db/queries/liturgies'
+import { resolveAnnouncementIcon } from '@/lib/announcement-icon'
 import { publicAuthorName } from '@/lib/article'
 import { formatBulletinSubtitle, groupAgendaByWeekday, liturgySlug } from '@/lib/bulletin'
 import {
@@ -184,33 +185,41 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
       ) : null}
 
       {agendaDays.length > 0 || announcements.length > 0 ? (
-        <section className="container mx-auto px-5 pb-16 md:px-8">
-          <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+        <section className="container mx-auto px-5 pb-12 md:px-8">
+          <div className="grid gap-6 lg:grid-cols-2">
             {agendaDays.length > 0 ? (
-              <div>
-                <SectionHead>Agenda da semana</SectionHead>
-                <p className="text-muted-foreground -mt-4 mb-6">
+              <div className="border-border rounded-xl border p-6 md:p-8">
+                <h2 className="text-brand-deep font-serif text-2xl">Agenda da semana</h2>
+                <p className="text-muted-foreground mt-1 text-sm">
                   {formatShortDatePtBR(weekWindow.from)} a {formatShortDatePtBR(weekWindow.to)}
                 </p>
-                <ol className="bg-brand-sky space-y-6 p-6">
+                <ol className="divide-border mt-6 divide-y">
                   {agendaDays.map((day) => (
-                    <li key={day.weekday}>
-                      <h3 className="eyebrow text-brand-ridge border-brand-accent mb-3 border-b pb-2">{day.label}</h3>
-                      <dl className="space-y-2">
+                    <li key={day.weekday} className="flex gap-4 py-4 first:pt-0 last:pb-0">
+                      <span
+                        aria-hidden="true"
+                        className="bg-brand-sky flex size-11 shrink-0 items-center justify-center rounded-lg"
+                      >
+                        <CalendarIcon className="text-brand-deep size-5" />
+                      </span>
+                      <div className="w-16 shrink-0">
+                        <h3 className="eyebrow text-brand-deep">{day.label.slice(0, 3)}</h3>
+                        <p className="text-muted-foreground mt-1.5 text-sm tabular-nums">
+                          {formatShortDatePtBR(day.items[0].resolvedDate)}
+                        </p>
+                      </div>
+                      <ul className="min-w-0 flex-1 space-y-3">
                         {day.items.map((item) => (
-                          <div key={`${item.time ?? ''}-${item.title}`} className="flex gap-3">
-                            <dt className="font-narrow text-brand-deep w-16 shrink-0 tabular-nums">
-                              {item.time ? <time>{formatTimePtBR(item.time)}</time> : '—'}
-                            </dt>
-                            <dd>
-                              <span className="block">{item.title}</span>
-                              {item.description ? (
-                                <span className="text-muted-foreground block text-sm">{item.description}</span>
-                              ) : null}
-                            </dd>
-                          </div>
+                          <li key={`${item.time ?? ''}-${item.title}`}>
+                            <span className="text-brand-deep block font-bold">{item.title}</span>
+                            <span className="text-muted-foreground block text-sm">
+                              {item.time ? <time>{formatTimePtBR(item.time)}</time> : null}
+                              {item.time && item.description ? ' · ' : null}
+                              {item.description}
+                            </span>
+                          </li>
                         ))}
-                      </dl>
+                      </ul>
                     </li>
                   ))}
                 </ol>
@@ -218,27 +227,31 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
             ) : null}
 
             {announcements.length > 0 ? (
-              <div>
-                <SectionHead>Avisos</SectionHead>
-                <ul className="space-y-8">
-                  {announcements.map((ann) => (
-                    <li key={ann.id} className="border-brand-accent border-l-2 pl-5">
-                      <h3 className="text-brand-ridge font-serif text-2xl leading-snug">{ann.title}</h3>
-                      {ann.description ? (
-                        <div className="prose prose-sm mt-2 max-w-none">
-                          <Markdown content={ann.description} />
-                        </div>
-                      ) : null}
-                      {ann.url ? (
-                        <Link
-                          href={ann.url}
-                          className="text-brand-current mt-2 inline-block underline-offset-4 hover:underline"
+              <div className="border-border rounded-xl border p-6 md:p-8">
+                <h2 className="text-brand-deep font-serif text-2xl">Avisos</h2>
+                <ul className="divide-border mt-6 divide-y">
+                  {announcements.map((ann) => {
+                    const Icon = resolveAnnouncementIcon(ann.icon)
+                    return (
+                      <li key={ann.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
+                        <span
+                          aria-hidden="true"
+                          className="bg-brand-accent/15 flex size-11 shrink-0 items-center justify-center rounded-full"
                         >
-                          Acesse
-                        </Link>
-                      ) : null}
-                    </li>
-                  ))}
+                          <Icon className="text-brand-ridge size-5" />
+                        </span>
+                        <div className="min-w-0">
+                          <h3 className="text-brand-deep font-bold">{ann.title}</h3>
+                          {ann.description ? (
+                            <div className="prose prose-sm mt-1 max-w-none">
+                              <Markdown content={ann.description} />
+                            </div>
+                          ) : null}
+                          {ann.url ? <ArrowLink href={ann.url}>Acesse</ArrowLink> : null}
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
             ) : null}
