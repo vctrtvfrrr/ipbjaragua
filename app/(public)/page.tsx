@@ -260,20 +260,33 @@ export default async function Home({ searchParams }: PageProps<'/'>) {
       ) : null}
 
       {recentBulletins.length > 0 ? (
-        <section className="container mx-auto px-5 pb-16 md:px-8">
-          <SectionHead>Boletins publicados</SectionHead>
-          <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-            {recentBulletins.map((b) => (
-              <li key={b.id} className="border-border border-b pb-3">
-                <Link href={`/bulletins/${formatISODate(b.date)}`} className="group block">
-                  <h3 className="font-narrow text-brand-deep text-xl group-hover:underline">
-                    {formatLongDatePtBR(b.date)}
-                  </h3>
-                  <p className="text-muted-foreground mt-1 text-sm">{formatBulletinSubtitle(b.edition, b.date)}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <section className="container mx-auto px-5 pb-12 md:px-8">
+          <div className="bg-brand-sky rounded-xl p-6 md:p-8">
+            <h2 className="text-brand-deep font-serif text-2xl">Boletins recentes</h2>
+            <ul className="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+              {recentBulletins.map((b) => (
+                <li key={b.id} className="flex gap-4">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white"
+                  >
+                    <FileTextIcon className="text-brand-deep size-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-brand-deep font-bold">
+                      <Link href={`/bulletins/${formatISODate(b.date)}`} className="underline-offset-4 hover:underline">
+                        {formatLongDatePtBR(b.date)}
+                      </Link>
+                    </h3>
+                    <p className="text-muted-foreground mt-1 text-sm">{formatBulletinSubtitle(b.edition, b.date)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <ArrowLink href="/bulletins" className="mt-4">
+              Ver todos os boletins
+            </ArrowLink>
+          </div>
         </section>
       ) : null}
 
