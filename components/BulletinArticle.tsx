@@ -9,14 +9,14 @@ export default function BulletinArticle({ article }: { article: ArticleWithAutho
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <section className="mb-12 max-w-3xl">
+    <section className="mb-12">
       <p className="eyebrow text-brand-ridge">Artigo</p>
       <h2 className="text-brand-ridge mt-3 font-serif text-3xl leading-snug">{article.title}</h2>
       <p className="text-muted-foreground mt-2 text-sm">{publicAuthorName(article)}</p>
 
       <div className="relative mt-5">
         <div
-          className="prose prose-headings:font-serif prose-headings:text-brand-ridge overflow-hidden transition-all duration-500 print:max-h-none!"
+          className="prose prose-headings:font-serif prose-headings:text-brand-ridge max-w-none overflow-hidden transition-all duration-500 print:max-h-none!"
           style={{ maxHeight: expanded ? '99999px' : '20rem' }}
         >
           <Markdown content={article.content} />

@@ -52,7 +52,7 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
 
       <div className="container mx-auto px-5 pt-6 pb-20 md:px-8 print:px-0 print:pt-7 print:pb-0">
         <KeepOneLiturgyActOpen listId="liturgy-acts" />
-        <ol id="liturgy-acts" className="max-w-3xl space-y-10 print:max-w-none print:space-y-7">
+        <ol id="liturgy-acts" className="space-y-10 print:space-y-7">
           {liturgy.acts.map((act, i) => (
             <li key={act.id}>
               <details open={i === 0} className="group">

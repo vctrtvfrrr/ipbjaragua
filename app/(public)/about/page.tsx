@@ -10,7 +10,7 @@ export default function About() {
 
       {/* TODO: substituir pelo texto institucional aprovado (issue #42 mantém o preenchimento). */}
       <div className="container mx-auto px-5 pt-6 pb-20 md:px-8">
-        <div className="prose prose-lg prose-headings:font-serif prose-headings:text-brand-ridge">
+        <div className="prose prose-lg prose-headings:font-serif prose-headings:text-brand-ridge max-w-none">
           <p>
             Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum
             tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas
