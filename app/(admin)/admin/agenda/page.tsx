@@ -5,9 +5,14 @@ import Pagination from '@/components/Pagination'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { countPastAgendaItems, listFutureAgendaItems, listPastAgendaItems, type AgendaItem } from '@/db/queries/agenda'
+import {
+  countPastAgendaItems,
+  listPastAgendaItems,
+  listUpcomingAgendaItems,
+  type AgendaItem,
+} from '@/db/queries/agenda'
 import { requirePageRead } from '@/lib/auth/require-page-read'
-import { formatLongDatePtBR, today } from '@/lib/date'
+import { currentTimeHHMM, formatLongDatePtBR, today } from '@/lib/date'
 import { resolvePage, totalPages } from '@/lib/pagination'
 
 const PAGE_SIZE = 20
@@ -19,20 +24,20 @@ type AdminAgendaPageProps = {
 export default async function AdminAgendaPage({ searchParams }: AdminAgendaPageProps) {
   const user = await requirePageRead('agenda')
 
-  const todayDate = today()
+  const now = { date: today(), time: currentTimeHHMM() }
   const { page: rawPage } = await searchParams
-  const pastTotal = await countPastAgendaItems(todayDate)
+  const pastTotal = await countPastAgendaItems(now)
   const pages = totalPages(pastTotal, PAGE_SIZE)
   const page = resolvePage(rawPage, pages)
-  const [futureItems, pastItems] = await Promise.all([
-    listFutureAgendaItems(todayDate),
-    listPastAgendaItems({ today: todayDate, page, pageSize: PAGE_SIZE }),
+  const [upcomingItems, pastItems] = await Promise.all([
+    listUpcomingAgendaItems(now),
+    listPastAgendaItems({ now, page, pageSize: PAGE_SIZE }),
   ])
 
   const canCreate = user.can('agenda', 'create')
   const canUpdate = user.can('agenda', 'update')
   const canDelete = user.can('agenda', 'delete')
-  const total = futureItems.length + pastTotal
+  const total = upcomingItems.length + pastTotal
 
   return (
     <section className="grid gap-6">
@@ -59,68 +64,64 @@ export default async function AdminAgendaPage({ searchParams }: AdminAgendaPageP
         </div>
       ) : (
         <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {futureItems.map((item) => (
-                <AgendaRow
-                  key={item.id}
-                  item={item}
-                  canCreate={canCreate}
-                  canUpdate={canUpdate}
-                  canDelete={canDelete}
-                />
-              ))}
-              {pastItems.length > 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="bg-muted/40 text-muted-foreground text-xs font-medium uppercase">
-                    Eventos passados
-                  </TableCell>
-                </TableRow>
-              ) : null}
-              {pastItems.map((item) => (
-                <AgendaRow
-                  key={item.id}
-                  item={item}
-                  canCreate={canCreate}
-                  canUpdate={canUpdate}
-                  canDelete={canDelete}
-                />
-              ))}
-            </TableBody>
-          </Table>
+          <div className="grid gap-3">
+            <h3 className="text-base font-semibold tracking-normal">Próximos eventos</h3>
+            {upcomingItems.length === 0 ? (
+              <p className="text-muted-foreground rounded-lg border px-4 py-6 text-center text-sm">
+                Nenhum evento futuro.
+              </p>
+            ) : (
+              <AgendaTable items={upcomingItems} canCreate={canCreate} canUpdate={canUpdate} canDelete={canDelete} />
+            )}
+          </div>
 
-          {pages > 1 ? <Pagination page={page} totalPages={pages} basePath="/admin/agenda" /> : null}
+          {pastItems.length > 0 ? (
+            <div className="grid gap-3">
+              <h3 className="text-base font-semibold tracking-normal">Eventos passados</h3>
+              <AgendaTable items={pastItems} canCreate={canCreate} canUpdate={canUpdate} canDelete={canDelete} />
+              {pages > 1 ? <Pagination page={page} totalPages={pages} basePath="/admin/agenda" /> : null}
+            </div>
+          ) : null}
         </>
       )}
     </section>
   )
 }
 
-function AgendaRow({
-  item,
-  canCreate,
-  canUpdate,
-  canDelete,
-}: {
-  item: AgendaItem
-  canCreate: boolean
-  canUpdate: boolean
-  canDelete: boolean
-}) {
+type AgendaPermissions = { canCreate: boolean; canUpdate: boolean; canDelete: boolean }
+
+function AgendaTable({ items, ...permissions }: { items: AgendaItem[] } & AgendaPermissions) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Título</TableHead>
+          <TableHead>Data</TableHead>
+          <TableHead>Horário</TableHead>
+          <TableHead className="text-right">Ações</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <AgendaRow key={item.id} item={item} {...permissions} />
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+function AgendaRow({ item, canCreate, canUpdate, canDelete }: { item: AgendaItem } & AgendaPermissions) {
   return (
     <TableRow>
-      <TableCell className="font-medium whitespace-normal">{item.title}</TableCell>
-      <TableCell>{formatLongDatePtBR(item.event_date)}</TableCell>
-      <TableCell>{item.time ? item.time.slice(0, 5) : 'Dia inteiro'}</TableCell>
-      <TableCell>
+      <TableCell className="align-top font-medium whitespace-normal">
+        {item.title}
+        {item.description ? (
+          <span className="text-muted-foreground mt-0.5 block text-xs font-normal">{item.description}</span>
+        ) : null}
+      </TableCell>
+      <TableCell className="align-top">{formatLongDatePtBR(item.event_date)}</TableCell>
+      <TableCell className="align-top">{item.time ? item.time.slice(0, 5) : 'Dia inteiro'}</TableCell>
+      <TableCell className="align-top">
         <div className="flex items-center justify-end gap-2">
           {canUpdate ? (
             <Link

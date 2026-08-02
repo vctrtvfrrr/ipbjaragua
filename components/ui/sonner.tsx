@@ -1,15 +1,12 @@
 'use client'
 
-import { useTheme } from 'next-themes'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from 'lucide-react'
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps['theme']}
+      theme="light"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
@@ -24,11 +21,21 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--normal-text': 'var(--popover-foreground)',
           '--normal-border': 'var(--border)',
           '--border-radius': 'var(--radius)',
+          // Inherited fallback for a toast raised without a type.
+          '--toast-accent': 'var(--border)',
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast: 'cn-toast',
+          // Sonner ships `[data-sonner-toast][data-styled='true'] { border: … }` in a stylesheet it
+          // appends at runtime, so the shorthand outranks these on both specificity and order.
+          toast: 'border-l-4! border-l-(--toast-accent)!',
+          icon: 'text-(--toast-accent)',
+          success: '[--toast-accent:var(--brand-ridge)]',
+          error: '[--toast-accent:var(--destructive)]',
+          warning: '[--toast-accent:var(--brand-deep)]',
+          info: '[--toast-accent:var(--brand-current)]',
+          loading: '[--toast-accent:var(--muted-foreground)]',
         },
       }}
       {...props}

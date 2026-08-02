@@ -1,16 +1,33 @@
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronsUpDown, Plus } from 'lucide-react'
 import { DeleteSongButton } from '@/components/admin/DeleteSongButton'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { listSongsForAdmin } from '@/db/queries/songs'
+import {
+  DEFAULT_SONG_SORT,
+  listSongsForAdmin,
+  type SongSort,
+  type SongSortDirection,
+  type SongSortField,
+} from '@/db/queries/songs'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 
-export default async function AdminSongsPage() {
+function resolveSort({ sort, dir }: { sort?: string | string[]; dir?: string | string[] }): SongSort {
+  if (sort !== 'title' && sort !== 'reference') return DEFAULT_SONG_SORT
+
+  return { field: sort, direction: dir === 'desc' ? 'desc' : 'asc' }
+}
+
+type AdminSongsPageProps = {
+  searchParams: Promise<{ sort?: string | string[]; dir?: string | string[] }>
+}
+
+export default async function AdminSongsPage({ searchParams }: AdminSongsPageProps) {
   const user = await requirePageRead('songs')
 
-  const songs = await listSongsForAdmin()
+  const sort = resolveSort(await searchParams)
+  const songs = await listSongsForAdmin(sort)
 
   const canCreate = user.can('songs', 'create')
   const canUpdate = user.can('songs', 'update')
@@ -43,8 +60,8 @@ export default async function AdminSongsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Título</TableHead>
-              <TableHead>Referência</TableHead>
+              <SortableHead field="title" label="Título" sort={sort} />
+              <SortableHead field="reference" label="Referência" sort={sort} />
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -72,5 +89,24 @@ export default async function AdminSongsPage() {
         </Table>
       )}
     </section>
+  )
+}
+
+function SortableHead({ field, label, sort }: { field: SongSortField; label: string; sort: SongSort }) {
+  const active = sort.field === field
+  const nextDirection: SongSortDirection = active && sort.direction === 'asc' ? 'desc' : 'asc'
+  const Icon = !active ? ChevronsUpDown : sort.direction === 'asc' ? ArrowUp : ArrowDown
+
+  return (
+    <TableHead>
+      <Link
+        href={`/admin/songs?sort=${field}&dir=${nextDirection}`}
+        aria-label={`Ordenar por ${label}`}
+        className="hover:text-brand-ridge inline-flex items-center gap-1.5"
+      >
+        {label}
+        <Icon className={cn('size-3.5', !active && 'opacity-40')} />
+      </Link>
+    </TableHead>
   )
 }

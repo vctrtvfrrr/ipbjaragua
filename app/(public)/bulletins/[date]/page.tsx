@@ -83,22 +83,21 @@ export default async function BulletinDetailPage({ params, searchParams }: PageP
                     <h3 className="eyebrow text-brand-ridge border-brand-accent mb-2 border-b pb-1">{day.label}</h3>
                     <ul>
                       {day.items.map((item) => (
-                        <li key={item.id}>
+                        <li key={item.id} className="flex gap-1">
                           {item.time ? (
-                            <>
+                            <span className="shrink-0">
                               <time dateTime={item.time} className="font-narrow text-brand-deep">
                                 {item.time}
                               </time>{' '}
-                              –{' '}
-                            </>
+                              –
+                            </span>
                           ) : null}
-                          {item.title}
-                          {item.description ? (
-                            <>
-                              {' '}
-                              – <em className="text-muted-foreground">{item.description}</em>
-                            </>
-                          ) : null}
+                          <span className="min-w-0">
+                            {item.title}
+                            {item.description ? (
+                              <em className="text-muted-foreground block">{item.description}</em>
+                            ) : null}
+                          </span>
                         </li>
                       ))}
                     </ul>

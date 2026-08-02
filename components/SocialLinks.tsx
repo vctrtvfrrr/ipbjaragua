@@ -4,7 +4,7 @@ export default function SocialLinks() {
   return (
     <>
       <Link
-        href="https://www.facebook.com/ipbjaraguadosul"
+        href="https://www.facebook.com/profile.php?id=61588906712363"
         title="Facebook"
         className="inline-flex size-11 items-center justify-center p-2.5"
         target="_blank"

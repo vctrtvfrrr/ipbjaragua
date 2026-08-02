@@ -1,4 +1,4 @@
-import { and, asc, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, getTableColumns, inArray, isNull, sql, type SQL } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { songs } from '@/db/schema'
 import type { LyricsBlock } from '@/lib/song'
@@ -7,6 +7,12 @@ import { buildSlugCandidates, writeWithAllocatedSlug } from './slug'
 
 export type Song = typeof songs.$inferSelect
 export type SongForAdmin = Song & { songReference: string | null }
+
+export type SongSortField = 'title' | 'reference'
+export type SongSortDirection = 'asc' | 'desc'
+export type SongSort = { field: SongSortField; direction: SongSortDirection }
+
+export const DEFAULT_SONG_SORT: SongSort = { field: 'title', direction: 'asc' }
 
 export class SongNotFoundError extends Error {
   constructor(id: number) {
@@ -84,12 +90,49 @@ export async function getSongById(id: number, db: Database = defaultDb): Promise
   return rows[0]
 }
 
-export async function listSongsForAdmin(db: Database = defaultDb): Promise<SongForAdmin[]> {
+const IS_HYMNAL = sql`${songs.album} IS NOT NULL AND ${songs.track} IS NOT NULL`
+
+/** The same priority that derives the reference, as a sortable rank. */
+const REFERENCE_BUCKET = sql`CASE
+  WHEN ${IS_HYMNAL} THEN 0
+  WHEN ${songs.performer} IS NOT NULL THEN 1
+  WHEN ${songs.songwriter} IS NOT NULL THEN 2
+  ELSE 3
+END`
+
+const WITHOUT_REFERENCE = sql`${REFERENCE_BUCKET} = 3`
+
+/**
+ * Album and track only rank the hymnal bucket. Left ungated they would also rank a song that
+ * fills one of them without being a hymnal, sorting it away from the performer it displays.
+ */
+const HYMNAL_ALBUM = sql`CASE WHEN ${IS_HYMNAL} THEN ${songs.album} END`
+const HYMNAL_TRACK = sql`CASE WHEN ${IS_HYMNAL} THEN ${songs.track} END`
+
+function songOrderBy(sort: SongSort): SQL[] {
+  const dir = sort.direction === 'desc' ? desc : asc
+
+  if (sort.field === 'title') return [dir(songs.title), asc(songs.id)]
+
+  return [
+    // Absence of a reference is not a value to reverse, so it stays last either way.
+    asc(WITHOUT_REFERENCE),
+    dir(REFERENCE_BUCKET),
+    dir(HYMNAL_ALBUM),
+    dir(HYMNAL_TRACK),
+    dir(songs.performer),
+    dir(songs.songwriter),
+    dir(songs.title),
+    asc(songs.id),
+  ]
+}
+
+export async function listSongsForAdmin(sort: SongSort, db: Database = defaultDb): Promise<SongForAdmin[]> {
   const rows = await db
     .select(getTableColumns(songs))
     .from(songs)
     .where(isNull(songs.deleted_at))
-    .orderBy(asc(songs.title), asc(songs.id))
+    .orderBy(...songOrderBy(sort))
 
   return rows.map((song) => ({ ...song, songReference: songReference(song) }))
 }

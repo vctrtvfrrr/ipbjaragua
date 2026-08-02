@@ -1,8 +1,22 @@
-import { and, asc, count, desc, eq, gte, isNull, lt, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, isNotNull, isNull, lt, not, or, sql, type SQL } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { agenda } from '@/db/schema'
 
 export type AgendaItem = typeof agenda.$inferSelect
+
+/** The instant the admin listing is read at, in the church's timezone. */
+export type AgendaNow = { date: Date; time: string }
+
+/**
+ * An event is expired once its date is behind or, on its own date, once its time has been
+ * reached. An all-day event has no time to reach, so it only expires with the date.
+ */
+function isExpired(now: AgendaNow): SQL {
+  return or(
+    lt(agenda.event_date, now.date),
+    and(eq(agenda.event_date, now.date), isNotNull(agenda.time), lt(agenda.time, now.time))
+  )!
+}
 
 export class AgendaItemNotFoundError extends Error {
   constructor(id: number) {
@@ -60,31 +74,31 @@ export async function getAgendaItemById(id: number, db: Database = defaultDb): P
   return rows[0]
 }
 
-export async function listFutureAgendaItems(today: Date, db: Database = defaultDb): Promise<AgendaItem[]> {
+export async function listUpcomingAgendaItems(now: AgendaNow, db: Database = defaultDb): Promise<AgendaItem[]> {
   return db
     .select()
     .from(agenda)
-    .where(and(isNull(agenda.deleted_at), gte(agenda.event_date, today)))
+    .where(and(isNull(agenda.deleted_at), not(isExpired(now))))
     .orderBy(asc(agenda.event_date), asc(agenda.time), asc(agenda.id))
 }
 
 export async function listPastAgendaItems(
-  { today, page, pageSize }: { today: Date; page: number; pageSize: number },
+  { now, page, pageSize }: { now: AgendaNow; page: number; pageSize: number },
   db: Database = defaultDb
 ): Promise<AgendaItem[]> {
   return db
     .select()
     .from(agenda)
-    .where(and(isNull(agenda.deleted_at), lt(agenda.event_date, today)))
+    .where(and(isNull(agenda.deleted_at), isExpired(now)))
     .orderBy(desc(agenda.event_date), desc(agenda.time), desc(agenda.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
 }
 
-export async function countPastAgendaItems(today: Date, db: Database = defaultDb): Promise<number> {
+export async function countPastAgendaItems(now: AgendaNow, db: Database = defaultDb): Promise<number> {
   const [row] = await db
     .select({ value: count() })
     .from(agenda)
-    .where(and(isNull(agenda.deleted_at), lt(agenda.event_date, today)))
+    .where(and(isNull(agenda.deleted_at), isExpired(now)))
   return row?.value ?? 0
 }
