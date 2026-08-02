@@ -26,7 +26,7 @@ describe('evaluateAdminSession', () => {
 
     expect(decision.ok).toBe(true)
     expect(decision.ok ? decision.renewedToken : null).toEqual(expect.any(String))
-    expect(await verifySessionToken(decision.ok ? decision.renewedToken! : '', SECRET)).toMatchObject({
+    expect(await verifySessionToken(decision.ok ? decision.renewedToken! : '', SECRET, now)).toMatchObject({
       userId: 1,
       expiresAt: new Date('2026-08-01T12:00:00Z'),
     })

@@ -8,6 +8,7 @@ WORKDIR /app
 FROM base AS dev
 COPY package.json pnpm-*.yaml ./
 RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm exec playwright install --with-deps chromium
 COPY . .
 EXPOSE 3000
 CMD ["pnpm", "dev"]

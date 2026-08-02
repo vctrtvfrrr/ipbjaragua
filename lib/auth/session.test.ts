@@ -11,8 +11,9 @@ const SECRET = 'a'.repeat(32)
 
 describe('session tokens', () => {
   it('signs a token with only the user id plus JWT timestamps', async () => {
-    const token = await createSessionToken(12, SECRET, new Date('2026-07-02T12:00:00Z'))
-    const session = await verifySessionToken(token, SECRET)
+    const issuedAt = new Date('2026-07-02T12:00:00Z')
+    const token = await createSessionToken(12, SECRET, issuedAt)
+    const session = await verifySessionToken(token, SECRET, issuedAt)
 
     expect(session?.userId).toBe(12)
     expect(session?.expiresAt).toEqual(new Date('2026-08-01T12:00:00Z'))
