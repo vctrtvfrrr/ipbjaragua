@@ -6,21 +6,21 @@ export function formatISODate(value: Date): string {
   return value.toISOString().slice(0, 10)
 }
 
-export function todayISO(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+export function todayISO(at: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(at)
 }
 
-export function today(): Date {
-  return parseISODate(todayISO())
+export function today(at: Date = new Date()): Date {
+  return parseISODate(todayISO(at))
 }
 
-export function currentTimeHHMM(): string {
+export function currentTimeHHMM(at: Date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
     timeZone: 'America/Sao_Paulo',
-  }).formatToParts(new Date())
+  }).formatToParts(at)
   const h = parts.find((p) => p.type === 'hour')!.value
   const m = parts.find((p) => p.type === 'minute')!.value
   return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`

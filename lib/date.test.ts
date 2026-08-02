@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   bulletinSectionWindows,
+  currentTimeHHMM,
   currentWeekWindow,
   formatISODate,
   formatLongDatePtBR,
@@ -8,6 +9,7 @@ import {
   formatWeekdayPtBR,
   nextWeekDateForWeekday,
   parseISODate,
+  today,
   todayISO,
 } from './date'
 
@@ -20,6 +22,17 @@ describe('todayISO', () => {
   it('matches the current date in America/Sao_Paulo', () => {
     const spDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
     expect(todayISO()).toBe(spDate)
+  })
+})
+
+describe('reading a given instant', () => {
+  it('derives date and time from the same instant, on either side of midnight', () => {
+    // 02:59 UTC is 23:59 of the previous day in São Paulo; one minute later both must move together.
+    const beforeMidnight = new Date('2026-08-03T02:59:00Z')
+    const afterMidnight = new Date('2026-08-03T03:00:00Z')
+
+    expect([formatISODate(today(beforeMidnight)), currentTimeHHMM(beforeMidnight)]).toEqual(['2026-08-02', '23:59'])
+    expect([formatISODate(today(afterMidnight)), currentTimeHHMM(afterMidnight)]).toEqual(['2026-08-03', '00:00'])
   })
 })
 

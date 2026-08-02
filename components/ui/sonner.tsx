@@ -26,10 +26,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
         } as React.CSSProperties
       }
       toastOptions={{
+        // Inline, because Sonner ships `[data-sonner-toast][data-styled='true'] { border: … }` in a
+        // stylesheet it appends at runtime, outranking any class on both specificity and order.
+        style: { borderLeft: '4px solid var(--toast-accent)' },
         classNames: {
-          // Sonner ships `[data-sonner-toast][data-styled='true'] { border: … }` in a stylesheet it
-          // appends at runtime, so the shorthand outranks these on both specificity and order.
-          toast: 'border-l-4! border-l-(--toast-accent)!',
           icon: 'text-(--toast-accent)',
           success: '[--toast-accent:var(--brand-ridge)]',
           error: '[--toast-accent:var(--destructive)]',

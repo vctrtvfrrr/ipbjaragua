@@ -21,7 +21,7 @@ import { ReferencePreview } from './ReferencePreview'
 const INITIAL_STATE: ActionState = { status: 'idle' }
 const EMPTY_LYRICS: LyricsBlock[] = [{ type: 'verse', number: 1, content: '' }]
 
-type Props = { mode: 'create' } | { mode: 'edit'; song: Song }
+type Props = ({ mode: 'create' } | { mode: 'edit'; song: Song }) & { listPath: string }
 
 export function SongForm(props: Props) {
   const song = props.mode === 'edit' ? props.song : undefined
@@ -47,8 +47,8 @@ export function SongForm(props: Props) {
   useEffect(() => {
     if (state.status !== 'success') return
     toast.success(props.mode === 'edit' ? 'Cântico atualizado' : 'Cântico criado')
-    router.push('/admin/songs')
-  }, [state.status, props.mode, router])
+    router.push(props.listPath)
+  }, [state.status, props.mode, props.listPath, router])
 
   function submit(event: FormEvent<HTMLFormElement>) {
     const errors = validateLyricsBlocks(blocks)
@@ -127,7 +127,7 @@ export function SongForm(props: Props) {
       />
 
       <FormActions>
-        <Link href="/admin/songs" className={cn(buttonVariants({ variant: 'outline' }))}>
+        <Link href={props.listPath} className={cn(buttonVariants({ variant: 'outline' }))}>
           Cancelar
         </Link>
         <Button type="submit" disabled={isPending}>

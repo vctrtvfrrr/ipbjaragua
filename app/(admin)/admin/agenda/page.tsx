@@ -24,7 +24,9 @@ type AdminAgendaPageProps = {
 export default async function AdminAgendaPage({ searchParams }: AdminAgendaPageProps) {
   const user = await requirePageRead('agenda')
 
-  const now = { date: today(), time: currentTimeHHMM() }
+  // One clock reading, so date and time cannot straddle midnight and describe different days.
+  const clock = new Date()
+  const now = { date: today(clock), time: currentTimeHHMM(clock) }
   const { page: rawPage } = await searchParams
   const pastTotal = await countPastAgendaItems(now)
   const pages = totalPages(pastTotal, PAGE_SIZE)

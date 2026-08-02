@@ -4,30 +4,20 @@ import { DeleteSongButton } from '@/components/admin/DeleteSongButton'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import {
-  DEFAULT_SONG_SORT,
-  listSongsForAdmin,
-  type SongSort,
-  type SongSortDirection,
-  type SongSortField,
-} from '@/db/queries/songs'
+import { listSongsForAdmin, type SongSort, type SongSortDirection, type SongSortField } from '@/db/queries/songs'
 import { requirePageRead } from '@/lib/auth/require-page-read'
-
-function resolveSort({ sort, dir }: { sort?: string | string[]; dir?: string | string[] }): SongSort {
-  if (sort !== 'title' && sort !== 'reference') return DEFAULT_SONG_SORT
-
-  return { field: sort, direction: dir === 'desc' ? 'desc' : 'asc' }
-}
+import { resolveSongSort, songListPath, songSortQuery, type SongSortParams } from '@/lib/song-sort'
 
 type AdminSongsPageProps = {
-  searchParams: Promise<{ sort?: string | string[]; dir?: string | string[] }>
+  searchParams: Promise<SongSortParams>
 }
 
 export default async function AdminSongsPage({ searchParams }: AdminSongsPageProps) {
   const user = await requirePageRead('songs')
 
-  const sort = resolveSort(await searchParams)
+  const sort = resolveSongSort(await searchParams)
   const songs = await listSongsForAdmin(sort)
+  const sortQuery = songSortQuery(sort)
 
   const canCreate = user.can('songs', 'create')
   const canUpdate = user.can('songs', 'update')
@@ -38,7 +28,7 @@ export default async function AdminSongsPage({ searchParams }: AdminSongsPagePro
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Cânticos</h2>
         {canCreate ? (
-          <Link href="/admin/songs/new" className={cn(buttonVariants())}>
+          <Link href={`/admin/songs/new?${sortQuery}`} className={cn(buttonVariants())}>
             <Plus data-icon="inline-start" />
             Novo cântico
           </Link>
@@ -50,7 +40,7 @@ export default async function AdminSongsPage({ searchParams }: AdminSongsPagePro
           <p>Nenhum cântico ainda.</p>
           {canCreate ? (
             <div>
-              <Link href="/admin/songs/new" className={cn(buttonVariants())}>
+              <Link href={`/admin/songs/new?${sortQuery}`} className={cn(buttonVariants())}>
                 Criar o primeiro cântico
               </Link>
             </div>
@@ -74,7 +64,7 @@ export default async function AdminSongsPage({ searchParams }: AdminSongsPagePro
                   <div className="flex items-center justify-end gap-2">
                     {canUpdate ? (
                       <Link
-                        href={`/admin/songs/${song.id}/edit`}
+                        href={`/admin/songs/${song.id}/edit?${sortQuery}`}
                         className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                       >
                         Editar
@@ -100,7 +90,7 @@ function SortableHead({ field, label, sort }: { field: SongSortField; label: str
   return (
     <TableHead>
       <Link
-        href={`/admin/songs?sort=${field}&dir=${nextDirection}`}
+        href={songListPath({ field, direction: nextDirection })}
         aria-label={`Ordenar por ${label}`}
         className="hover:text-brand-ridge inline-flex items-center gap-1.5"
       >
