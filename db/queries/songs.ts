@@ -92,7 +92,6 @@ export async function getSongById(id: number, db: Database = defaultDb): Promise
 
 const IS_HYMNAL = sql`${songs.album} IS NOT NULL AND ${songs.track} IS NOT NULL`
 
-/** The same priority that derives the reference, as a sortable rank. */
 const REFERENCE_BUCKET = sql`CASE
   WHEN ${IS_HYMNAL} THEN 0
   WHEN ${songs.performer} IS NOT NULL THEN 1
@@ -101,11 +100,6 @@ const REFERENCE_BUCKET = sql`CASE
 END`
 
 const WITHOUT_REFERENCE = sql`${REFERENCE_BUCKET} = 3`
-
-/**
- * Album and track only rank the hymnal bucket. Left ungated they would also rank a song that
- * fills one of them without being a hymnal, sorting it away from the performer it displays.
- */
 const HYMNAL_ALBUM = sql`CASE WHEN ${IS_HYMNAL} THEN ${songs.album} END`
 const HYMNAL_TRACK = sql`CASE WHEN ${IS_HYMNAL} THEN ${songs.track} END`
 
@@ -115,7 +109,6 @@ function songOrderBy(sort: SongSort): SQL[] {
   if (sort.field === 'title') return [dir(songs.title), asc(songs.id)]
 
   return [
-    // Absence of a reference is not a value to reverse, so it stays last either way.
     asc(WITHOUT_REFERENCE),
     dir(REFERENCE_BUCKET),
     dir(HYMNAL_ALBUM),

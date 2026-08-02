@@ -21,13 +21,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--normal-text': 'var(--popover-foreground)',
           '--normal-border': 'var(--border)',
           '--border-radius': 'var(--radius)',
-          // Inherited fallback for a toast raised without a type.
           '--toast-accent': 'var(--border)',
         } as React.CSSProperties
       }
       toastOptions={{
-        // Inline, because Sonner ships `[data-sonner-toast][data-styled='true'] { border: … }` in a
-        // stylesheet it appends at runtime, outranking any class on both specificity and order.
         style: { borderLeft: '4px solid var(--toast-accent)' },
         classNames: {
           icon: 'text-(--toast-accent)',

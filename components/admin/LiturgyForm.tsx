@@ -558,8 +558,6 @@ function SongCombobox({
 }) {
   const selected = songs.find((song) => song.id === value)
   const [query, setQuery] = useState(selected?.title ?? '')
-  // Matching the reference — not the catalog columns behind it — keeps every hit explainable by
-  // what the option already shows.
   const needle = query.toLowerCase()
   const matches = (text: string | null) => text !== null && text.toLowerCase().includes(needle)
   const visible = songs.filter((song) => matches(song.title) || matches(song.songReference)).slice(0, 8)

@@ -23,8 +23,6 @@ type AdminAgendaPageProps = {
 
 export default async function AdminAgendaPage({ searchParams }: AdminAgendaPageProps) {
   const user = await requirePageRead('agenda')
-
-  // One clock reading, so date and time cannot straddle midnight and describe different days.
   const clock = new Date()
   const now = { date: today(clock), time: currentTimeHHMM(clock) }
   const { page: rawPage } = await searchParams

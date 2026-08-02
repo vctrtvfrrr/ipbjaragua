@@ -4,13 +4,8 @@ import { agenda } from '@/db/schema'
 
 export type AgendaItem = typeof agenda.$inferSelect
 
-/** The instant the admin listing is read at, in the church's timezone. */
 export type AgendaNow = { date: Date; time: string }
 
-/**
- * An event is expired once its date is behind or, on its own date, once its time has been
- * reached. An all-day event has no time to reach, so it only expires with the date.
- */
 function isExpired(now: AgendaNow): SQL {
   return or(
     lt(agenda.event_date, now.date),
