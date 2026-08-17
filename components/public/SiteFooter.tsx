@@ -10,7 +10,7 @@ export default function SiteFooter() {
     <footer className="bg-brand-deep text-brand-sky print:hidden">
       <div className="container mx-auto grid gap-10 px-5 md:px-8 py-14 md:grid-cols-[auto_1fr_auto] md:gap-16">
         <div className="flex items-start gap-4">
-          <BrandMark variant="white" className="h-48 w-auto" />
+          <BrandMark variant="white" className="mx-auto h-48 w-auto" />
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2">
@@ -28,7 +28,7 @@ export default function SiteFooter() {
           </nav>
 
           <div>
-            <h2 className="eyebrow text-brand-accent-on-deep mb-4">Endereço</h2>
+            <h2 className="eyebrow text-brand-accent-on-deep mb-4">Nosso Endereço</h2>
             <address className="space-y-1 not-italic">
               <p>{CHURCH_ADDRESS.street}</p>
               <p>
@@ -40,7 +40,7 @@ export default function SiteFooter() {
         </div>
 
         <div className="flex flex-col gap-4 md:items-end">
-          <h2 className="eyebrow text-brand-accent-on-deep">Redes</h2>
+          <h2 className="eyebrow text-brand-accent-on-deep">Redes Sociais</h2>
           <div className="flex items-center gap-2">
             <SocialLinks />
           </div>

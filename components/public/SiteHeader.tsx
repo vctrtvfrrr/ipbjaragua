@@ -36,8 +36,7 @@ export default function SiteHeader() {
     >
       <div className="container mx-auto flex h-24 items-center justify-between gap-6 px-5 md:px-8">
         <Link href="/" aria-label={`${CHURCH_NAME} — Início`} className="flex items-center">
-          <BrandMark variant="horizontal" className="hidden h-20 w-auto md:block" priority />
-          <BrandMark variant="symbol" className="h-9 w-auto md:hidden" priority />
+          <BrandMark variant="horizontal" className="h-16 w-auto md:h-20" priority />
         </Link>
 
         <nav aria-label="Navegação principal" className="hidden md:block">
