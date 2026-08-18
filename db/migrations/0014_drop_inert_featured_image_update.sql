@@ -1,0 +1,1 @@
+DELETE FROM "user_permissions" WHERE "entity" = 'featured_images' AND "action" = 'update';

@@ -99,6 +99,13 @@
       "when": 1785084240199,
       "tag": "0013_fearless_wraith",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787091013288,
+      "tag": "0014_drop_inert_featured_image_update",
+      "breakpoints": true
     }
   ]
 }

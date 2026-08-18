@@ -3,7 +3,14 @@
 import { useMemo, useState } from 'react'
 import { FieldError } from '@/components/admin/FormFeedback'
 import type { Permission } from '@/lib/authz'
-import { PERMISSION_ACTIONS, PERMISSION_ENTITIES, type Action, type Entity } from '@/lib/authz'
+import {
+  actionsFor,
+  isDeclaredPermission,
+  PERMISSION_ACTIONS,
+  PERMISSION_ENTITIES,
+  type Action,
+  type Entity,
+} from '@/lib/authz'
 import { permissionFormValue } from '@/lib/permission-form'
 
 const ENTITY_LABELS: Record<Entity, string> = {
@@ -41,7 +48,7 @@ export function PermissionGrid({ defaultPermissions = [], lockedPermissions = []
 
   function disabled(entity: Entity, action: Action): boolean {
     if (locked.has(permissionFormValue({ entity, action }))) return true
-    return action === 'read' && PERMISSION_ACTIONS.some((write) => write !== 'read' && checked(entity, write))
+    return action === 'read' && actionsFor(entity).some((write) => write !== 'read' && checked(entity, write))
   }
 
   function toggle(entity: Entity, action: Action, isChecked: boolean) {
@@ -80,6 +87,15 @@ export function PermissionGrid({ defaultPermissions = [], lockedPermissions = []
               <tr key={entity} className="border-b last:border-0">
                 <th className="px-3 py-2 text-left font-medium">{ENTITY_LABELS[entity]}</th>
                 {PERMISSION_ACTIONS.map((action) => {
+                  if (!isDeclaredPermission(entity, action)) {
+                    return (
+                      <td key={action} className="text-muted-foreground px-3 py-2 text-center">
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">Não se aplica</span>
+                      </td>
+                    )
+                  }
+
                   const isChecked = checked(entity, action)
                   return (
                     <td key={action} className="px-3 py-2 text-center">

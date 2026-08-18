@@ -68,6 +68,14 @@ describe('createInviteAction.execute', () => {
     EMAIL_FROM: 'IPB Jaraguá <no-reply@example.com>',
   }
 
+  function invitingAction() {
+    return defineCreateInviteAction({
+      env: resendEnv,
+      panelUrl: new URL('https://ipbjaragua.org.br/admin'),
+      sendMail: vi.fn().mockResolvedValue(undefined),
+    })
+  }
+
   beforeEach(async () => {
     db = await createTestDb()
     vi.mocked(revalidatePath).mockClear()
@@ -155,6 +163,55 @@ describe('createInviteAction.execute', () => {
       formData([
         ['email', 'novo@example.com'],
         ['name', 'Novo'],
+      ])
+    )
+
+    expect(state).toEqual({
+      status: 'error',
+      fieldErrors: { permissions: ['Escolha ao menos uma permissão.'] },
+    })
+    expect(await db.select().from(users)).toEqual([])
+  })
+
+  it('implies read for a write action of an entity that declares a subset', async () => {
+    const state = await invitingAction().execute(
+      { user: currentUser(1, true), db },
+      formData([
+        ['email', 'novo@example.com'],
+        ['name', 'Novo'],
+        ['permissions', 'featured_images:delete'],
+      ])
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [row] = await db.select().from(users).where(eq(users.email, 'novo@example.com'))
+    await expect(permissionsFor(db, row.id)).resolves.toEqual([
+      { entity: 'featured_images', action: 'read' },
+      { entity: 'featured_images', action: 'delete' },
+    ])
+  })
+
+  it('drops an undeclared entity/action combination forged into the form', async () => {
+    const state = await invitingAction().execute(
+      { user: currentUser(1, true), db },
+      inviteForm([['permissions', 'featured_images:update']])
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [row] = await db.select().from(users).where(eq(users.email, 'novo@example.com'))
+    await expect(permissionsFor(db, row.id)).resolves.toEqual([
+      { entity: 'articles', action: 'read' },
+      { entity: 'articles', action: 'create' },
+    ])
+  })
+
+  it('rejects a form whose only permission is an undeclared combination', async () => {
+    const state = await createInviteAction.execute(
+      { user: currentUser(1, true), db },
+      formData([
+        ['email', 'novo@example.com'],
+        ['name', 'Novo'],
+        ['permissions', 'featured_images:update'],
       ])
     )
 

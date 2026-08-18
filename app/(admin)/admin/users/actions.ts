@@ -9,7 +9,14 @@ import {
   UserEmailCollisionError,
 } from '@/db/queries/users'
 import { defineEntityAction } from '@/lib/entity-action'
-import { PERMISSION_ACTIONS, PERMISSION_ENTITIES, USER_MANAGEMENT_PERMISSIONS, type Permission } from '@/lib/authz'
+import {
+  isDeclaredPermission,
+  PERMISSION_ACTIONS,
+  PERMISSION_CATALOG,
+  PERMISSION_ENTITIES,
+  USER_MANAGEMENT_PERMISSIONS,
+  type Permission,
+} from '@/lib/authz'
 import { INVITE_EMAIL_WARNING, sendInviteEmail, type EmailEnv, type SendMail } from '@/lib/email/invite'
 import { getPublicOriginFromHeaders } from '@/lib/http/request-origin'
 import { permissionFormValue } from '@/lib/permission-form'
@@ -122,19 +129,18 @@ export function parseUserForm(formData: FormData): unknown {
 }
 
 export function normalizePermissions(permissions: Permission[]): Permission[] {
-  const keys = new Set(permissions.map(permissionFormValue))
+  const keys = new Set<string>()
 
   for (const permission of permissions) {
+    if (!isDeclaredPermission(permission.entity, permission.action)) continue
+
+    keys.add(permissionFormValue(permission))
     if (permission.action !== 'read') {
       keys.add(permissionFormValue({ entity: permission.entity, action: 'read' }))
     }
   }
 
-  return PERMISSION_ENTITIES.flatMap((entity) =>
-    PERMISSION_ACTIONS.flatMap((action) =>
-      keys.has(permissionFormValue({ entity, action })) ? [{ entity, action }] : []
-    )
-  )
+  return PERMISSION_CATALOG.filter((permission) => keys.has(permissionFormValue(permission)))
 }
 
 function parsePermissionValue(value: string): Permission | null {

@@ -161,7 +161,7 @@ Quem acessa o site público sem estar autenticado. Termo usado só quando é pre
 _Avoid_: Usuário (Visitante não é autenticado), anônimo.
 
 **Permissão**:
-Uma autorização concedida a um **Usuário**, na forma _entidade × ação_ (ex: criar Boletim, excluir Artigo). Um Usuário tem uma lista de Permissões; sem a Permissão correspondente, a ação não aparece nem é executável.
+Uma autorização concedida a um **Usuário**, na forma _entidade × ação_ (ex: criar Boletim, excluir Artigo). Um Usuário tem uma lista de Permissões; sem a Permissão correspondente, a ação não aparece nem é executável. Cada entidade declara quais ações fazem sentido para ela, então não existe toda combinação possível: a **Imagem Destacada** é imutável e por isso não tem Permissão de edição.
 _Avoid_: Papel/role (a alçada é uma lista de Permissões por Usuário, não um papel nomeado), nível de acesso.
 
 ## Ambiguidades sinalizadas
