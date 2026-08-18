@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     globals: true,
     testTimeout: 20_000,
+    // The first createTestDb of a worker boots PGlite and applies every migration,
+    // which outlasts the 10s default once CI runs several workers at once.
+    hookTimeout: 20_000,
     env: { DATABASE_URL: 'postgres://placeholder' },
     projects: [
       {
