@@ -15,5 +15,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { entity: 'announcements', label: 'Avisos', href: '/admin/announcements' },
   { entity: 'members', label: 'Rol de Membros', href: '/admin/members' },
   { entity: 'songs', label: 'Cânticos', href: '/admin/songs' },
+  { entity: 'meeting_minutes', label: 'Atas', href: '/admin/meeting-minutes' },
   { entity: 'users', label: 'Usuários', href: '/admin/users' },
 ]

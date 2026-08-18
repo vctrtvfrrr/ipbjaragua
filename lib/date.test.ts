@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
   bulletinSectionWindows,
+  churchYear,
+  churchYearRange,
   currentTimeHHMM,
   currentWeekWindow,
+  formatChurchDateTimeInput,
+  formatChurchDateTimePtBR,
   formatISODate,
   formatLongDatePtBR,
   formatShortDatePtBR,
   formatWeekdayPtBR,
   nextWeekDateForWeekday,
+  parseChurchDateTime,
   parseISODate,
   today,
   todayISO,
@@ -133,5 +138,38 @@ describe('UTC-anchored formatting (no off-by-one)', () => {
 
   it('formats the weekday keeping the calendar day', () => {
     expect(formatWeekdayPtBR(parseISODate('2026-06-07'))).toBe('Domingo')
+  })
+})
+
+describe('church time zone instants', () => {
+  it('reads civil time as America/Sao_Paulo', () => {
+    expect(parseChurchDateTime('2026-06-07T19:30').toISOString()).toBe('2026-06-07T22:30:00.000Z')
+  })
+
+  it('keeps a meeting that crosses midnight on separate civil days', () => {
+    const started = parseChurchDateTime('2026-06-07T22:00')
+    const ended = parseChurchDateTime('2026-06-08T00:30')
+
+    expect(ended.getTime() - started.getTime()).toBe(150 * 60 * 1000)
+  })
+
+  it('round-trips an instant back to the civil time the operator typed', () => {
+    expect(formatChurchDateTimeInput(parseChurchDateTime('2026-01-01T00:15'))).toBe('2026-01-01T00:15')
+  })
+
+  it('formats an instant as pt-BR civil time', () => {
+    expect(formatChurchDateTimePtBR(parseChurchDateTime('2026-06-07T19:30'))).toBe('07/06/2026, 19:30')
+  })
+
+  it('derives the year from the civil time, not from UTC', () => {
+    expect(churchYear(parseChurchDateTime('2026-12-31T23:00'))).toBe(2026)
+    expect(churchYear(new Date('2027-01-01T02:00:00.000Z'))).toBe(2026)
+  })
+
+  it('spans a year from its first civil instant to the next year first', () => {
+    expect(churchYearRange(2026)).toEqual({
+      from: new Date('2026-01-01T03:00:00.000Z'),
+      to: new Date('2027-01-01T03:00:00.000Z'),
+    })
   })
 })

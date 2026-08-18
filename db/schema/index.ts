@@ -12,5 +12,11 @@ export {
   type LiturgyStatus,
   type ScripturePassage,
 } from './liturgies.schema'
+export {
+  meetingMinutes,
+  meetingMinuteStatus,
+  meetingMinuteTopics,
+  type MeetingMinuteStatus,
+} from './meeting-minutes.schema'
 export { members, memberStatus } from './members.schema'
 export { songs } from './songs.schema'

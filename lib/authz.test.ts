@@ -41,6 +41,10 @@ describe('PERMISSION_CATALOG', () => {
     expect(actionsFor('featured_images')).toEqual(['read', 'create', 'delete'])
   })
 
+  it('declares Atas without a delete action', () => {
+    expect(actionsFor('meeting_minutes')).toEqual(['read', 'create', 'update'])
+  })
+
   it('keeps the user management floor inside the catalog', () => {
     for (const permission of USER_MANAGEMENT_PERMISSIONS) {
       expect(PERMISSION_CATALOG).toContainEqual(permission)

@@ -142,6 +142,24 @@ _Avoid_: Emoji, ilustração, Flyer Digital.
 A Descrição de um **Aviso** em formato de imagem compartilhável** — o cartaz que se manda no WhatsApp. É **conteúdo do Aviso, não decoração**: pertence a um único Aviso, é enviado no próprio formulário do Aviso e não vem de banco compartilhado nem é reaproveitável (contraste com **Imagem Destacada**). É opcional; quando existe, aparece no site público logo acima da Descrição, tanto na home quanto no **Boletim**, envolto num link para o próprio arquivo — o leitor abre a imagem em cheio e daí copia a URL ou baixa o arquivo para repostar. O Aviso **não tem página própria**: o que circula é o endereço do arquivo. Como o Flyer duplica em imagem o que a Descrição diz em texto, a informação essencial do Aviso deve continuar existindo na Descrição.
 _Avoid_: Imagem Destacada (banco decorativo compartilhado, outro conceito), banner, cartaz, arte, anexo.
 
+### Mesa Administrativa
+
+**Ata** (`meeting_minutes`):
+O registro documental de uma reunião da Mesa Administrativa da igreja, vivo apenas no painel — nada dela aparece no site público. Guarda o **Número**, um Título institucional, o Início e o Término da reunião como instantes completos, o Local, os Participantes, a Abertura, o Encerramento e seus **Tópicos**. Participantes, Abertura, Encerramento e a Discussão de cada Tópico são escritos em Markdown, sem HTML arbitrário. Uma Ata **nunca é excluída** — nem por remoção física nem por exclusão lógica: a numeração administrativa não pode ganhar lacunas por remoção. A **Data** da Ata e o ano em que ela é listada derivam do Início lido em America/Sao_Paulo; mais de uma Ata pode compartilhar a mesma Data, porque a identidade é o Número.
+_Avoid_: Documento, registro de reunião, ata de assembleia (a Mesa Administrativa é o órgão desta Ata).
+
+**Número** (`meeting_minutes.number`):
+A identidade sequencial e **global** de uma **Ata** — não reinicia por ano e pode conter lacunas, já que Atas históricas são cadastradas à mão. Na criação, o painel sugere o maior Número + 1, à maneira da **Edição** do Boletim, e o campo segue corrigível enquanto a Ata está Pendente de aprovação. A unicidade é garantida pelo banco.
+_Avoid_: Edição (é do Boletim), código, identificador.
+
+**Tópico** (`meeting_minute_topics`):
+Um assunto tratado na reunião, dentro de uma **Ata**: um título simples e uma **Discussão** em Markdown, que narra o que se deliberou. Sua **posição** na Ata é explícita e significativa — é a ordem em que a Mesa deliberou. Toda Ata exige ao menos um Tópico completo.
+_Avoid_: Item, pauta, seção, Ato (o Ato é da Liturgia).
+
+**Pendente de aprovação / Aprovada** (`meeting_minutes.status`):
+Os dois únicos estados de uma **Ata**. Toda Ata nasce **Pendente de aprovação** e nesse estado pode ser integralmente reformulada — inclusive seu Número. A **Aprovação** é uma ação à parte do formulário, deliberada, e consolida a Ata: uma vez **Aprovada**, ela não volta atrás nem admite alteração de conteúdo, Número ou Status. O formulário não expõe o Status.
+_Avoid_: Rascunho/Publicado (são do Boletim e da Liturgia, e ali a transição vai nos dois sentidos), homologada, fechada.
+
 ### Acesso ao painel
 
 **Usuário** (`users`):
@@ -161,7 +179,7 @@ Quem acessa o site público sem estar autenticado. Termo usado só quando é pre
 _Avoid_: Usuário (Visitante não é autenticado), anônimo.
 
 **Permissão**:
-Uma autorização concedida a um **Usuário**, na forma _entidade × ação_ (ex: criar Boletim, excluir Artigo). Um Usuário tem uma lista de Permissões; sem a Permissão correspondente, a ação não aparece nem é executável. Cada entidade declara quais ações fazem sentido para ela, então não existe toda combinação possível: a **Imagem Destacada** é imutável e por isso não tem Permissão de edição.
+Uma autorização concedida a um **Usuário**, na forma _entidade × ação_ (ex: criar Boletim, excluir Artigo). Um Usuário tem uma lista de Permissões; sem a Permissão correspondente, a ação não aparece nem é executável. Cada entidade declara quais ações fazem sentido para ela, então não existe toda combinação possível: a **Imagem Destacada** é imutável e por isso não tem Permissão de edição, e a **Ata** nunca é excluída e por isso não tem Permissão de exclusão.
 _Avoid_: Papel/role (a alçada é uma lista de Permissões por Usuário, não um papel nomeado), nível de acesso.
 
 ## Ambiguidades sinalizadas

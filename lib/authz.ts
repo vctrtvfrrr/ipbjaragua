@@ -8,6 +8,7 @@ export const PERMISSION_ENTITIES = [
   'agenda',
   'users',
   'featured_images',
+  'meeting_minutes',
 ] as const
 
 export const PERMISSION_ACTIONS = ['read', 'create', 'update', 'delete'] as const
@@ -18,6 +19,7 @@ export type Permission = { entity: Entity; action: Action }
 
 // Featured Images are immutable: normalizing happens once on upload, so replacing
 // one means deleting and uploading again — there is no update to authorize.
+// Atas are never deleted: administrative numbering must not gain gaps from removal.
 const ENTITY_ACTIONS: Record<Entity, readonly Action[]> = {
   bulletins: PERMISSION_ACTIONS,
   articles: PERMISSION_ACTIONS,
@@ -28,6 +30,7 @@ const ENTITY_ACTIONS: Record<Entity, readonly Action[]> = {
   agenda: PERMISSION_ACTIONS,
   users: PERMISSION_ACTIONS,
   featured_images: ['read', 'create', 'delete'],
+  meeting_minutes: ['read', 'create', 'update'],
 }
 
 export function actionsFor(entity: Entity): readonly Action[] {

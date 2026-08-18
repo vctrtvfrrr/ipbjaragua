@@ -1,3 +1,5 @@
+export const CHURCH_TIME_ZONE = 'America/Sao_Paulo'
+
 export function parseISODate(value: string): Date {
   return new Date(`${value}T00:00:00Z`)
 }
@@ -7,7 +9,7 @@ export function formatISODate(value: Date): string {
 }
 
 export function todayISO(at: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(at)
+  return new Intl.DateTimeFormat('en-CA', { timeZone: CHURCH_TIME_ZONE }).format(at)
 }
 
 export function today(at: Date = new Date()): Date {
@@ -19,7 +21,7 @@ export function currentTimeHHMM(at: Date = new Date()): string {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-    timeZone: 'America/Sao_Paulo',
+    timeZone: CHURCH_TIME_ZONE,
   }).formatToParts(at)
   const h = parts.find((p) => p.type === 'hour')!.value
   const m = parts.find((p) => p.type === 'minute')!.value
@@ -102,4 +104,66 @@ export function bulletinSectionWindows(date: Date): { agenda: DateWindow; birthd
     agenda: { from: agendaFrom, to: agendaTo },
     birthdays: { from: sunday, to: birthdaysTo },
   }
+}
+
+const churchDateTimeParts = new Intl.DateTimeFormat('en-CA', {
+  timeZone: CHURCH_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+})
+
+function churchWallClock(instant: Date): number {
+  const parts = Object.fromEntries(churchDateTimeParts.formatToParts(instant).map((part) => [part.type, part.value]))
+  return Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  )
+}
+
+// The civil time the operator types has no offset, so the instant is found by
+// correcting a first guess with the offset the zone applies at that guess.
+export function parseChurchDateTime(value: string): Date {
+  const wallClock = Date.parse(`${value}:00Z`)
+  let instant = wallClock
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    instant = wallClock - (churchWallClock(new Date(instant)) - instant)
+  }
+
+  return new Date(instant)
+}
+
+export function formatChurchDateTimeInput(instant: Date): string {
+  return new Date(churchWallClock(instant)).toISOString().slice(0, 16)
+}
+
+export function churchYear(instant: Date): number {
+  return new Date(churchWallClock(instant)).getUTCFullYear()
+}
+
+export function churchYearRange(year: number): { from: Date; to: Date } {
+  return { from: parseChurchDateTime(`${year}-01-01T00:00`), to: parseChurchDateTime(`${year + 1}-01-01T00:00`) }
+}
+
+const churchDateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: CHURCH_TIME_ZONE,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+export function formatChurchDateTimePtBR(instant: Date): string {
+  return churchDateTimeFormatter.format(instant)
 }

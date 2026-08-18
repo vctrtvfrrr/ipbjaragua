@@ -23,6 +23,7 @@ const ENTITY_LABELS: Record<Entity, string> = {
   agenda: 'Agenda',
   users: 'Usuários',
   featured_images: 'Imagens Destacadas',
+  meeting_minutes: 'Atas',
 }
 
 const ACTION_LABELS: Record<Action, string> = {

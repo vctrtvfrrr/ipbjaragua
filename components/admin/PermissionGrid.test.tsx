@@ -19,7 +19,9 @@ describe('PermissionGrid', () => {
 
     expect(checkbox(container, 'featured_images:update')).toBeNull()
     expect(checkbox(container, 'featured_images:delete')).not.toBeNull()
-    expect(screen.getByText('Não se aplica')).toBeInTheDocument()
+    expect(checkbox(container, 'meeting_minutes:delete')).toBeNull()
+    expect(checkbox(container, 'meeting_minutes:update')).not.toBeNull()
+    expect(screen.getAllByText('Não se aplica')).toHaveLength(2)
   })
 
   it('keeps the read implication for a write action of a subset entity', () => {
