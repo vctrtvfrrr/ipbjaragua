@@ -22,12 +22,17 @@ import { getPublicOriginFromHeaders } from '@/lib/http/request-origin'
 import { permissionFormValue } from '@/lib/permission-form'
 import { nullableTrimmedString } from '@/lib/validation'
 
-const permissionSchema = z.object({
-  entity: z.enum(PERMISSION_ENTITIES),
-  action: z.enum(PERMISSION_ACTIONS),
-})
+const permissionSchema = z
+  .object({
+    entity: z.enum(PERMISSION_ENTITIES, { error: 'Permissão inválida.' }),
+    action: z.enum(PERMISSION_ACTIONS, { error: 'Permissão inválida.' }),
+  })
+  .refine(({ entity, action }) => isDeclaredPermission(entity, action), 'Permissão inválida.')
 
-const permissionsSchema = z.array(permissionSchema).min(1, 'Escolha ao menos uma permissão.')
+const permissionsSchema = z
+  .array(permissionSchema)
+  .min(1, 'Escolha ao menos uma permissão.')
+  .transform(normalizePermissions)
 
 const createInviteSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email('E-mail inválido')),
@@ -112,13 +117,13 @@ export const cancelInviteAction = defineEntityAction({
 })
 
 export function parseUserForm(formData: FormData): unknown {
-  const permissions = normalizePermissions(
-    formData
-      .getAll('permissions')
-      .filter((value): value is string => typeof value === 'string')
-      .map(parsePermissionValue)
-      .filter((permission): permission is Permission => permission !== null)
-  )
+  const permissions = formData
+    .getAll('permissions')
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => {
+      const [entity, action] = value.split(':')
+      return { entity, action }
+    })
 
   return {
     email: formData.get('email'),
@@ -129,25 +134,15 @@ export function parseUserForm(formData: FormData): unknown {
 }
 
 export function normalizePermissions(permissions: Permission[]): Permission[] {
-  const keys = new Set<string>()
+  const keys = new Set(permissions.map(permissionFormValue))
 
   for (const permission of permissions) {
-    if (!isDeclaredPermission(permission.entity, permission.action)) continue
-
-    keys.add(permissionFormValue(permission))
     if (permission.action !== 'read') {
       keys.add(permissionFormValue({ entity: permission.entity, action: 'read' }))
     }
   }
 
   return PERMISSION_CATALOG.filter((permission) => keys.has(permissionFormValue(permission)))
-}
-
-function parsePermissionValue(value: string): Permission | null {
-  const [entity, action] = value.split(':')
-  const permission = { entity, action }
-  const parsed = permissionSchema.safeParse(permission)
-  return parsed.success ? parsed.data : null
 }
 
 function keepsOwnUserManagement(permissions: Permission[]): boolean {

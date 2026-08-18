@@ -191,33 +191,23 @@ describe('createInviteAction.execute', () => {
     ])
   })
 
-  it('drops an undeclared entity/action combination forged into the form', async () => {
+  it.each([
+    ['an undeclared combination alongside a valid one', ['articles:create', 'featured_images:update']],
+    ['an undeclared combination on its own', ['featured_images:update']],
+    ['a value that is not a permission at all', ['articles:publish']],
+  ])('rejects the whole form when it carries %s', async (_case, permissions) => {
     const state = await invitingAction().execute(
-      { user: currentUser(1, true), db },
-      inviteForm([['permissions', 'featured_images:update']])
-    )
-
-    expect(state).toEqual({ status: 'success' })
-    const [row] = await db.select().from(users).where(eq(users.email, 'novo@example.com'))
-    await expect(permissionsFor(db, row.id)).resolves.toEqual([
-      { entity: 'articles', action: 'read' },
-      { entity: 'articles', action: 'create' },
-    ])
-  })
-
-  it('rejects a form whose only permission is an undeclared combination', async () => {
-    const state = await createInviteAction.execute(
       { user: currentUser(1, true), db },
       formData([
         ['email', 'novo@example.com'],
         ['name', 'Novo'],
-        ['permissions', 'featured_images:update'],
+        ...permissions.map((permission) => ['permissions', permission] as [string, string]),
       ])
     )
 
     expect(state).toEqual({
       status: 'error',
-      fieldErrors: { permissions: ['Escolha ao menos uma permissão.'] },
+      fieldErrors: { permissions: ['Permissão inválida.'] },
     })
     expect(await db.select().from(users)).toEqual([])
   })

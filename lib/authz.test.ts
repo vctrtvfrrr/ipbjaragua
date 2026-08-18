@@ -72,4 +72,8 @@ describe('can', () => {
     expect(can(permissions, 'bulletins', 'delete')).toBe(false)
     expect(can(permissions, 'songs', 'read')).toBe(false)
   })
+
+  it('denies an undeclared action even when a stale grant is stored', () => {
+    expect(can([{ entity: 'featured_images', action: 'update' }], 'featured_images', 'update')).toBe(false)
+  })
 })

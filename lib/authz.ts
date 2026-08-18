@@ -47,6 +47,10 @@ export const USER_MANAGEMENT_PERMISSIONS: Permission[] = [
   { entity: 'users', action: 'update' },
 ]
 
+// A stored grant is never trusted on its own: rows survive a catalog change (and a
+// mixed-version deploy can write one back), so an undeclared pair must not authorize.
 export function can(permissions: readonly Permission[], entity: Entity, action: Action): boolean {
+  if (!isDeclaredPermission(entity, action)) return false
+
   return permissions.some((permission) => permission.entity === entity && permission.action === action)
 }
