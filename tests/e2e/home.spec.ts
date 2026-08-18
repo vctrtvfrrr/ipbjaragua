@@ -41,3 +41,26 @@ test('sends the reader to the full listing instead of paginating the home', asyn
   await expect(page.getByRole('navigation', { name: 'Paginação' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Ver todos os artigos' })).toHaveAttribute('href', '/articles')
 })
+
+test('stretches the featured visual to the card height when the title wraps', async ({ page }) => {
+  await page.goto('/')
+
+  const card = page.locator('article').filter({ hasText: 'Artigo em destaque' }).first()
+  const geometry = await card.evaluate((element) => {
+    const visuals = element.querySelectorAll('img, svg')
+    const visual = visuals[visuals.length - 1].getBoundingClientRect()
+    const title = element.querySelector('h2')!.getBoundingClientRect()
+    const box = element.getBoundingClientRect()
+    const lineHeight = parseFloat(getComputedStyle(element.querySelector('h2')!).lineHeight)
+    return {
+      titleLines: Math.round(title.height / lineHeight),
+      gapTop: visual.top - box.top,
+      visualHeight: visual.height,
+      cardHeight: box.height,
+    }
+  })
+
+  expect(geometry.titleLines).toBeGreaterThan(1)
+  expect(geometry.gapTop).toBeLessThanOrEqual(1)
+  expect(geometry.cardHeight - geometry.visualHeight).toBeLessThanOrEqual(1)
+})

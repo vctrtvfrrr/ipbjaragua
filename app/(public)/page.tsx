@@ -135,7 +135,7 @@ export default async function Home() {
         <section className="container mx-auto px-5 py-12 md:px-8">
           <div className="grid gap-6 md:grid-cols-5">
             {latest ? (
-              <article className="bg-brand-sky flex items-end overflow-hidden rounded-xl md:col-span-3">
+              <article className="bg-brand-sky flex overflow-hidden rounded-xl md:col-span-3">
                 <div className="flex-1 p-6 md:p-8">
                   <p className="text-muted-foreground flex items-center gap-3 text-sm">
                     <IconTile
@@ -161,7 +161,7 @@ export default async function Home() {
                   featuredImagePath={latest.featuredImagePath}
                   slug={latest.slug}
                   alt=""
-                  className="hidden aspect-video w-1/2 shrink-0 object-cover sm:block"
+                  className="hidden aspect-video w-1/2 shrink-0 self-stretch object-cover sm:block"
                 />
               </article>
             ) : null}

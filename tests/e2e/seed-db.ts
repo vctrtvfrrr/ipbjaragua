@@ -30,7 +30,7 @@ const E2E_DB_NAME = 'ipbjaragua_e2e'
 
 export const FEATURED = {
   slug: 'graca-soberana',
-  title: 'Graça Soberana',
+  title: 'Graça Soberana e a Perseverança dos Santos na Caminhada Diária',
   author: 'Rev. Jean Carlos Almeida',
   date: '2026-06-07',
   excerpt: 'Um breve resumo do artigo em destaque.',
