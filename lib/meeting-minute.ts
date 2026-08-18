@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { MeetingMinuteStatus } from '@/db/schema'
-import { parseChurchDateTime } from '@/lib/date'
+import { isChurchDateTime, parseChurchDateTime } from '@/lib/date'
 import { CHURCH_NAME } from '@/lib/og/config'
 import { requiredTrimmedString } from '@/lib/validation'
 
@@ -38,10 +38,7 @@ const markdownField = z
     else if (!hasMeaningfulMarkdown(value)) context.addIssue({ code: 'custom', message: EMPTY_MARKDOWN })
   })
 
-const churchDateTimeField = z
-  .string()
-  .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, 'Informe data e horário')
+const churchDateTimeField = z.string().trim().refine(isChurchDateTime, 'Informe uma data e um horário existentes')
 
 export const meetingMinuteTopicSchema = z.object({
   title: requiredTrimmedString(REQUIRED),
@@ -79,6 +76,13 @@ export function parseSerializedMeetingMinutePayload(formData: FormData): unknown
   if (typeof payload !== 'string') throw new Error('payload is required')
 
   return JSON.parse(payload)
+}
+
+// The form accepts any year, including the historical Atas typed in by hand, so the
+// listing has to be able to show the year the operator wrote — not only the current one.
+export function resolveMeetingMinuteYear(raw: string | undefined, currentYear: number): number {
+  const year = Number(raw)
+  return Number.isInteger(year) && year >= 1900 && year <= currentYear ? year : currentYear
 }
 
 export function meetingMinuteTopicLabel(topic: { title: string }, index: number): string {

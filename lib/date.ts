@@ -133,6 +133,8 @@ function churchWallClock(instant: Date): number {
 // correcting a first guess with the offset the zone applies at that guess.
 export function parseChurchDateTime(value: string): Date {
   const wallClock = Date.parse(`${value}:00Z`)
+  if (Number.isNaN(wallClock)) return new Date(NaN)
+
   let instant = wallClock
 
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -144,6 +146,17 @@ export function parseChurchDateTime(value: string): Date {
 
 export function formatChurchDateTimeInput(instant: Date): string {
   return new Date(churchWallClock(instant)).toISOString().slice(0, 16)
+}
+
+// A civil time only exists if reading the instant back yields it again: an impossible
+// calendar day rolls over, and an hour skipped by a daylight saving jump lands before
+// itself. An hour the zone repeats round-trips on both of its instants, and this keeps
+// the earlier one.
+export function isChurchDateTime(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return false
+
+  const instant = parseChurchDateTime(value)
+  return !Number.isNaN(instant.getTime()) && formatChurchDateTimeInput(instant) === value
 }
 
 export function churchYear(instant: Date): number {

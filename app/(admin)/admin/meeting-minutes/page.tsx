@@ -5,12 +5,17 @@ import { buttonVariants } from '@/components/ui/button'
 import { listMeetingMinutesByYear } from '@/db/queries/meeting-minutes'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 import { churchYear, formatChurchDateTimePtBR } from '@/lib/date'
-import { MEETING_MINUTE_STATUS_LABELS } from '@/lib/meeting-minute'
+import { MEETING_MINUTE_STATUS_LABELS, resolveMeetingMinuteYear } from '@/lib/meeting-minute'
 import { cn } from '@/lib/utils'
 
-export default async function AdminMeetingMinutesPage() {
+type AdminMeetingMinutesPageProps = {
+  searchParams: Promise<{ year?: string }>
+}
+
+export default async function AdminMeetingMinutesPage({ searchParams }: AdminMeetingMinutesPageProps) {
   const user = await requirePageRead('meeting_minutes')
-  const year = churchYear(new Date())
+  const { year: rawYear } = await searchParams
+  const year = resolveMeetingMinuteYear(rawYear, churchYear(new Date()))
   const minutes = await listMeetingMinutesByYear(year)
   const canCreate = user.can('meeting_minutes', 'create')
 

@@ -7,6 +7,7 @@ import {
   currentWeekWindow,
   formatChurchDateTimeInput,
   formatChurchDateTimePtBR,
+  isChurchDateTime,
   formatISODate,
   formatLongDatePtBR,
   formatShortDatePtBR,
@@ -171,5 +172,31 @@ describe('church time zone instants', () => {
       from: new Date('2026-01-01T03:00:00.000Z'),
       to: new Date('2027-01-01T03:00:00.000Z'),
     })
+  })
+})
+
+describe('isChurchDateTime', () => {
+  it('accepts a civil time the zone really has', () => {
+    expect(isChurchDateTime('2026-06-07T19:30')).toBe(true)
+  })
+
+  it('rejects anything that is not a civil date and time', () => {
+    expect(isChurchDateTime('')).toBe(false)
+    expect(isChurchDateTime('07/06/2026 19:30')).toBe(false)
+    expect(isChurchDateTime('2026-06-07T19:30:00')).toBe(false)
+  })
+
+  it('rejects a day the calendar does not have', () => {
+    expect(isChurchDateTime('2026-02-30T12:00')).toBe(false)
+    expect(isChurchDateTime('2026-13-01T12:00')).toBe(false)
+  })
+
+  it('rejects an hour a daylight saving jump skipped', () => {
+    expect(isChurchDateTime('2018-11-04T00:30')).toBe(false)
+  })
+
+  it('reads an hour a daylight saving end repeated as the earlier instant', () => {
+    expect(isChurchDateTime('2018-02-17T23:30')).toBe(true)
+    expect(parseChurchDateTime('2018-02-17T23:30').toISOString()).toBe('2018-02-18T01:30:00.000Z')
   })
 })

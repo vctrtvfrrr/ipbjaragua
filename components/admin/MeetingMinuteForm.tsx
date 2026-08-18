@@ -63,8 +63,8 @@ export function MeetingMinuteForm({ suggestedNumber, suggestedTitle }: Props) {
   useEffect(() => {
     if (state.status !== 'success') return
     toast.success('Ata criada')
-    router.push('/admin/meeting-minutes')
-  }, [state.status, router])
+    router.push(`/admin/meeting-minutes?year=${startedAt.slice(0, 4)}`)
+  }, [state.status, startedAt, router])
 
   function submit(event: FormEvent<HTMLFormElement>) {
     if (createMeetingMinuteSchema.safeParse(JSON.parse(payload)).success) return

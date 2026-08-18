@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createMeetingMinuteSchema, hasMeaningfulMarkdown } from './meeting-minute'
+import { createMeetingMinuteSchema, hasMeaningfulMarkdown, resolveMeetingMinuteYear } from './meeting-minute'
 
 function payload(overrides: Record<string, unknown> = {}) {
   return {
@@ -85,11 +85,34 @@ describe('createMeetingMinuteSchema', () => {
     expect(errorPaths(payload({ ended_at: '2026-06-07T18:00' }))).toEqual(['ended_at'])
   })
 
+  it('rejects a civil time that never existed', () => {
+    expect(errorPaths(payload({ started_at: '2026-02-30T12:00' }))).toEqual(['started_at'])
+    expect(errorPaths(payload({ started_at: '2018-11-04T00:30', ended_at: '2018-11-04T02:00' }))).toEqual([
+      'started_at',
+    ])
+  })
+
   it('accepts a meeting that crosses midnight', () => {
     const result = createMeetingMinuteSchema.parse(
       payload({ started_at: '2026-06-07T22:00', ended_at: '2026-06-08T00:30' })
     )
 
     expect(result.ended_at.getTime() - result.started_at.getTime()).toBe(150 * 60 * 1000)
+  })
+})
+
+describe('resolveMeetingMinuteYear', () => {
+  it('falls back to the current year when no year is asked for', () => {
+    expect(resolveMeetingMinuteYear(undefined, 2026)).toBe(2026)
+  })
+
+  it('shows the year a historical Ata was filed under', () => {
+    expect(resolveMeetingMinuteYear('2019', 2026)).toBe(2019)
+  })
+
+  it('ignores a year that is future or not a year at all', () => {
+    expect(resolveMeetingMinuteYear('2027', 2026)).toBe(2026)
+    expect(resolveMeetingMinuteYear('ontem', 2026)).toBe(2026)
+    expect(resolveMeetingMinuteYear('2026.5', 2026)).toBe(2026)
   })
 })
