@@ -7,6 +7,9 @@ const baseURL = `http://localhost:${PORT}`
 export default defineConfig({
   testDir: './tests/e2e',
   reporter: 'list',
+  // The suite runs against `next dev`, so a first navigation also waits for the
+  // route to compile — well past the 5s default on a loaded CI runner.
+  expect: { timeout: 15_000 },
   use: { baseURL },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
