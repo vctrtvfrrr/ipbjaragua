@@ -210,3 +210,14 @@ const churchDateFormatter = new Intl.DateTimeFormat('pt-BR', {
 export function formatChurchDatePtBR(instant: Date): string {
   return churchDateFormatter.format(instant)
 }
+
+const churchTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: CHURCH_TIME_ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+export function formatChurchTimePtBR(instant: Date): string {
+  return churchTimeFormatter.format(instant)
+}

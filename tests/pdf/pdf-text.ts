@@ -1,0 +1,112 @@
+import { inflateSync } from 'node:zlib'
+
+type PdfObject = { dict: string; stream: Buffer | null }
+
+// Chromium subsets its fonts and writes glyph ids, so the only way to read a generated PDF
+// back is to walk the objects and decode each font's ToUnicode map. It is the smallest
+// parser that makes "what does this page actually say" an assertable question.
+export function pdfPageTexts(pdf: Buffer): string[] {
+  const objects = parseObjects(pdf)
+
+  return pageNumbers(objects).map((number) => pageText(objects, objects.get(number)!))
+}
+
+export function pdfPageSizes(pdf: Buffer): { width: number; height: number }[] {
+  return [...pdf.toString('latin1').matchAll(/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)].map((match) => ({
+    width: Number(match[1]),
+    height: Number(match[2]),
+  }))
+}
+
+function parseObjects(pdf: Buffer): Map<number, PdfObject> {
+  const latin = pdf.toString('latin1')
+  const objects = new Map<number, PdfObject>()
+
+  for (const match of latin.matchAll(/(\d+) 0 obj\b/g)) {
+    const start = match.index + match[0].length
+    const end = latin.indexOf('endobj', start)
+    const body = latin.slice(start, end)
+    const marker = /stream\r?\n/.exec(body)
+
+    if (!marker) {
+      objects.set(Number(match[1]), { dict: body, stream: null })
+      continue
+    }
+
+    const dict = body.slice(0, marker.index)
+    const raw = Buffer.from(body.slice(marker.index + marker[0].length, body.lastIndexOf('endstream')), 'latin1')
+    objects.set(Number(match[1]), { dict, stream: dict.includes('/FlateDecode') ? inflateSync(raw) : raw })
+  }
+
+  return objects
+}
+
+function pageNumbers(objects: Map<number, PdfObject>): number[] {
+  for (const object of objects.values()) {
+    if (!object.dict.includes('/Type /Pages')) continue
+
+    const kids = /\/Kids\s*\[([^\]]*)\]/.exec(object.dict)
+    if (kids) return [...kids[1].matchAll(/(\d+) 0 R/g)].map((match) => Number(match[1]))
+  }
+
+  return []
+}
+
+function pageText(objects: Map<number, PdfObject>, page: PdfObject): string {
+  const fonts = new Map<string, Map<number, string>>()
+  const fontDict = /\/Font\s*<<([\s\S]*?)>>/.exec(page.dict)
+
+  for (const match of fontDict?.[1].matchAll(/(\/F\d+)\s+(\d+) 0 R/g) ?? []) {
+    fonts.set(match[1], toUnicodeMap(objects, objects.get(Number(match[2]))!))
+  }
+
+  const contents = /\/Contents\s+(\d+) 0 R/.exec(page.dict)
+  const stream = contents ? (objects.get(Number(contents[1]))?.stream ?? null) : null
+
+  return stream ? decodeContent(stream.toString('latin1'), fonts) : ''
+}
+
+function toUnicodeMap(objects: Map<number, PdfObject>, font: PdfObject): Map<number, string> {
+  const map = new Map<number, string>()
+  const reference = /\/ToUnicode\s+(\d+) 0 R/.exec(font.dict)
+  const cmap = reference ? objects.get(Number(reference[1]))?.stream?.toString('latin1') : null
+  if (!cmap) return map
+
+  for (const block of cmap.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+    for (const pair of block[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g)) {
+      map.set(parseInt(pair[1], 16), fromUtf16(pair[2]))
+    }
+  }
+
+  for (const block of cmap.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
+    for (const range of block[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g)) {
+      const [low, high, destination] = [parseInt(range[1], 16), parseInt(range[2], 16), parseInt(range[3], 16)]
+      for (let code = low; code <= high; code++) map.set(code, String.fromCodePoint(destination + code - low))
+    }
+  }
+
+  return map
+}
+
+function fromUtf16(hex: string): string {
+  const units = hex.match(/.{4}/g) ?? []
+  return String.fromCharCode(...units.map((unit) => parseInt(unit, 16)))
+}
+
+function decodeContent(content: string, fonts: Map<string, Map<number, string>>): string {
+  const tokens = content.matchAll(/(\/F\d+)\s+[\d.]+\s+Tf|<([0-9a-fA-F]+)>\s*Tj|\[([^\]]*)\]\s*TJ/g)
+  let current = new Map<number, string>()
+  let text = ''
+
+  for (const token of tokens) {
+    if (token[1]) current = fonts.get(token[1]) ?? new Map()
+    else if (token[2]) text += decodeHex(token[2], current)
+    else for (const part of token[3].matchAll(/<([0-9a-fA-F]+)>/g)) text += decodeHex(part[1], current)
+  }
+
+  return text
+}
+
+function decodeHex(hex: string, font: Map<number, string>): string {
+  return (hex.match(/.{4}/g) ?? []).map((unit) => font.get(parseInt(unit, 16)) ?? '').join('')
+}

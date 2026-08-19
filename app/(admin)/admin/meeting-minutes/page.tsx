@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
+import { MeetingMinutePdfButton } from '@/components/admin/MeetingMinutePdfButton'
 import { MeetingMinuteTopicList } from '@/components/admin/MeetingMinuteTopicList'
 import { MeetingMinuteYearNav } from '@/components/admin/MeetingMinuteYearNav'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -64,16 +65,17 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
                 </TableCell>
                 <TableCell>{MEETING_MINUTE_STATUS_LABELS[minute.status]}</TableCell>
                 <TableCell>
-                  {canUpdate && minute.status === 'pending' ? (
-                    <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-2">
+                    {canUpdate && minute.status === 'pending' ? (
                       <Link
                         href={`/admin/meeting-minutes/${minute.id}/edit`}
                         className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                       >
                         Editar
                       </Link>
-                    </div>
-                  ) : null}
+                    ) : null}
+                    <MeetingMinutePdfButton minute={minute} />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
