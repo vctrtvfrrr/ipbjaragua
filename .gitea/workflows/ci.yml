@@ -46,13 +46,13 @@ jobs:
           pnpm lint
           pnpm format:check
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium chromium-headless-shell
+
       - name: Test
         run: pnpm test
         env:
           PG_TEST_DATABASE_URL: postgres://ipbjaragua:ipbjaragua@postgres:5432/postgres
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E test
         run: pnpm test:e2e
