@@ -5,13 +5,18 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useActionState, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { createMeetingMinuteFormAction } from '@/app/(admin)/admin/meeting-minutes/form-actions'
+import {
+  createMeetingMinuteFormAction,
+  updateMeetingMinuteFormAction,
+} from '@/app/(admin)/admin/meeting-minutes/form-actions'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Form, FormActions, FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import type { MeetingMinuteWithTopics } from '@/db/queries/meeting-minutes'
+import { formatChurchDateTimeInput } from '@/lib/date'
 import type { ActionState } from '@/lib/entity-action'
-import { createMeetingMinuteSchema, meetingMinuteTopicLabel } from '@/lib/meeting-minute'
+import { createMeetingMinuteSchema, meetingMinuteTopicLabel, updateMeetingMinuteSchema } from '@/lib/meeting-minute'
 import { cn } from '@/lib/utils'
 import { FieldError, FormError } from './FormFeedback'
 import { MarkdownField } from './MarkdownField'
@@ -21,27 +26,41 @@ const INITIAL_STATE: ActionState = { status: 'idle' }
 type TopicDraft = { key: string; title: string; discussion: string }
 type FormErrors = Record<string, string[]>
 
-type Props = { suggestedNumber: number; suggestedTitle: string }
+type Props =
+  | { mode: 'create'; suggestedNumber: number; suggestedTitle: string }
+  | { mode: 'edit'; minute: MeetingMinuteWithTopics }
 
-export function MeetingMinuteForm({ suggestedNumber, suggestedTitle }: Props) {
-  const [state, formAction, isPending] = useActionState(createMeetingMinuteFormAction, INITIAL_STATE)
+export function MeetingMinuteForm(props: Props) {
+  const minute = props.mode === 'edit' ? props.minute : null
+  const schema = minute ? updateMeetingMinuteSchema : createMeetingMinuteSchema
+  const [state, formAction, isPending] = useActionState(
+    minute ? updateMeetingMinuteFormAction : createMeetingMinuteFormAction,
+    INITIAL_STATE
+  )
   const router = useRouter()
 
-  const [number, setNumber] = useState(String(suggestedNumber))
-  const [title, setTitle] = useState(suggestedTitle)
-  const [startedAt, setStartedAt] = useState('')
-  const [endedAt, setEndedAt] = useState('')
-  const [location, setLocation] = useState('')
-  const [attendees, setAttendees] = useState('')
-  const [opening, setOpening] = useState('')
-  const [closing, setClosing] = useState('')
-  const [topics, setTopics] = useState<TopicDraft[]>(() => [emptyTopic()])
+  const [number, setNumber] = useState(() =>
+    props.mode === 'edit' ? String(props.minute.number) : String(props.suggestedNumber)
+  )
+  const [title, setTitle] = useState(() => (props.mode === 'edit' ? props.minute.title : props.suggestedTitle))
+  const [startedAt, setStartedAt] = useState(() => (minute ? formatChurchDateTimeInput(minute.started_at) : ''))
+  const [endedAt, setEndedAt] = useState(() => (minute ? formatChurchDateTimeInput(minute.ended_at) : ''))
+  const [location, setLocation] = useState(minute?.location ?? '')
+  const [attendees, setAttendees] = useState(minute?.attendees ?? '')
+  const [opening, setOpening] = useState(minute?.opening ?? '')
+  const [closing, setClosing] = useState(minute?.closing ?? '')
+  const [topics, setTopics] = useState<TopicDraft[]>(() =>
+    minute
+      ? minute.topics.map((topic) => ({ key: randomKey(), title: topic.title, discussion: topic.discussion }))
+      : [emptyTopic()]
+  )
   const [attempted, setAttempted] = useState(false)
 
   const formError = state.status === 'error' ? state.formError : undefined
   const payload = useMemo(
     () =>
       JSON.stringify({
+        id: minute?.id,
         number,
         title,
         started_at: startedAt,
@@ -52,22 +71,22 @@ export function MeetingMinuteForm({ suggestedNumber, suggestedTitle }: Props) {
         closing,
         topics: topics.map((topic) => ({ title: topic.title, discussion: topic.discussion })),
       }),
-    [attendees, closing, endedAt, location, number, opening, startedAt, title, topics]
+    [attendees, closing, minute, endedAt, location, number, opening, startedAt, title, topics]
   )
   const errors = useMemo<FormErrors>(() => {
     if (!attempted) return {}
-    const result = createMeetingMinuteSchema.safeParse(JSON.parse(payload))
+    const result = schema.safeParse(JSON.parse(payload))
     return result.success ? {} : errorsFromIssues(result.error.issues)
-  }, [attempted, payload])
+  }, [attempted, payload, schema])
 
   useEffect(() => {
     if (state.status !== 'success') return
-    toast.success('Ata criada')
+    toast.success(minute ? 'Ata atualizada' : 'Ata criada')
     router.push(`/admin/meeting-minutes?year=${startedAt.slice(0, 4)}`)
-  }, [state.status, startedAt, router])
+  }, [state.status, startedAt, router, minute])
 
   function submit(event: FormEvent<HTMLFormElement>) {
-    if (createMeetingMinuteSchema.safeParse(JSON.parse(payload)).success) return
+    if (schema.safeParse(JSON.parse(payload)).success) return
 
     event.preventDefault()
     setAttempted(true)
@@ -131,8 +150,20 @@ export function MeetingMinuteForm({ suggestedNumber, suggestedTitle }: Props) {
         <FieldError messages={errors.location} />
       </FormField>
 
-      <MarkdownField label="Participantes" name="attendees" errors={errors.attendees} onChange={setAttendees} />
-      <MarkdownField label="Abertura" name="opening" errors={errors.opening} onChange={setOpening} />
+      <MarkdownField
+        label="Participantes"
+        name="attendees"
+        defaultValue={minute?.attendees}
+        errors={errors.attendees}
+        onChange={setAttendees}
+      />
+      <MarkdownField
+        label="Abertura"
+        name="opening"
+        defaultValue={minute?.opening}
+        errors={errors.opening}
+        onChange={setOpening}
+      />
 
       <section className="grid gap-4">
         <h3 className="text-base font-semibold tracking-normal">Tópicos</h3>
@@ -189,6 +220,7 @@ export function MeetingMinuteForm({ suggestedNumber, suggestedTitle }: Props) {
             <MarkdownField
               label="Discussão"
               name={`topics.${index}.discussion`}
+              defaultValue={topic.discussion}
               errors={errors[`topics.${index}.discussion`]}
               onChange={(value) => updateTopic(index, { discussion: value })}
             />
@@ -203,7 +235,13 @@ export function MeetingMinuteForm({ suggestedNumber, suggestedTitle }: Props) {
         </div>
       </section>
 
-      <MarkdownField label="Encerramento" name="closing" errors={errors.closing} onChange={setClosing} />
+      <MarkdownField
+        label="Encerramento"
+        name="closing"
+        defaultValue={minute?.closing}
+        errors={errors.closing}
+        onChange={setClosing}
+      />
 
       <FormActions>
         <Link href="/admin/meeting-minutes" className={cn(buttonVariants({ variant: 'outline' }))}>
@@ -218,7 +256,11 @@ export function MeetingMinuteForm({ suggestedNumber, suggestedTitle }: Props) {
 }
 
 function emptyTopic(): TopicDraft {
-  return { key: globalThis.crypto?.randomUUID?.() ?? String(Math.random()), title: '', discussion: '' }
+  return { key: randomKey(), title: '', discussion: '' }
+}
+
+function randomKey(): string {
+  return globalThis.crypto?.randomUUID?.() ?? String(Math.random())
 }
 
 function topicHasContent(topic: TopicDraft): boolean {

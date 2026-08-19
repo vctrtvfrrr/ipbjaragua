@@ -6,9 +6,13 @@ import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
 import { createTestDb, type TestDb } from '@/tests/db'
 import {
   createMeetingMinute,
+  getMeetingMinuteById,
   listMeetingMinutesByYear,
+  MeetingMinuteImmutableError,
+  MeetingMinuteNotFoundError,
   MeetingMinuteNumberTakenError,
   nextMeetingMinuteNumber,
+  updateMeetingMinute,
 } from './meeting-minutes'
 
 function input(overrides: Partial<CreateMeetingMinuteInput> = {}): CreateMeetingMinuteInput {
@@ -115,6 +119,162 @@ describe('meeting_minutes constraints', () => {
     )
 
     expect(rows.map((row) => row.column_name)).not.toContain('deleted_at')
+  })
+})
+
+describe('getMeetingMinuteById', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('returns the Ata with its Tópicos in position order', async () => {
+    const created = await createMeetingMinute(
+      input({
+        topics: [
+          { title: 'Orçamento', discussion: 'Aprovado.' },
+          { title: 'Reforma', discussion: 'Adiada.' },
+        ],
+      }),
+      db
+    )
+
+    const minute = await getMeetingMinuteById(created.id, db)
+
+    expect(minute).toMatchObject({
+      id: created.id,
+      number: 1,
+      title: 'IPB de Jaraguá do Sul',
+      status: 'pending',
+    })
+    expect(minute?.topics.map((topic) => topic.title)).toEqual(['Orçamento', 'Reforma'])
+  })
+
+  it('returns null when the Ata does not exist', async () => {
+    expect(await getMeetingMinuteById(999, db)).toBeNull()
+  })
+})
+
+describe('updateMeetingMinute', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('rewrites every field of the Ata, keeping its identity', async () => {
+    const created = await createMeetingMinute(input(), db)
+
+    const updated = await updateMeetingMinute(
+      created.id,
+      input({
+        number: 9,
+        title: 'Ata reformulada',
+        started_at: parseChurchDateTime('2026-06-14T18:00'),
+        ended_at: parseChurchDateTime('2026-06-14T19:30'),
+        location: 'Sala de reuniões',
+        attendees: '- Presbítero Pedro',
+        opening: 'Aberta com leitura bíblica.',
+        closing: 'Encerrada com oração.',
+      }),
+      db
+    )
+
+    expect(updated).toMatchObject({
+      id: created.id,
+      number: 9,
+      title: 'Ata reformulada',
+      location: 'Sala de reuniões',
+      status: 'pending',
+    })
+    expect(updated?.started_at.toISOString()).toBe('2026-06-14T21:00:00.000Z')
+    expect(await db.select().from(meetingMinutes)).toHaveLength(1)
+  })
+
+  it('replaces the Tópicos with the new set in the new order', async () => {
+    const created = await createMeetingMinute(
+      input({
+        topics: [
+          { title: 'Orçamento', discussion: 'Aprovado.' },
+          { title: 'Reforma', discussion: 'Adiada.' },
+        ],
+      }),
+      db
+    )
+
+    await updateMeetingMinute(
+      created.id,
+      input({
+        topics: [
+          { title: 'Reforma', discussion: 'Retomada.' },
+          { title: 'Missões', discussion: 'Novo Tópico.' },
+        ],
+      }),
+      db
+    )
+
+    const topics = await db
+      .select({
+        position: meetingMinuteTopics.position,
+        title: meetingMinuteTopics.title,
+        discussion: meetingMinuteTopics.discussion,
+      })
+      .from(meetingMinuteTopics)
+      .where(eq(meetingMinuteTopics.meeting_minute_id, created.id))
+      .orderBy(asc(meetingMinuteTopics.position))
+
+    expect(topics).toEqual([
+      { position: 0, title: 'Reforma', discussion: 'Retomada.' },
+      { position: 1, title: 'Missões', discussion: 'Novo Tópico.' },
+    ])
+  })
+
+  it('accepts keeping the same Número the Ata already has', async () => {
+    const created = await createMeetingMinute(input({ number: 7 }), db)
+
+    const updated = await updateMeetingMinute(created.id, input({ number: 7, title: 'Mesmo Número' }), db)
+
+    expect(updated?.number).toBe(7)
+  })
+
+  it('rejects a Número taken by another Ata and leaves the Ata untouched', async () => {
+    await createMeetingMinute(input({ number: 3 }), db)
+    const created = await createMeetingMinute(
+      input({
+        number: 7,
+        started_at: parseChurchDateTime('2026-06-14T19:30'),
+        ended_at: parseChurchDateTime('2026-06-14T21:00'),
+      }),
+      db
+    )
+
+    await expect(updateMeetingMinute(created.id, input({ number: 3 }), db)).rejects.toThrow(
+      MeetingMinuteNumberTakenError
+    )
+
+    const minute = await getMeetingMinuteById(created.id, db)
+    expect(minute?.number).toBe(7)
+    expect(minute?.title).toBe('IPB de Jaraguá do Sul')
+    expect(minute?.topics.map((topic) => topic.title)).toEqual(['Orçamento'])
+  })
+
+  it('rejects an Ata Aprovada and leaves it untouched', async () => {
+    const created = await createMeetingMinute(input(), db)
+    await db.update(meetingMinutes).set({ status: 'approved' }).where(eq(meetingMinutes.id, created.id))
+
+    await expect(updateMeetingMinute(created.id, input({ title: 'Tarde demais' }), db)).rejects.toThrow(
+      MeetingMinuteImmutableError
+    )
+
+    const minute = await getMeetingMinuteById(created.id, db)
+    expect(minute?.title).toBe('IPB de Jaraguá do Sul')
+    expect(minute?.status).toBe('approved')
+  })
+
+  it('rejects an Ata that does not exist', async () => {
+    await expect(updateMeetingMinute(999, input(), db)).rejects.toThrow(MeetingMinuteNotFoundError)
+    expect(await db.select().from(meetingMinuteTopics)).toEqual([])
   })
 })
 

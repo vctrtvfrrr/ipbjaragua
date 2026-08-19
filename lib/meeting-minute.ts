@@ -57,7 +57,10 @@ const meetingMinuteFields = z.object({
   topics: z.array(meetingMinuteTopicSchema).min(1, 'A Ata exige ao menos um Tópico'),
 })
 
-export const createMeetingMinuteSchema = meetingMinuteFields.transform((raw, context) => {
+function parseChurchTimes<T extends z.output<typeof meetingMinuteFields>>(
+  raw: T,
+  context: z.RefinementCtx
+): Omit<T, 'started_at' | 'ended_at'> & { started_at: Date; ended_at: Date } {
   const started_at = parseChurchDateTime(raw.started_at)
   const ended_at = parseChurchDateTime(raw.ended_at)
 
@@ -67,7 +70,13 @@ export const createMeetingMinuteSchema = meetingMinuteFields.transform((raw, con
   }
 
   return { ...raw, started_at, ended_at }
-})
+}
+
+export const createMeetingMinuteSchema = meetingMinuteFields.transform(parseChurchTimes)
+
+export const updateMeetingMinuteSchema = meetingMinuteFields
+  .extend({ id: z.coerce.number().int().positive('ID é obrigatório') })
+  .transform(parseChurchTimes)
 
 export type CreateMeetingMinuteInput = z.output<typeof createMeetingMinuteSchema>
 

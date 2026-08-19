@@ -18,6 +18,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
   const year = resolveMeetingMinuteYear(rawYear, churchYear(new Date()))
   const minutes = await listMeetingMinutesByYear(year)
   const canCreate = user.can('meeting_minutes', 'create')
+  const canUpdate = user.can('meeting_minutes', 'update')
 
   return (
     <section className="grid gap-6">
@@ -50,6 +51,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
               <TableHead>Título</TableHead>
               <TableHead>Início</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -59,6 +61,18 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
                 <TableCell className="font-medium whitespace-normal">{minute.title}</TableCell>
                 <TableCell>{formatChurchDateTimePtBR(minute.started_at)}</TableCell>
                 <TableCell>{MEETING_MINUTE_STATUS_LABELS[minute.status]}</TableCell>
+                <TableCell>
+                  {canUpdate && minute.status === 'pending' ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/admin/meeting-minutes/${minute.id}/edit`}
+                        className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                      >
+                        Editar
+                      </Link>
+                    </div>
+                  ) : null}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

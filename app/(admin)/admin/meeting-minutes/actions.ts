@@ -1,7 +1,17 @@
 import { revalidatePath } from 'next/cache'
-import { createMeetingMinute, MeetingMinuteNumberTakenError } from '@/db/queries/meeting-minutes'
+import {
+  createMeetingMinute,
+  MeetingMinuteImmutableError,
+  MeetingMinuteNotFoundError,
+  MeetingMinuteNumberTakenError,
+  updateMeetingMinute,
+} from '@/db/queries/meeting-minutes'
 import { defineEntityAction } from '@/lib/entity-action'
-import { createMeetingMinuteSchema, parseSerializedMeetingMinutePayload } from '@/lib/meeting-minute'
+import {
+  createMeetingMinuteSchema,
+  parseSerializedMeetingMinutePayload,
+  updateMeetingMinuteSchema,
+} from '@/lib/meeting-minute'
 
 export const createMeetingMinuteAction = defineEntityAction({
   entity: 'meeting_minutes',
@@ -11,6 +21,23 @@ export const createMeetingMinuteAction = defineEntityAction({
   write: ({ data, db }) => createMeetingMinute(data, db),
   revalidate: () => revalidatePath('/admin/meeting-minutes'),
   validationErrorMessage: () => 'Revise a Ata antes de salvar.',
-  errorMessage: (error) =>
-    error instanceof MeetingMinuteNumberTakenError ? 'Já existe uma Ata com esse Número.' : undefined,
+  errorMessage: meetingMinuteErrorMessage,
 })
+
+export const updateMeetingMinuteAction = defineEntityAction({
+  entity: 'meeting_minutes',
+  action: 'update',
+  schema: updateMeetingMinuteSchema,
+  parse: parseSerializedMeetingMinutePayload,
+  write: ({ data, db }) => updateMeetingMinute(data.id, data, db),
+  revalidate: () => revalidatePath('/admin/meeting-minutes'),
+  validationErrorMessage: () => 'Revise a Ata antes de salvar.',
+  errorMessage: meetingMinuteErrorMessage,
+})
+
+function meetingMinuteErrorMessage(error: unknown): string | undefined {
+  if (error instanceof MeetingMinuteNumberTakenError) return 'Já existe uma Ata com esse Número.'
+  if (error instanceof MeetingMinuteNotFoundError) return 'Ata não encontrada.'
+  if (error instanceof MeetingMinuteImmutableError) return 'Somente Atas Pendentes de aprovação podem ser editadas.'
+  return undefined
+}

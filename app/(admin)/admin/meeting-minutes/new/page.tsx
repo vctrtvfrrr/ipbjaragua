@@ -13,7 +13,11 @@ export default async function NewMeetingMinutePage() {
   return (
     <section className="grid gap-6">
       <h2 className="text-xl font-semibold tracking-normal">Nova Ata</h2>
-      <MeetingMinuteForm suggestedNumber={suggestedNumber} suggestedTitle={DEFAULT_MEETING_MINUTE_TITLE} />
+      <MeetingMinuteForm
+        mode="create"
+        suggestedNumber={suggestedNumber}
+        suggestedTitle={DEFAULT_MEETING_MINUTE_TITLE}
+      />
     </section>
   )
 }
