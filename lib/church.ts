@@ -1,3 +1,5 @@
+export const CHURCH_NAME = 'Igreja Presbiteriana do Brasil em Jaraguá do Sul'
+
 export const CHURCH_ADDRESS = {
   street: 'Rua Gustavo Bruch, 86',
   district: 'Czerniewicz',

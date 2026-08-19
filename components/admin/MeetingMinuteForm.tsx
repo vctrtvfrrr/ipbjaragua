@@ -26,9 +26,7 @@ const INITIAL_STATE: ActionState = { status: 'idle' }
 type TopicDraft = { key: string; title: string; discussion: string }
 type FormErrors = Record<string, string[]>
 
-type Props =
-  | { mode: 'create'; suggestedNumber: number; suggestedTitle: string }
-  | { mode: 'edit'; minute: MeetingMinuteWithTopics }
+type Props = { mode: 'create'; suggestedNumber: number } | { mode: 'edit'; minute: MeetingMinuteWithTopics }
 
 export function MeetingMinuteForm(props: Props) {
   const minute = props.mode === 'edit' ? props.minute : null
@@ -42,7 +40,7 @@ export function MeetingMinuteForm(props: Props) {
   const [number, setNumber] = useState(() =>
     props.mode === 'edit' ? String(props.minute.number) : String(props.suggestedNumber)
   )
-  const [title, setTitle] = useState(() => (props.mode === 'edit' ? props.minute.title : props.suggestedTitle))
+  const [title, setTitle] = useState(() => (props.mode === 'edit' ? props.minute.title : ''))
   const [startedAt, setStartedAt] = useState(() => (minute ? formatChurchDateTimeInput(minute.started_at) : ''))
   const [endedAt, setEndedAt] = useState(() => (minute ? formatChurchDateTimeInput(minute.ended_at) : ''))
   const [location, setLocation] = useState(minute?.location ?? '')

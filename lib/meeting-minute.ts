@@ -1,15 +1,12 @@
 import { z } from 'zod'
 import type { MeetingMinuteStatus } from '@/db/schema'
 import { isChurchDateTime, parseChurchDateTime } from '@/lib/date'
-import { CHURCH_NAME } from '@/lib/og/config'
 import { requiredTrimmedString } from '@/lib/validation'
 
 export const MEETING_MINUTE_STATUS_LABELS: Record<MeetingMinuteStatus, string> = {
   pending: 'Pendente de aprovação',
   approved: 'Aprovada',
 }
-
-export const DEFAULT_MEETING_MINUTE_TITLE = CHURCH_NAME
 
 const REQUIRED = 'Campo obrigatório'
 const EMPTY_MARKDOWN = 'Escreva um conteúdo, não apenas formatação'
