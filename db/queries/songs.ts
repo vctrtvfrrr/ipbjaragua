@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, getTableColumns, inArray, isNull, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, getColumns, inArray, isNull, sql, type SQL } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { songs } from '@/db/schema'
 import type { LyricsBlock } from '@/lib/song'
@@ -122,7 +122,7 @@ function songOrderBy(sort: SongSort): SQL[] {
 
 export async function listSongsForAdmin(sort: SongSort, db: Database = defaultDb): Promise<SongForAdmin[]> {
   const rows = await db
-    .select(getTableColumns(songs))
+    .select(getColumns(songs))
     .from(songs)
     .where(isNull(songs.deleted_at))
     .orderBy(...songOrderBy(sort))

@@ -1,27 +1,11 @@
-import { readFile, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { describe, expect, it } from 'vitest'
-
-const migrationsDirectory = join(process.cwd(), 'db/migrations')
-
-async function applySql(client: PGlite, sql: string) {
-  for (const statement of sql.split('--> statement-breakpoint')) {
-    if (statement.trim()) await client.exec(statement)
-  }
-}
+import { applyMigration, applyMigrationsBefore } from '@/tests/migrations'
 
 describe('announcement flyer migration', () => {
   it('drops announcement image links without changing announcements or the featured image collection', async () => {
     const client = new PGlite()
-    const migrationFiles = (await readdir(migrationsDirectory))
-      .filter((file) => /^\d{4}_.+\.sql$/.test(file))
-      .sort()
-    const flyerMigrationIndex = migrationFiles.findIndex((file) => file === '0013_fearless_wraith.sql')
-
-    for (const file of migrationFiles.slice(0, flyerMigrationIndex)) {
-      await applySql(client, await readFile(join(migrationsDirectory, file), 'utf8'))
-    }
+    await applyMigrationsBefore(client, 'fearless_wraith')
 
     await client.exec(`
       INSERT INTO featured_images (path) VALUES ('${'a'.repeat(48)}.webp');
@@ -29,7 +13,7 @@ describe('announcement flyer migration', () => {
       VALUES ('Aviso existente', 'Descrição original', '2026-07-31', 1);
     `)
 
-    await applySql(client, await readFile(join(migrationsDirectory, migrationFiles[flyerMigrationIndex]), 'utf8'))
+    await applyMigration(client, 'fearless_wraith')
 
     const announcement = await client.query<{
       title: string

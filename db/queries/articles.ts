@@ -1,4 +1,4 @@
-import { and, count, desc, eq, getTableColumns, inArray, isNull, ne, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, getColumns, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { articles, featuredImages, users } from '@/db/schema'
 import { pickRandomFeaturedImageId } from './featured-images'
@@ -138,7 +138,7 @@ export async function listArticlesForAdmin(
 ): Promise<ArticleWithAuthorContact[]> {
   return db
     .select({
-      ...getTableColumns(articles),
+      ...getColumns(articles),
       authorName: users.name,
       authorEmail: users.email,
       featuredImagePath: featuredImages.path,
@@ -180,7 +180,7 @@ export async function listAuthorOptions(currentAuthorId?: number, db: Database =
 
 function selectArticlesWithAuthor(db: Database) {
   return db
-    .select({ ...getTableColumns(articles), authorName: users.name, featuredImagePath: featuredImages.path })
+    .select({ ...getColumns(articles), authorName: users.name, featuredImagePath: featuredImages.path })
     .from(articles)
     .innerJoin(users, eq(articles.author_id, users.id))
     .leftJoin(featuredImages, eq(articles.featured_image_id, featuredImages.id))

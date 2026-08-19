@@ -1,4 +1,4 @@
-import { and, count, desc, eq, getTableColumns, isNull, max } from 'drizzle-orm'
+import { and, count, desc, eq, getColumns, isNull, max } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { articles, bulletins, users } from '@/db/schema'
 
@@ -105,7 +105,7 @@ export async function listBulletinsForAdmin(
   db: Database = defaultDb
 ): Promise<BulletinForAdmin[]> {
   return db
-    .select({ ...getTableColumns(bulletins), articleTitle: articles.title })
+    .select({ ...getColumns(bulletins), articleTitle: articles.title })
     .from(bulletins)
     .leftJoin(articles, eq(bulletins.article_id, articles.id))
     .orderBy(desc(bulletins.date), desc(bulletins.id))

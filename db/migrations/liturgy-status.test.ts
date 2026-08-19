@@ -1,28 +1,11 @@
-import { readFile, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { describe, expect, it } from 'vitest'
-
-const migrationsDirectory = join(process.cwd(), 'db/migrations')
-
-async function applySql(client: PGlite, sql: string) {
-  for (const statement of sql.split('--> statement-breakpoint')) {
-    if (statement.trim()) await client.exec(statement)
-  }
-}
+import { applyMigration, applyMigrationsBefore } from '@/tests/migrations'
 
 describe('liturgy status migration', () => {
   it('preserves date-based visibility when backfilling existing liturgies', async () => {
     const client = new PGlite()
-    const migrationFiles = (await readdir(migrationsDirectory))
-      .filter((file) => /^\d{4}_.+\.sql$/.test(file))
-      .sort()
-
-    const statusMigrationIndex = migrationFiles.findIndex((file) => file === '0011_wooden_donald_blake.sql')
-
-    for (const file of migrationFiles.slice(0, statusMigrationIndex)) {
-      await applySql(client, await readFile(join(migrationsDirectory, file), 'utf8'))
-    }
+    await applyMigrationsBefore(client, 'wooden_donald_blake')
 
     await client.exec(`
       INSERT INTO liturgies (date, theme, time)
@@ -32,7 +15,7 @@ describe('liturgy status migration', () => {
         (((CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date + 1), 'Future service', '09:00')
     `)
 
-    await applySql(client, await readFile(join(migrationsDirectory, migrationFiles[statusMigrationIndex]), 'utf8'))
+    await applyMigration(client, 'wooden_donald_blake')
 
     const { rows } = await client.query<{ theme: string; status: string }>(
       'SELECT theme, status FROM liturgies ORDER BY date'

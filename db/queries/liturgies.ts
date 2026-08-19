@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, lte, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, getColumns, gt, gte, inArray, isNull, lte, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { liturgyActs, liturgyMoments, liturgies, type LiturgyStatus, type ScripturePassage, songs } from '@/db/schema'
 import { liturgySlug } from '@/lib/bulletin'
@@ -215,7 +215,7 @@ export async function getLiturgyForEditor(
 
 export async function listSongPickerOptions(db: Database = defaultDb): Promise<SongPickerOption[]> {
   const rows = await db
-    .select(getTableColumns(songs))
+    .select(getColumns(songs))
     .from(songs)
     .where(isNull(songs.deleted_at))
     .orderBy(asc(songs.title), asc(songs.id))

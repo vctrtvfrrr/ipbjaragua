@@ -170,9 +170,7 @@ export async function seedE2eDatabase() {
   await client.unsafe('DROP SCHEMA IF EXISTS drizzle CASCADE')
   await client.unsafe('CREATE SCHEMA public')
 
-  const db = drizzle(client, {
-    schema: { articles, bulletins, liturgies, agenda, announcements, members, users, userPermissions },
-  })
+  const db = drizzle({ client })
   await migrate(db, { migrationsFolder: './db/migrations' })
 
   const authorIds = new Map<string, number>()
