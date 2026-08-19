@@ -28,10 +28,30 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: 'postgres',
+          environment: 'node',
+          include: ['tests/postgres/**/*.test.ts'],
+          // Each case recreates a scratch database on the same server.
+          fileParallelism: false,
+          maxWorkers: 1,
+          sequence: { groupOrder: 2 },
+        },
+      },
+      {
+        extends: true,
+        test: {
           name: 'node',
           environment: 'node',
           include: ['**/*.test.ts'],
-          exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', '.claude/**', 'db/**/*.test.ts', 'tests/db.test.ts'],
+          exclude: [
+            'node_modules/**',
+            'tests/e2e/**',
+            'tests/postgres/**',
+            '.next/**',
+            '.claude/**',
+            'db/**/*.test.ts',
+            'tests/db.test.ts',
+          ],
         },
       },
       {
