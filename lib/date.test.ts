@@ -5,6 +5,7 @@ import {
   churchYearRange,
   currentTimeHHMM,
   currentWeekWindow,
+  formatChurchDatePtBR,
   formatChurchDateTimeInput,
   formatChurchDateTimePtBR,
   isChurchDateTime,
@@ -160,6 +161,14 @@ describe('church time zone instants', () => {
 
   it('formats an instant as pt-BR civil time', () => {
     expect(formatChurchDateTimePtBR(parseChurchDateTime('2026-06-07T19:30'))).toBe('07/06/2026, 19:30')
+  })
+
+  it('formats an instant as a pt-BR civil date, without the time', () => {
+    expect(formatChurchDatePtBR(parseChurchDateTime('2026-06-07T19:30'))).toBe('07/06/2026')
+  })
+
+  it('formats the civil day, not the UTC one', () => {
+    expect(formatChurchDatePtBR(new Date('2026-06-08T02:00:00.000Z'))).toBe('07/06/2026')
   })
 
   it('derives the year from the civil time, not from UTC', () => {

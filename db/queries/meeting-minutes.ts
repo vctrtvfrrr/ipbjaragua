@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lt, max } from 'drizzle-orm'
+import { and, asc, eq, max } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { meetingMinuteTopics, meetingMinutes, type MeetingMinuteStatus } from '@/db/schema'
 import { churchYear, churchYearRange } from '@/lib/date'
@@ -16,6 +16,7 @@ export type MeetingMinuteListItem = {
   title: string
   started_at: Date
   status: MeetingMinuteStatus
+  topics: { title: string }[]
 }
 
 export class MeetingMinuteNumberTakenError extends Error {
@@ -152,17 +153,12 @@ export async function listMeetingMinutesByYear(
 ): Promise<MeetingMinuteListItem[]> {
   const { from, to } = churchYearRange(year)
 
-  return db
-    .select({
-      id: meetingMinutes.id,
-      number: meetingMinutes.number,
-      title: meetingMinutes.title,
-      started_at: meetingMinutes.started_at,
-      status: meetingMinutes.status,
-    })
-    .from(meetingMinutes)
-    .where(and(gte(meetingMinutes.started_at, from), lt(meetingMinutes.started_at, to)))
-    .orderBy(asc(meetingMinutes.number))
+  return db.query.meetingMinutes.findMany({
+    columns: { id: true, number: true, title: true, started_at: true, status: true },
+    with: { topics: { columns: { title: true }, orderBy: { position: 'asc' } } },
+    where: { started_at: { gte: from, lt: to } },
+    orderBy: { number: 'asc' },
+  })
 }
 
 export async function earliestMeetingMinuteYear(db: Database = defaultDb): Promise<number | null> {

@@ -1,17 +1,18 @@
 import { PGlite } from '@electric-sql/pglite'
-import { drizzle } from 'drizzle-orm/pglite'
+import { drizzle, type PgliteDatabase } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { sql } from 'drizzle-orm'
+import { relations, type Relations } from '@/db/relations'
 
 export type TestDb = Awaited<ReturnType<typeof createTestDb>>
 
-let base: Promise<{ db: ReturnType<typeof drizzle>; truncate: string }> | undefined
+let base: Promise<{ db: PgliteDatabase<Relations>; truncate: string }> | undefined
 
 async function getBase() {
   if (base) return base
   base = (async () => {
     const client = new PGlite()
-    const db = drizzle({ client })
+    const db = drizzle({ client, relations })
     await migrate(db, { migrationsFolder: './db/migrations' })
     const { rows } = await client.query<{ tablename: string }>(
       `SELECT tablename FROM pg_tables WHERE schemaname = 'public'`

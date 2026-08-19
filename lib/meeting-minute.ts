@@ -4,7 +4,7 @@ import { isChurchDateTime, parseChurchDateTime } from '@/lib/date'
 import { requiredTrimmedString } from '@/lib/validation'
 
 export const MEETING_MINUTE_STATUS_LABELS: Record<MeetingMinuteStatus, string> = {
-  pending: 'Pendente de aprovação',
+  pending: 'Aprovação pendente',
   approved: 'Aprovada',
 }
 
@@ -110,4 +110,19 @@ export function resolveMeetingMinuteYearNavigation(
 
 export function meetingMinuteTopicLabel(topic: { title: string }, index: number): string {
   return topic.title.trim() || `Tópico ${index + 1}`
+}
+
+export function meetingMinuteLabel(minute: { number: number; title: string }): string {
+  return `Ata nº ${minute.number} — ${minute.title}`
+}
+
+export const MEETING_MINUTE_TOPIC_TITLE_LIMIT = 60
+
+export function abbreviateMeetingMinuteTopicTitle(title: string): string {
+  if (title.length <= MEETING_MINUTE_TOPIC_TITLE_LIMIT) return title
+
+  const head = title.slice(0, MEETING_MINUTE_TOPIC_TITLE_LIMIT)
+  const lastSpace = head.lastIndexOf(' ')
+
+  return `${lastSpace === -1 ? head : head.slice(0, lastSpace)}…`
 }

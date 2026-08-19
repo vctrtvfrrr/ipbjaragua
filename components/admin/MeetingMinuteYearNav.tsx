@@ -18,18 +18,20 @@ export function MeetingMinuteYearNav({ previousYear, nextYear }: Props) {
       ) : (
         <Link
           href={`/admin/meeting-minutes?year=${previousYear}`}
+          aria-label={`Atas de ${previousYear}`}
           className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
         >
           <ChevronLeft data-icon="inline-start" />
-          Anterior
+          {previousYear}
         </Link>
       )}
       {nextYear === null ? null : (
         <Link
           href={`/admin/meeting-minutes?year=${nextYear}`}
+          aria-label={`Atas de ${nextYear}`}
           className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
         >
-          Próximo
+          {nextYear}
           <ChevronRight data-icon="inline-end" />
         </Link>
       )}

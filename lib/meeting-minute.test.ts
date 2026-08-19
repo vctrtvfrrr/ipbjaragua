@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { createMeetingMinuteSchema, hasMeaningfulMarkdown, resolveMeetingMinuteYearNavigation } from './meeting-minute'
+import {
+  abbreviateMeetingMinuteTopicTitle,
+  createMeetingMinuteSchema,
+  hasMeaningfulMarkdown,
+  meetingMinuteLabel,
+  MEETING_MINUTE_TOPIC_TITLE_LIMIT,
+  resolveMeetingMinuteYearNavigation,
+} from './meeting-minute'
 
 function payload(overrides: Record<string, unknown> = {}) {
   return {
@@ -155,5 +162,34 @@ describe('resolveMeetingMinuteYearNavigation', () => {
       previousYear: null,
       nextYear: null,
     })
+  })
+})
+
+describe('meetingMinuteLabel', () => {
+  it('names the Ata by its Número and Título', () => {
+    expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' })).toBe('Ata nº 42 — Reunião ordinária')
+  })
+})
+
+describe('abbreviateMeetingMinuteTopicTitle', () => {
+  const limit = MEETING_MINUTE_TOPIC_TITLE_LIMIT
+
+  it('leaves a title within the limit untouched', () => {
+    const title = 'a'.repeat(limit - 1)
+    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe(title)
+  })
+
+  it('leaves a title exactly at the limit untouched', () => {
+    const title = 'a'.repeat(limit)
+    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe(title)
+  })
+
+  it('cuts at the last whole word and marks the cut', () => {
+    const title = `${'palavra '.repeat(9)}excedente`
+    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe('palavra palavra palavra palavra palavra palavra palavra…')
+  })
+
+  it('cuts mid-word when a single word already exceeds the limit', () => {
+    expect(abbreviateMeetingMinuteTopicTitle('b'.repeat(limit + 10))).toBe(`${'b'.repeat(limit)}…`)
   })
 })

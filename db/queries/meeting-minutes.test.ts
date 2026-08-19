@@ -38,7 +38,7 @@ describe('createMeetingMinute', () => {
     db = await createTestDb()
   })
 
-  it('stores the Ata as Pendente de aprovação with its Tópicos in order', async () => {
+  it('stores the Ata as Aprovação pendente with its Tópicos in order', async () => {
     const minute = await createMeetingMinute(
       input({
         topics: [
@@ -337,6 +337,29 @@ describe('listMeetingMinutesByYear', () => {
 
     expect(await listMeetingMinutesByYear(2026, db)).toHaveLength(1)
     expect(await listMeetingMinutesByYear(2027, db)).toEqual([])
+  })
+
+  it('brings the Tópico titles in deliberation order', async () => {
+    const created = await createMeetingMinute(input(), db)
+    await db.delete(meetingMinuteTopics)
+    await db.insert(meetingMinuteTopics).values([
+      { meeting_minute_id: created.id, position: 2, title: 'Missões', discussion: 'Em estudo.' },
+      { meeting_minute_id: created.id, position: 0, title: 'Orçamento', discussion: 'Aprovado.' },
+      { meeting_minute_id: created.id, position: 1, title: 'Reforma', discussion: 'Adiada.' },
+    ])
+
+    const [minute] = await listMeetingMinutesByYear(2026, db)
+
+    expect(minute.topics).toEqual([{ title: 'Orçamento' }, { title: 'Reforma' }, { title: 'Missões' }])
+  })
+
+  it('brings an empty list for an Ata without Tópicos', async () => {
+    await createMeetingMinute(input(), db)
+    await db.delete(meetingMinuteTopics)
+
+    const [minute] = await listMeetingMinutesByYear(2026, db)
+
+    expect(minute.topics).toEqual([])
   })
 })
 

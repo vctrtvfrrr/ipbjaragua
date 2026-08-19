@@ -68,7 +68,7 @@ describe('createMeetingMinuteAction.execute', () => {
     expect(await db.select().from(meetingMinutes)).toEqual([])
   })
 
-  it('saves a complete Ata as Pendente de aprovação with its Tópicos in order', async () => {
+  it('saves a complete Ata as Aprovação pendente with its Tópicos in order', async () => {
     const state = await createMeetingMinuteAction.execute({ user: userWithPermission(true), db }, formData(payload()))
 
     expect(state).toEqual({ status: 'success' })

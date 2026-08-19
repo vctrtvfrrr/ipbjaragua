@@ -5,8 +5,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { buttonVariants } from '@/components/ui/button'
 import { earliestMeetingMinuteYear, listMeetingMinutesByYear } from '@/db/queries/meeting-minutes'
 import { requirePageRead } from '@/lib/auth/require-page-read'
-import { churchYear, formatChurchDateTimePtBR } from '@/lib/date'
-import { MEETING_MINUTE_STATUS_LABELS, resolveMeetingMinuteYearNavigation } from '@/lib/meeting-minute'
+import { churchYear, formatChurchDatePtBR } from '@/lib/date'
+import {
+  abbreviateMeetingMinuteTopicTitle,
+  MEETING_MINUTE_STATUS_LABELS,
+  meetingMinuteLabel,
+  resolveMeetingMinuteYearNavigation,
+} from '@/lib/meeting-minute'
 import { cn } from '@/lib/utils'
 
 type AdminMeetingMinutesPageProps = {
@@ -42,9 +47,9 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Número</TableHead>
+              <TableHead>Data</TableHead>
               <TableHead>Título</TableHead>
-              <TableHead>Início</TableHead>
+              <TableHead>Tópicos discutidos</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -52,9 +57,21 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
           <TableBody>
             {minutes.map((minute) => (
               <TableRow key={minute.id}>
-                <TableCell>{minute.number}</TableCell>
-                <TableCell className="font-medium whitespace-normal">{minute.title}</TableCell>
-                <TableCell>{formatChurchDateTimePtBR(minute.started_at)}</TableCell>
+                <TableCell>{formatChurchDatePtBR(minute.started_at)}</TableCell>
+                <TableCell className="font-medium whitespace-normal">{meetingMinuteLabel(minute)}</TableCell>
+                <TableCell className="whitespace-normal">
+                  {minute.topics.length === 0 ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <ol className="list-inside list-decimal">
+                      {minute.topics.map((topic, index) => (
+                        <li key={index} title={topic.title}>
+                          {abbreviateMeetingMinuteTopicTitle(topic.title)}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </TableCell>
                 <TableCell>{MEETING_MINUTE_STATUS_LABELS[minute.status]}</TableCell>
                 <TableCell>
                   {canUpdate && minute.status === 'pending' ? (
