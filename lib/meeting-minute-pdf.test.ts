@@ -1,5 +1,7 @@
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMeetingMinute } from '@/db/queries/meeting-minutes'
+import { meetingMinutes } from '@/db/schema'
 import type { CurrentUser } from '@/lib/auth/current-user'
 import { generateMeetingMinutePdf } from '@/lib/meeting-minute-pdf'
 import { closeSharedBrowser } from '@/lib/pdf/browser'
@@ -63,6 +65,13 @@ describe('generateMeetingMinutePdf', () => {
 
     expect(result).toMatchObject({ status: 'ok', filename: 'ata-12.pdf' })
     expect(result.status === 'ok' && result.pdf.subarray(0, 5).toString()).toBe('%PDF-')
+  })
+
+  it('does not render an Ata that was already Approved', async () => {
+    const created = await createMeetingMinute(minute(), db)
+    await db.update(meetingMinutes).set({ status: 'approved' }).where(eq(meetingMinutes.id, created.id))
+
+    expect(await generateMeetingMinutePdf(user('read'), created.id, db)).toEqual({ status: 'not-found' })
   })
 
   it('fails visibly instead of dropping an image it may not fetch', { timeout: 60_000 }, async () => {

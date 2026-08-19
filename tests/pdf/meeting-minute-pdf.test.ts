@@ -40,7 +40,7 @@ function longMinute(topics: number, words: number): MeetingMinuteDocument {
 }
 
 async function pendingPdf(minute: MeetingMinuteDocument, job = 'test'): Promise<Buffer> {
-  return renderPdf(job, await renderMeetingMinuteDocumentHtml(minute, { watermark: PENDING_WATERMARK }))
+  return renderPdf(job, () => renderMeetingMinuteDocumentHtml(minute))
 }
 
 afterAll(async () => {
@@ -101,10 +101,10 @@ describe('the PDF of a Pending Ata', () => {
   })
 
   it('never renders two documents at the same time', { timeout: 90_000 }, async () => {
-    const html = await renderMeetingMinuteDocumentHtml(MINUTE, { watermark: PENDING_WATERMARK })
+    const build = () => renderMeetingMinuteDocumentHtml(MINUTE)
 
-    const first = renderPdf('queue-first', html)
-    const second = renderPdf('queue-second', html)
+    const first = renderPdf('queue-first', build)
+    const second = renderPdf('queue-second', build)
 
     expect(pdfJobState('queue-second')).toBe('waiting')
 

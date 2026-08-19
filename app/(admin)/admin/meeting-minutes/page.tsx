@@ -74,7 +74,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
                         Editar
                       </Link>
                     ) : null}
-                    <MeetingMinutePdfButton minute={minute} />
+                    {minute.status === 'pending' ? <MeetingMinutePdfButton minute={minute} /> : null}
                   </div>
                 </TableCell>
               </TableRow>

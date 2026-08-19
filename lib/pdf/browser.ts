@@ -33,14 +33,16 @@ export function pdfJobState(job: string): PdfJobState {
   return queued.has(job) ? 'waiting' : 'idle'
 }
 
-export async function renderPdf(job: string, html: string): Promise<Buffer> {
+// The document is built inside the queue, not before it: fetching the images is the part
+// with unbounded memory and network, so leaving it outside would serialize only the cheap half.
+export async function renderPdf(job: string, build: () => Promise<string>): Promise<Buffer> {
   queued.set(job, (queued.get(job) ?? 0) + 1)
 
   const result = tail.then(async () => {
     release(job)
     running = job
     try {
-      return await print(html)
+      return await print(await build())
     } finally {
       running = null
     }

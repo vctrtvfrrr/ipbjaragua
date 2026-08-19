@@ -30,18 +30,16 @@ describe('renderMeetingMinuteDocumentHtml', () => {
     expect(html).not.toMatch(/<li>[^<]*Orçamento/)
   })
 
-  it('marks every page of a Pending Ata and leaves an Approved one unmarked', async () => {
-    const pending = await renderMeetingMinuteDocumentHtml(MINUTE, { watermark: PENDING_WATERMARK })
+  it('carries a mark the printed page repeats on every sheet', async () => {
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE)
 
-    expect(pending).toContain(PENDING_WATERMARK)
-    expect(pending).toMatch(/class="watermark"/)
-    expect(pending).toMatch(/\.watermark\{position:fixed/)
-
-    expect(await renderMeetingMinuteDocumentHtml(MINUTE)).not.toContain(PENDING_WATERMARK)
+    expect(html).toContain(PENDING_WATERMARK)
+    expect(html).toMatch(/class="watermark"/)
+    expect(html).toMatch(/\.watermark\{position:fixed/)
   })
 
   it('leaves out everything the model does not carry', async () => {
-    const html = await renderMeetingMinuteDocumentHtml(MINUTE, { watermark: PENDING_WATERMARK })
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE)
 
     expect(html).not.toContain('<footer')
     expect(html).not.toContain('<img')

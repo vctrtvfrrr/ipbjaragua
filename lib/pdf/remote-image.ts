@@ -1,14 +1,25 @@
 import { lookup as dnsLookup } from 'node:dns'
 import type { IncomingMessage } from 'node:http'
 import { request as httpsRequest } from 'node:https'
+import { isIP } from 'node:net'
 import { isPublicIpAddress } from './ip-address'
 
 export const REMOTE_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif'] as const
 
 export const MAX_REMOTE_IMAGE_BYTES = 4 * 1024 * 1024
 
+export const MAX_DOCUMENT_IMAGES = 24
+export const MAX_DOCUMENT_IMAGE_BYTES = 16 * 1024 * 1024
+
 const MAX_REDIRECTS = 3
 const REQUEST_TIMEOUT_MS = 10_000
+
+// What a single document may spend on remote images, shared by every field and Tópico.
+export type ImageBudget = { remainingImages: number; remainingBytes: number }
+
+export function createImageBudget(): ImageBudget {
+  return { remainingImages: MAX_DOCUMENT_IMAGES, remainingBytes: MAX_DOCUMENT_IMAGE_BYTES }
+}
 
 export class RemoteImageError extends Error {
   constructor(
@@ -55,11 +66,17 @@ function parseUrl(rawUrl: string, protocol: string): URL {
   }
 
   if (url.protocol !== protocol) throw new RemoteImageError(rawUrl, 'somente endereços HTTPS públicos são aceitos')
+
+  // A literal address never reaches the guarded lookup — Node connects straight to it — so
+  // the same rule has to be applied here, before any socket exists.
+  const literal = url.hostname.replace(/^\[|\]$/g, '')
+  if (isIP(literal) && !isPublicIpAddress(literal)) {
+    throw new RemoteImageError(rawUrl, 'o destino não é um endereço público')
+  }
+
   return url
 }
 
-// Resolution and connection share one answer, so a name that resolves to a public address
-// during the check and to a private one a moment later never gets a second chance.
 export function publicOnlyLookup(
   hostname: string,
   options: Parameters<Lookup>[1],

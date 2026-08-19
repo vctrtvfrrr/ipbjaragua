@@ -26,10 +26,25 @@ afterEach(() => {
 })
 
 describe('MeetingMinutePdfButton', () => {
+  it('names the file after the Número when the document arrives', async () => {
+    const click = vi.fn()
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(click)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => Promise.resolve(url.endsWith('/state') ? stateResponse('generating') : pdfResponse()))
+    )
+
+    render(<MeetingMinutePdfButton minute={MINUTE} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
+
+    await waitFor(() => expect(click).toHaveBeenCalled())
+    expect((click.mock.instances[0] as HTMLAnchorElement).download).toBe('ata-12.pdf')
+  })
+
   it('offers the document without generating it first', () => {
     render(<MeetingMinutePdfButton minute={MINUTE} />)
 
-    expect(screen.getByRole('button', { name: 'Visualizar PDF' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Baixar PDF' })).toBeEnabled()
   })
 
   it('locks the control while the server has the document in hand', async () => {
@@ -46,13 +61,13 @@ describe('MeetingMinutePdfButton', () => {
     )
 
     render(<MeetingMinutePdfButton minute={MINUTE} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
 
     const button = screen.getByRole('button', { name: 'Aguardando…' })
     expect(button).toBeDisabled()
 
     deliver(pdfResponse())
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Visualizar PDF' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Baixar PDF' })).toBeEnabled())
   })
 
   it('announces the generation once the queue reaches this Ata', async () => {
@@ -69,12 +84,12 @@ describe('MeetingMinutePdfButton', () => {
     )
 
     render(<MeetingMinutePdfButton minute={MINUTE} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Gerando…' })).toBeDisabled(), { timeout: 3000 })
 
     deliver(pdfResponse())
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Visualizar PDF' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Baixar PDF' })).toBeEnabled())
   })
 
   it('shows why a generation failed instead of a broken document', async () => {
@@ -90,9 +105,9 @@ describe('MeetingMinutePdfButton', () => {
     )
 
     render(<MeetingMinutePdfButton minute={MINUTE} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Visualizar PDF' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Não foi possível carregar a imagem.'))
-    expect(screen.getByRole('button', { name: 'Visualizar PDF' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Baixar PDF' })).toBeEnabled()
   })
 })

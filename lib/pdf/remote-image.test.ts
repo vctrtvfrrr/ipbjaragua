@@ -64,6 +64,22 @@ describe('fetchRemoteImageDataUri', () => {
     await expect(fetchRemoteImageDataUri('not-a-url')).rejects.toThrow('o endereço é inválido')
   })
 
+  it.each([
+    ['https://127.0.0.1/logo.png'],
+    ['https://10.0.0.5/logo.png'],
+    ['https://169.254.169.254/latest/meta-data'],
+    ['https://[::1]/logo.png'],
+    ['https://[fd00::1]/logo.png'],
+  ])('refuses the literal private address %s, which never reaches a DNS lookup', async (url) => {
+    await expect(fetchRemoteImageDataUri(url)).rejects.toThrow('o destino não é um endereço público')
+  })
+
+  it('refuses a redirect to a literal private address', async () => {
+    const url = serve('/literal.png', { status: 302, headers: { location: 'http://127.0.0.1/logo.png' } })
+
+    await expect(fetchRemoteImageDataUri(url, transport)).rejects.toThrow('o destino não é um endereço público')
+  })
+
   it('refuses a name that resolves to a private address', async () => {
     const url = serve('/private.png', { headers: { 'content-type': 'image/png' }, body: PNG })
 

@@ -23,25 +23,20 @@ const RESERVED_V4: Range[] = [
   { prefix: '240.0.0.0', bits: 4 },
 ]
 
+// IPv6 is default-deny: only global unicast is allocated, so anything outside it is either
+// reserved today or unassigned, and an address nobody can be reached at is an address the
+// renderer has no business connecting to.
+const GLOBAL_UNICAST_V6: Range = { prefix: '2000::', bits: 3 }
+
 const RESERVED_V6: Range[] = [
-  { prefix: '::', bits: 128 },
-  { prefix: '::1', bits: 128 },
-  { prefix: '100::', bits: 64 },
   { prefix: '2001::', bits: 23 },
   { prefix: '2001:db8::', bits: 32 },
-  { prefix: 'fc00::', bits: 7 },
-  { prefix: 'fe80::', bits: 10 },
-  { prefix: 'ff00::', bits: 8 },
+  { prefix: '3fff::', bits: 20 },
 ]
 
-// Transition formats carry an IPv4 destination inside an IPv6 address, so the address is
-// only as public as the address it embeds.
-const V4_INSIDE_V6: Range[] = [
-  { prefix: '::ffff:0:0', bits: 96 },
-  { prefix: '64:ff9b::', bits: 96 },
-  { prefix: '64:ff9b:1::', bits: 48 },
-  { prefix: '2002::', bits: 16 },
-]
+// 6to4 carries an IPv4 destination inside an IPv6 address, so the address is only as public
+// as the address it embeds.
+const SIX_TO_FOUR: Range = { prefix: '2002::', bits: 16 }
 
 export function isPublicIpAddress(address: string): boolean {
   const version = isIP(address)
@@ -58,13 +53,11 @@ function isPublicV4(octets: number[] | null): boolean {
 function isPublicV6(address: string): boolean {
   const groups = parseV6(address)
   if (!groups) return false
+  if (!matchesV6(groups, GLOBAL_UNICAST_V6)) return false
   if (RESERVED_V6.some((range) => matchesV6(groups, range))) return false
+  if (!matchesV6(groups, SIX_TO_FOUR)) return true
 
-  const embedded = V4_INSIDE_V6.find((range) => matchesV6(groups, range))
-  if (!embedded) return true
-
-  const offset = embedded.prefix === '2002::' ? 1 : 6
-  return isPublicV4([groups[offset] >> 8, groups[offset] & 0xff, groups[offset + 1] >> 8, groups[offset + 1] & 0xff])
+  return isPublicV4([groups[1] >> 8, groups[1] & 0xff, groups[2] >> 8, groups[2] & 0xff])
 }
 
 function parseV4(address: string): number[] | null {
@@ -82,7 +75,7 @@ function matchesV4(octets: number[], range: Range): boolean {
   return (value & mask) >>> 0 === (prefix & mask) >>> 0
 }
 
-export function parseV6(address: string): number[] | null {
+function parseV6(address: string): number[] | null {
   if (isIP(address) !== 6) return null
 
   const [head, tail] = address.split('::') as [string, string | undefined]

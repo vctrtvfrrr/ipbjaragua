@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 type Phase = 'idle' | 'waiting' | 'generating'
 
 const LABELS: Record<Phase, string> = {
-  idle: 'Visualizar PDF',
+  idle: 'Baixar PDF',
   waiting: 'Aguardando…',
   generating: 'Gerando…',
 }
@@ -24,10 +24,7 @@ export function MeetingMinutePdfButton({ minute }: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const base = `/admin/meeting-minutes/${minute.id}/pdf`
 
-  async function view() {
-    // The tab has to be claimed inside the click, before any await: opened later, it is a
-    // popup the browser blocks.
-    const viewer = window.open('', '_blank')
+  async function download() {
     setPhase('waiting')
     const stopWatching = watchState(base, setPhase)
 
@@ -35,9 +32,8 @@ export function MeetingMinutePdfButton({ minute }: Props) {
       const response = await fetch(base)
       if (!response.ok) throw new Error(await failureMessage(response))
 
-      present(viewer, await response.blob(), `ata-${minute.number}.pdf`)
+      save(await response.blob(), `ata-${minute.number}.pdf`)
     } catch (error) {
-      viewer?.close()
       toast.error(error instanceof Error ? error.message : GENERIC_ERROR)
     } finally {
       stopWatching()
@@ -46,7 +42,7 @@ export function MeetingMinutePdfButton({ minute }: Props) {
   }
 
   return (
-    <Button variant="outline" size="sm" disabled={phase !== 'idle'} onClick={view}>
+    <Button variant="outline" size="sm" disabled={phase !== 'idle'} onClick={download}>
       <FileText data-icon="inline-start" />
       {LABELS[phase]}
     </Button>
@@ -78,17 +74,15 @@ async function failureMessage(response: Response): Promise<string> {
   }
 }
 
-function present(viewer: Window | null, pdf: Blob, filename: string): void {
+// The Ata leaves the browser under the name the Número gives it: a blob handed to a viewer
+// would be saved under whatever name that viewer invents.
+function save(pdf: Blob, filename: string): void {
   const url = URL.createObjectURL(pdf)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
 
-  if (viewer) viewer.location.href = url
-  else {
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    link.click()
-  }
-
-  // Revoking now would pull the document out from under the viewer that is still loading it.
+  // Revoking now would pull the document out from under a download that has not started.
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }

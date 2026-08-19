@@ -1,6 +1,7 @@
 import { formatChurchDatePtBR, formatChurchTimePtBR } from '@/lib/date'
 import { loadPdfFontFaceCss } from '@/lib/pdf/fonts'
 import { renderMarkdownToHtml } from '@/lib/pdf/markdown'
+import { createImageBudget } from '@/lib/pdf/remote-image'
 
 export const PENDING_WATERMARK = 'PENDENTE DE APROVAÇÃO'
 
@@ -20,27 +21,24 @@ export function meetingMinutePdfFilename(minute: { number: number }): string {
   return `ata-${minute.number}.pdf`
 }
 
-export async function renderMeetingMinuteDocumentHtml(
-  minute: MeetingMinuteDocument,
-  options: { watermark?: string } = {}
-): Promise<string> {
-  const [fontFaces, attendees, opening, closing, topics] = await Promise.all([
-    loadPdfFontFaceCss(),
-    renderMarkdownToHtml(minute.attendees),
-    renderMarkdownToHtml(minute.opening),
-    renderMarkdownToHtml(minute.closing),
-    Promise.all(
-      minute.topics.map(async (topic) => ({
-        title: topic.title,
-        discussion: await renderMarkdownToHtml(topic.discussion),
-      }))
-    ),
-  ])
+// Only a Pending Ata is rendered on demand, so the mark is not an option: an unmarked
+// document belongs to the Approved cache, which is not built here.
+export async function renderMeetingMinuteDocumentHtml(minute: MeetingMinuteDocument): Promise<string> {
+  const budget = createImageBudget()
+  const fontFaces = await loadPdfFontFaceCss()
+  const attendees = await renderMarkdownToHtml(minute.attendees, budget)
+  const opening = await renderMarkdownToHtml(minute.opening, budget)
+  const closing = await renderMarkdownToHtml(minute.closing, budget)
+  const topics = []
+
+  for (const topic of minute.topics) {
+    topics.push({ title: topic.title, discussion: await renderMarkdownToHtml(topic.discussion, budget) })
+  }
 
   const documentTitle = `${minute.number}ª Ata de Reunião`
 
   const body = `
-${options.watermark ? `<div class="watermark" aria-hidden="true">${escapeHtml(options.watermark)}</div>` : ''}
+<div class="watermark" aria-hidden="true">${escapeHtml(PENDING_WATERMARK)}</div>
 <main>
   <header>
     <h1>${escapeHtml(minute.title)}</h1>
