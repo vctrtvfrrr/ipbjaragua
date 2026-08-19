@@ -1,17 +1,17 @@
-import { forbidden, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { MeetingMinuteForm } from '@/components/admin/MeetingMinuteForm'
 import { getMeetingMinuteById } from '@/db/queries/meeting-minutes'
 import { requirePageRead } from '@/lib/auth/require-page-read'
+import { requireMeetingMinuteEdit } from '../../require-edit'
 
 export default async function EditMeetingMinutePage({ params }: PageProps<'/admin/meeting-minutes/[id]/edit'>) {
   const user = await requirePageRead('meeting_minutes')
-  if (!user.can('meeting_minutes', 'update')) forbidden()
 
   const { id } = await params
-  const minute = await getMeetingMinuteById(Number(id))
+  const minuteId = Number(id)
+  if (!Number.isInteger(minuteId) || minuteId < 1) notFound()
 
-  if (!minute) notFound()
-  if (minute.status !== 'pending') forbidden()
+  const minute = requireMeetingMinuteEdit(user, await getMeetingMinuteById(minuteId))
 
   return (
     <section className="grid gap-6">
