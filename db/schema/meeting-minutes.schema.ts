@@ -26,13 +26,19 @@ export const meetingMinutes = pgTable(
   ]
 )
 
-export const meetingMinuteTopics = pgTable('meeting_minute_topics', {
-  id: id(),
-  meeting_minute_id: integer('meeting_minute_id')
-    .notNull()
-    .references(() => meetingMinutes.id),
-  position: integer('position').notNull(),
-  title: text('title').notNull(),
-  discussion: text('discussion').notNull(),
-  ...timestamps(),
-})
+export const meetingMinuteTopics = pgTable(
+  'meeting_minute_topics',
+  {
+    id: id(),
+    meeting_minute_id: integer('meeting_minute_id')
+      .notNull()
+      .references(() => meetingMinutes.id),
+    position: integer('position').notNull(),
+    title: text('title').notNull(),
+    discussion: text('discussion').notNull(),
+    ...timestamps(),
+  },
+  // Every read of a Tópico is "the Tópicos of this Ata, in order": the listing joins them
+  // per Ata, so without this the planner rescans the whole table once per row.
+  (t) => [index('meeting_minute_topics_minute_position_index').on(t.meeting_minute_id, t.position)]
+)

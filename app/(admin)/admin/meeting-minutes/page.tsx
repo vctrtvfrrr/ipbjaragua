@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
+import { MeetingMinuteTopicList } from '@/components/admin/MeetingMinuteTopicList'
 import { MeetingMinuteYearNav } from '@/components/admin/MeetingMinuteYearNav'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { buttonVariants } from '@/components/ui/button'
@@ -7,7 +8,6 @@ import { earliestMeetingMinuteYear, listMeetingMinutesByYear } from '@/db/querie
 import { requirePageRead } from '@/lib/auth/require-page-read'
 import { churchYear, formatChurchDatePtBR } from '@/lib/date'
 import {
-  abbreviateMeetingMinuteTopicTitle,
   MEETING_MINUTE_STATUS_LABELS,
   meetingMinuteLabel,
   resolveMeetingMinuteYearNavigation,
@@ -60,17 +60,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
                 <TableCell>{formatChurchDatePtBR(minute.started_at)}</TableCell>
                 <TableCell className="font-medium whitespace-normal">{meetingMinuteLabel(minute)}</TableCell>
                 <TableCell className="whitespace-normal">
-                  {minute.topics.length === 0 ? (
-                    <span className="text-muted-foreground">—</span>
-                  ) : (
-                    <ol className="list-inside list-decimal">
-                      {minute.topics.map((topic, index) => (
-                        <li key={index} title={topic.title}>
-                          {abbreviateMeetingMinuteTopicTitle(topic.title)}
-                        </li>
-                      ))}
-                    </ol>
-                  )}
+                  <MeetingMinuteTopicList topics={minute.topics} />
                 </TableCell>
                 <TableCell>{MEETING_MINUTE_STATUS_LABELS[minute.status]}</TableCell>
                 <TableCell>

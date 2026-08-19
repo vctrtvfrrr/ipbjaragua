@@ -192,4 +192,17 @@ describe('abbreviateMeetingMinuteTopicTitle', () => {
   it('cuts mid-word when a single word already exceeds the limit', () => {
     expect(abbreviateMeetingMinuteTopicTitle('b'.repeat(limit + 10))).toBe(`${'b'.repeat(limit)}…`)
   })
+
+  it('counts and cuts by grapheme, never splitting one in half', () => {
+    const emoji = `${'a'.repeat(limit - 1)}😀fim`
+    expect(abbreviateMeetingMinuteTopicTitle(emoji)).toBe(`${'a'.repeat(limit - 1)}😀…`)
+
+    const combining = 'á'.repeat(limit + 1)
+    expect(abbreviateMeetingMinuteTopicTitle(combining)).toBe(`${'á'.repeat(limit)}…`)
+  })
+
+  it('leaves a title of exactly the limit in graphemes untouched, however long in code units', () => {
+    const title = '😀'.repeat(limit)
+    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe(title)
+  })
 })

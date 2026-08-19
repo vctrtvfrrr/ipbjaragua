@@ -1,0 +1,1 @@
+CREATE INDEX "meeting_minute_topics_minute_position_index" ON "meeting_minute_topics" ("meeting_minute_id","position");

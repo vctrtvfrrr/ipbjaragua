@@ -14,7 +14,8 @@ const DATABASE_NAME = 'ipbjaragua_migrations_upgrade'
 // The journal Drizzle 0.x kept in meta/_journal.json, in the order it applied the migrations.
 // A database migrated by 0.x still carries these `created_at` values, and `agenda_always_dated`
 // is the one whose value no longer matches its migration folder — the upgrade has to fall back
-// to the hash to recognise that row.
+// to the hash to recognise that row. Migrations added after it are not part of the upgrade —
+// they simply apply on top, so the assertions below only cover this prefix.
 const JOURNAL_0X: [name: string, when: number][] = [
   ['talented_ravenous', 1782610331348],
   ['fresh_squirrel_girl', 1783028814250],
@@ -104,16 +105,19 @@ describe('booting over a PostgreSQL database migrated by Drizzle 0.x', () => {
     const rows = await client<{ id: number; name: string | null }[]>`
       SELECT id, name FROM "drizzle"."__drizzle_migrations" ORDER BY id
     `
-    expect(rows).toEqual(JOURNAL_0X.map(([name], index) => ({ id: index + 1, name: expect.stringContaining(name) })))
+    expect(rows.slice(0, JOURNAL_0X.length)).toEqual(
+      JOURNAL_0X.map(([name], index) => ({ id: index + 1, name: expect.stringContaining(name) }))
+    )
     expect(await client`SELECT full_name FROM members`).toEqual([{ full_name: 'Ana' }])
   })
 
   it('is idempotent on a second boot', async () => {
     const db = drizzle({ client })
     await migrate(db, { migrationsFolder: './db/migrations' })
+    const afterFirstBoot = await client`SELECT id FROM "drizzle"."__drizzle_migrations" ORDER BY id`
     await migrate(db, { migrationsFolder: './db/migrations' })
 
-    expect(await client`SELECT id FROM "drizzle"."__drizzle_migrations" ORDER BY id`).toHaveLength(JOURNAL_0X.length)
+    expect(await client`SELECT id FROM "drizzle"."__drizzle_migrations" ORDER BY id`).toEqual(afterFirstBoot)
     expect(await client`SELECT full_name FROM members`).toEqual([{ full_name: 'Ana' }])
   })
 })
