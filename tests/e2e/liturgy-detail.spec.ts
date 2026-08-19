@@ -7,6 +7,13 @@ function actDetails(page: Page, name: string) {
   return page.getByRole('heading', { name, exact: true }).locator('..').locator('..')
 }
 
+// The Atos work as plain markup until KeepOneLiturgyActOpen attaches, and a click that
+// lands before that closes an open Ato for good. Only the enhanced behaviour is worth
+// asserting, so wait for the list to say it is live.
+async function actEnhancement(page: Page) {
+  await expect(page.locator('#liturgy-acts')).toHaveAttribute('data-keep-one-act-open', 'on')
+}
+
 test('opening an act closes the previously open act', async ({ page }) => {
   const [firstAct, secondAct] = E2E_LITURGY_ACTS
   await page.goto(LITURGY_PATH)
@@ -14,6 +21,8 @@ test('opening an act closes the previously open act', async ({ page }) => {
   const secondHeading = page.getByRole('heading', { name: secondAct.name, exact: true })
   const firstDetails = actDetails(page, firstAct.name)
   const secondDetails = actDetails(page, secondAct.name)
+
+  await actEnhancement(page)
 
   await expect(firstDetails).toHaveAttribute('open', '')
   await expect(secondDetails).not.toHaveAttribute('open', '')
@@ -32,11 +41,34 @@ test('an open act cannot be closed with mouse or keyboard', async ({ page }) => 
   const summary = heading.locator('..')
   const details = actDetails(page, firstAct.name)
 
+  await actEnhancement(page)
+
   await heading.click()
   await expect(details).toHaveAttribute('open', '')
 
   await summary.focus()
   await summary.press('Enter')
+  await expect(details).toHaveAttribute('open', '')
+})
+
+// The regression guard for the gate above: with hydration held back, an ungated click
+// closes the Ato natively and no timeout ever brings it back.
+test('keeps an open act open when hydration arrives late', async ({ page }) => {
+  const [firstAct] = E2E_LITURGY_ACTS
+
+  await page.route('**/*.js*', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await route.continue()
+  })
+
+  await page.goto(LITURGY_PATH, { waitUntil: 'commit' })
+
+  const heading = page.getByRole('heading', { name: firstAct.name, exact: true })
+  const details = actDetails(page, firstAct.name)
+
+  await actEnhancement(page)
+
+  await heading.click()
   await expect(details).toHaveAttribute('open', '')
 })
 

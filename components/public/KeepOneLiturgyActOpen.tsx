@@ -22,7 +22,15 @@ export default function KeepOneLiturgyActOpen({ listId }: { listId: string }) {
     }
 
     list.addEventListener('click', keepOneActOpen)
-    return () => list.removeEventListener('click', keepOneActOpen)
+    // Until this listener is live, clicking an open Ato closes it natively and nothing
+    // reopens it, so a reader — or a test — can tell the enhancement apart from the
+    // plain markup instead of guessing that hydration already happened.
+    list.dataset.keepOneActOpen = 'on'
+
+    return () => {
+      delete list.dataset.keepOneActOpen
+      list.removeEventListener('click', keepOneActOpen)
+    }
   }, [listId])
 
   return null
