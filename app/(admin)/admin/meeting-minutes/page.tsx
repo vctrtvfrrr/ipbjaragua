@@ -1,11 +1,12 @@
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
+import { MeetingMinuteYearNav } from '@/components/admin/MeetingMinuteYearNav'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { buttonVariants } from '@/components/ui/button'
-import { listMeetingMinutesByYear } from '@/db/queries/meeting-minutes'
+import { earliestMeetingMinuteYear, listMeetingMinutesByYear } from '@/db/queries/meeting-minutes'
 import { requirePageRead } from '@/lib/auth/require-page-read'
 import { churchYear, formatChurchDateTimePtBR } from '@/lib/date'
-import { MEETING_MINUTE_STATUS_LABELS, resolveMeetingMinuteYear } from '@/lib/meeting-minute'
+import { MEETING_MINUTE_STATUS_LABELS, resolveMeetingMinuteYearNavigation } from '@/lib/meeting-minute'
 import { cn } from '@/lib/utils'
 
 type AdminMeetingMinutesPageProps = {
@@ -15,7 +16,10 @@ type AdminMeetingMinutesPageProps = {
 export default async function AdminMeetingMinutesPage({ searchParams }: AdminMeetingMinutesPageProps) {
   const user = await requirePageRead('meeting_minutes')
   const { year: rawYear } = await searchParams
-  const year = resolveMeetingMinuteYear(rawYear, churchYear(new Date()))
+  const { year, previousYear, nextYear } = resolveMeetingMinuteYearNavigation(rawYear, {
+    earliestYear: await earliestMeetingMinuteYear(),
+    currentYear: churchYear(new Date()),
+  })
   const minutes = await listMeetingMinutesByYear(year)
   const canCreate = user.can('meeting_minutes', 'create')
   const canUpdate = user.can('meeting_minutes', 'update')
@@ -33,16 +37,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
       </div>
 
       {minutes.length === 0 ? (
-        <div className="text-muted-foreground grid gap-4 rounded-lg border py-12 text-center text-sm">
-          <p>Nenhuma Ata em {year}.</p>
-          {canCreate ? (
-            <div>
-              <Link href="/admin/meeting-minutes/new" className={cn(buttonVariants())}>
-                Criar a primeira Ata
-              </Link>
-            </div>
-          ) : null}
-        </div>
+        <p className="text-muted-foreground rounded-lg border py-12 text-center text-sm">Nenhuma Ata em {year}.</p>
       ) : (
         <Table>
           <TableHeader>
@@ -78,6 +73,8 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
           </TableBody>
         </Table>
       )}
+
+      <MeetingMinuteYearNav previousYear={previousYear} nextYear={nextYear} />
     </section>
   )
 }

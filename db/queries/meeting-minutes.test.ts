@@ -6,6 +6,7 @@ import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
 import { createTestDb, type TestDb } from '@/tests/db'
 import {
   createMeetingMinute,
+  earliestMeetingMinuteYear,
   getMeetingMinuteById,
   listMeetingMinutesByYear,
   MeetingMinuteImmutableError,
@@ -336,5 +337,38 @@ describe('listMeetingMinutesByYear', () => {
 
     expect(await listMeetingMinutesByYear(2026, db)).toHaveLength(1)
     expect(await listMeetingMinutesByYear(2027, db)).toEqual([])
+  })
+})
+
+describe('earliestMeetingMinuteYear', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('has no year to offer while no Ata exists', async () => {
+    expect(await earliestMeetingMinuteYear(db)).toBeNull()
+  })
+
+  it('reads the year of the oldest Início in America/Sao_Paulo', async () => {
+    await createMeetingMinute(
+      input({
+        number: 2,
+        started_at: parseChurchDateTime('2022-05-10T19:00'),
+        ended_at: parseChurchDateTime('2022-05-10T20:00'),
+      }),
+      db
+    )
+    await createMeetingMinute(
+      input({
+        number: 1,
+        started_at: parseChurchDateTime('2019-12-31T21:00'),
+        ended_at: parseChurchDateTime('2020-01-01T00:30'),
+      }),
+      db
+    )
+
+    expect(await earliestMeetingMinuteYear(db)).toBe(2019)
   })
 })

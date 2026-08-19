@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createMeetingMinuteSchema, hasMeaningfulMarkdown, resolveMeetingMinuteYear } from './meeting-minute'
+import { createMeetingMinuteSchema, hasMeaningfulMarkdown, resolveMeetingMinuteYearNavigation } from './meeting-minute'
 
 function payload(overrides: Record<string, unknown> = {}) {
   return {
@@ -101,18 +101,59 @@ describe('createMeetingMinuteSchema', () => {
   })
 })
 
-describe('resolveMeetingMinuteYear', () => {
-  it('falls back to the current year when no year is asked for', () => {
-    expect(resolveMeetingMinuteYear(undefined, 2026)).toBe(2026)
+describe('resolveMeetingMinuteYearNavigation', () => {
+  it('opens on the current year when no year is asked for', () => {
+    expect(resolveMeetingMinuteYearNavigation(undefined, { earliestYear: 2019, currentYear: 2026 })).toEqual({
+      year: 2026,
+      previousYear: 2025,
+      nextYear: null,
+    })
   })
 
-  it('shows the year a historical Ata was filed under', () => {
-    expect(resolveMeetingMinuteYear('2019', 2026)).toBe(2019)
+  it('walks a year that holds no Ata, as long as it is within the bounds', () => {
+    expect(resolveMeetingMinuteYearNavigation('2022', { earliestYear: 2019, currentYear: 2026 })).toEqual({
+      year: 2022,
+      previousYear: 2021,
+      nextYear: 2023,
+    })
   })
 
-  it('ignores a year that is future or not a year at all', () => {
-    expect(resolveMeetingMinuteYear('2027', 2026)).toBe(2026)
-    expect(resolveMeetingMinuteYear('ontem', 2026)).toBe(2026)
-    expect(resolveMeetingMinuteYear('2026.5', 2026)).toBe(2026)
+  it('stops at the year of the oldest Ata', () => {
+    expect(resolveMeetingMinuteYearNavigation('2019', { earliestYear: 2019, currentYear: 2026 })).toEqual({
+      year: 2019,
+      previousYear: null,
+      nextYear: 2020,
+    })
+  })
+
+  it('offers no navigation at all when the whole archive lives in the current year', () => {
+    expect(resolveMeetingMinuteYearNavigation(undefined, { earliestYear: 2026, currentYear: 2026 })).toEqual({
+      year: 2026,
+      previousYear: null,
+      nextYear: null,
+    })
+    expect(resolveMeetingMinuteYearNavigation(undefined, { earliestYear: null, currentYear: 2026 })).toEqual({
+      year: 2026,
+      previousYear: null,
+      nextYear: null,
+    })
+  })
+
+  it('falls back to the current year when the asked year is out of bounds or not a year', () => {
+    const bounds = { earliestYear: 2019, currentYear: 2026 }
+
+    expect(resolveMeetingMinuteYearNavigation('2027', bounds).year).toBe(2026)
+    expect(resolveMeetingMinuteYearNavigation('2018', bounds).year).toBe(2026)
+    expect(resolveMeetingMinuteYearNavigation('ontem', bounds).year).toBe(2026)
+    expect(resolveMeetingMinuteYearNavigation('2026.5', bounds).year).toBe(2026)
+    expect(resolveMeetingMinuteYearNavigation('', bounds).year).toBe(2026)
+  })
+
+  it('never offers a year ahead of today, even if an Ata was filed in the future', () => {
+    expect(resolveMeetingMinuteYearNavigation('2027', { earliestYear: 2027, currentYear: 2026 })).toEqual({
+      year: 2026,
+      previousYear: null,
+      nextYear: null,
+    })
   })
 })

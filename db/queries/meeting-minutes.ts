@@ -1,7 +1,7 @@
 import { and, asc, eq, gte, lt, max } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { meetingMinuteTopics, meetingMinutes, type MeetingMinuteStatus } from '@/db/schema'
-import { churchYearRange } from '@/lib/date'
+import { churchYear, churchYearRange } from '@/lib/date'
 import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
 
 export type MeetingMinute = typeof meetingMinutes.$inferSelect
@@ -163,6 +163,16 @@ export async function listMeetingMinutesByYear(
     .from(meetingMinutes)
     .where(and(gte(meetingMinutes.started_at, from), lt(meetingMinutes.started_at, to)))
     .orderBy(asc(meetingMinutes.number))
+}
+
+export async function earliestMeetingMinuteYear(db: Database = defaultDb): Promise<number | null> {
+  const [row] = await db
+    .select({ started_at: meetingMinutes.started_at })
+    .from(meetingMinutes)
+    .orderBy(asc(meetingMinutes.started_at))
+    .limit(1)
+
+  return row ? churchYear(row.started_at) : null
 }
 
 function translateMeetingMinuteWriteError(error: unknown, number: number): unknown {

@@ -87,11 +87,28 @@ export function parseSerializedMeetingMinutePayload(formData: FormData): unknown
   return JSON.parse(payload)
 }
 
-// The form accepts any year, including the historical Atas typed in by hand, so the
-// listing has to be able to show the year the operator wrote — not only the current one.
-export function resolveMeetingMinuteYear(raw: string | undefined, currentYear: number): number {
-  const year = Number(raw)
-  return Number.isInteger(year) && year >= 1900 && year <= currentYear ? year : currentYear
+export type MeetingMinuteYearNavigation = {
+  year: number
+  previousYear: number | null
+  nextYear: number | null
+}
+
+// The oldest Ata anchors the walk: before it there is nothing to find, and a year ahead of
+// today is never offered. Anything outside those bounds falls back to the current year.
+export function resolveMeetingMinuteYearNavigation(
+  raw: string | undefined,
+  bounds: { earliestYear: number | null; currentYear: number }
+): MeetingMinuteYearNavigation {
+  const { currentYear } = bounds
+  const oldestYear = Math.min(bounds.earliestYear ?? currentYear, currentYear)
+  const asked = Number(raw)
+  const year = Number.isInteger(asked) && asked >= oldestYear && asked <= currentYear ? asked : currentYear
+
+  return {
+    year,
+    previousYear: year > oldestYear ? year - 1 : null,
+    nextYear: year < currentYear ? year + 1 : null,
+  }
 }
 
 export function meetingMinuteTopicLabel(topic: { title: string }, index: number): string {
