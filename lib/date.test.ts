@@ -173,6 +173,31 @@ describe('church time zone instants', () => {
       to: new Date('2027-01-01T03:00:00.000Z'),
     })
   })
+
+  it('opens a year whose civil midnight the zone skipped on the first instant it reads as that year', () => {
+    expect(churchYearRange(1914).from).toEqual(new Date('1914-01-01T03:06:28.000Z'))
+    expect(churchYear(new Date('1914-01-01T03:06:27.000Z'))).toBe(1913)
+    expect(churchYear(new Date('1914-01-01T03:06:28.000Z'))).toBe(1914)
+  })
+
+  // A record is filed under churchYear but found by churchYearRange, so a year the two
+  // disagree about hides an Ata from the very listing that offers its year.
+  it('agrees with churchYear on every boundary it can be asked about', () => {
+    const disagreements: string[] = []
+
+    for (let year = 1900; year <= 2100; year++) {
+      const { from, to } = churchYearRange(year)
+
+      for (const instant of [new Date(from.getTime() - 1), from, new Date(to.getTime() - 1), to]) {
+        const withinRange = instant >= from && instant < to
+        if ((churchYear(instant) === year) !== withinRange) {
+          disagreements.push(`${year}: ${instant.toISOString()} reads as ${churchYear(instant)}`)
+        }
+      }
+    }
+
+    expect(disagreements).toEqual([])
+  })
 })
 
 describe('isChurchDateTime', () => {

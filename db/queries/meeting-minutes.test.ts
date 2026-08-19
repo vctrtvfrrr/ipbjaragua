@@ -351,6 +351,21 @@ describe('earliestMeetingMinuteYear', () => {
     expect(await earliestMeetingMinuteYear(db)).toBeNull()
   })
 
+  it('agrees with the yearly listing on an Início the zone barely reaches', async () => {
+    await createMeetingMinute(
+      input({
+        started_at: parseChurchDateTime('1913-12-31T23:55'),
+        ended_at: parseChurchDateTime('1914-01-01T01:00'),
+      }),
+      db
+    )
+
+    const year = await earliestMeetingMinuteYear(db)
+
+    expect(year).toBe(1913)
+    expect(await listMeetingMinutesByYear(year!, db)).toHaveLength(1)
+  })
+
   it('reads the year of the oldest Início in America/Sao_Paulo', async () => {
     await createMeetingMinute(
       input({

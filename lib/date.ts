@@ -163,8 +163,27 @@ export function churchYear(instant: Date): number {
   return new Date(churchWallClock(instant)).getUTCFullYear()
 }
 
+// A year does not always open at a civil midnight — São Paulo's 1914 offset change skipped
+// the minutes before it — so the midnight the operator would write can still read as the
+// previous year. The boundary is the first instant the zone already reads as the year,
+// which is what keeps churchYearRange and churchYear from classifying an Ata differently.
+function churchYearStart(year: number): Date {
+  const DAY = 24 * 60 * 60 * 1000
+  const guess = parseChurchDateTime(`${year}-01-01T00:00`).getTime()
+  let before = guess - DAY
+  let after = guess + DAY
+
+  while (after - before > 1000) {
+    const middle = before + Math.floor((after - before) / 2 / 1000) * 1000
+    if (churchYear(new Date(middle)) < year) before = middle
+    else after = middle
+  }
+
+  return new Date(after)
+}
+
 export function churchYearRange(year: number): { from: Date; to: Date } {
-  return { from: parseChurchDateTime(`${year}-01-01T00:00`), to: parseChurchDateTime(`${year + 1}-01-01T00:00`) }
+  return { from: churchYearStart(year), to: churchYearStart(year + 1) }
 }
 
 const churchDateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
