@@ -1,0 +1,131 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ipbjaragua
+          POSTGRES_PASSWORD: ipbjaragua
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U ipbjaragua"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install native build toolchain
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential python3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: |
+          pnpm lint
+          pnpm format:check
+
+      - name: Test
+        run: pnpm test
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E test
+        run: pnpm test:e2e
+        env:
+          E2E_ADMIN_DATABASE_URL: postgres://ipbjaragua:ipbjaragua@postgres:5432/postgres
+          E2E_DATABASE_URL: postgres://ipbjaragua:ipbjaragua@postgres:5432/ipbjaragua_e2e
+
+  build:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: gitea.ref == 'refs/heads/master'
+
+    env:
+      REGISTRY: git.codelab.tec.br
+      IMAGE: git.codelab.tec.br/codelab/ipbjaragua
+      TAG: ${{ gitea.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Registry login
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Build image
+        run: |
+          docker build \
+            --target production \
+            -t "${IMAGE}:${TAG}" \
+            -t "${IMAGE}:latest" \
+            .
+
+      - name: Push image
+        run: |
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:latest"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: gitea.ref == 'refs/heads/master'
+
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+
+    env:
+      REGISTRY: git.codelab.tec.br
+      TAG: ${{ gitea.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Registry login
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Deploy stack
+        uses: https://git.codelab.tec.br/codelab/deploy-stack@master
+        with:
+          app: ipbjaragua
+          image-tag: ${{ env.TAG }}
+        env:
+          APPENV_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APPENV_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          APPENV_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          APPENV_GOOGLE_OAUTH_REDIRECT_URI: ${{ vars.GOOGLE_OAUTH_REDIRECT_URI }}
+          APPENV_SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          APPENV_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          APPENV_EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          APPENV_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          APPENV_OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}

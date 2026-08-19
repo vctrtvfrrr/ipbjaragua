@@ -1,6 +1,7 @@
 services:
   ipbjaragua:
     image: git.codelab.tec.br/codelab/ipbjaragua:${IMAGE_TAG:-latest}
+    pull_policy: always
     container_name: ipbjaragua
     restart: unless-stopped
     env_file:
