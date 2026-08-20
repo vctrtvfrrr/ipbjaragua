@@ -1,9 +1,12 @@
 import { formatChurchDatePtBR, formatChurchTimePtBR } from '@/lib/date'
+import { MEETING_MINUTE_STATUS_LABELS, meetingMinuteLabel } from '@/lib/meeting-minute'
 import { loadPdfFontFaceCss } from '@/lib/pdf/fonts'
 import { renderMarkdownToHtml } from '@/lib/pdf/markdown'
 import { createImageBudget } from '@/lib/pdf/remote-image'
 
-export const PENDING_WATERMARK = 'PENDENTE DE APROVAÇÃO'
+// The mark says what the Status says: the glossary owns that wording, and a document that
+// invented its own would drift from the panel the reader just came from.
+export const PENDING_WATERMARK = MEETING_MINUTE_STATUS_LABELS.pending.toLocaleUpperCase('pt-BR')
 
 export type MeetingMinuteDocument = {
   number: number
@@ -35,14 +38,13 @@ export async function renderMeetingMinuteDocumentHtml(minute: MeetingMinuteDocum
     topics.push({ title: topic.title, discussion: await renderMarkdownToHtml(topic.discussion, budget) })
   }
 
-  const documentTitle = `${minute.number}ª Ata de Reunião`
+  const documentTitle = meetingMinuteLabel(minute)
 
   const body = `
 <div class="watermark" aria-hidden="true">${escapeHtml(PENDING_WATERMARK)}</div>
 <main>
   <header>
-    <h1>${escapeHtml(minute.title)}</h1>
-    <p class="number">${escapeHtml(documentTitle)}</p>
+    <h1>${escapeHtml(documentTitle)}</h1>
   </header>
   <dl class="facts">
     <div><dt>Data</dt><dd>${formatChurchDatePtBR(minute.started_at)}</dd></div>
@@ -92,7 +94,6 @@ main{position:relative;z-index:1}
 
 header{text-align:center;border-bottom:1.5pt solid #1f2937;padding-bottom:6mm;margin-bottom:6mm}
 h1{font-family:'PT Serif',serif;font-weight:700;font-size:1.5rem;line-height:1.25}
-.number{margin-top:2mm;font-weight:700;font-size:.95rem;letter-spacing:.14em;text-transform:uppercase}
 
 .facts{display:grid;grid-template-columns:auto 1fr;gap:1mm 6mm;margin-bottom:7mm}
 .facts>div{display:contents}

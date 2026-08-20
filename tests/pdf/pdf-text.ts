@@ -94,14 +94,22 @@ function fromUtf16(hex: string): string {
 }
 
 function decodeContent(content: string, fonts: Map<string, Map<number, string>>): string {
-  const tokens = content.matchAll(/(\/F\d+)\s+[\d.]+\s+Tf|<([0-9a-fA-F]+)>\s*Tj|\[([^\]]*)\]\s*TJ/g)
+  const tokens = content.matchAll(
+    /(\/F\d+)\s+[\d.]+\s+Tf|([-\d.]+)\s+([-\d.]+)\s+Tm|<([0-9a-fA-F]+)>\s*Tj|\[([^\]]*)\]\s*TJ/g
+  )
   let current = new Map<number, string>()
+  let baseline: string | null = null
   let text = ''
 
   for (const token of tokens) {
     if (token[1]) current = fonts.get(token[1]) ?? new Map()
-    else if (token[2]) text += decodeHex(token[2], current)
-    else for (const part of token[3].matchAll(/<([0-9a-fA-F]+)>/g)) text += decodeHex(part[1], current)
+    // A wrap emits no space glyph, so without the baseline the last word of a line and the
+    // first of the next would read as one.
+    else if (token[3]) {
+      if (baseline !== null && baseline !== token[3]) text += '\n'
+      baseline = token[3]
+    } else if (token[4]) text += decodeHex(token[4], current)
+    else if (token[5]) for (const part of token[5].matchAll(/<([0-9a-fA-F]+)>/g)) text += decodeHex(part[1], current)
   }
 
   return text

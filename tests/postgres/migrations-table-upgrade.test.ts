@@ -35,6 +35,11 @@ const JOURNAL_0X: [name: string, when: number][] = [
   ['meeting_minutes', 1787095816715],
 ]
 
+// `DROP DATABASE IF EXISTS` on a database that is not there, and the `CREATE SCHEMA` the
+// 0.x seed already ran, both answer with a NOTICE. They are the conditions the test asks
+// for, so the driver's default of printing them only buries the assertions.
+const QUIET = { max: 1, onnotice: () => {} }
+
 function scratchDatabaseUrl() {
   const url = new URL(ADMIN_DATABASE_URL)
   url.pathname = `/${DATABASE_NAME}`
@@ -42,7 +47,7 @@ function scratchDatabaseUrl() {
 }
 
 async function recreateScratchDatabase() {
-  const admin = postgres(ADMIN_DATABASE_URL, { max: 1 })
+  const admin = postgres(ADMIN_DATABASE_URL, QUIET)
   try {
     await admin.unsafe(`DROP DATABASE IF EXISTS "${DATABASE_NAME}"`)
     await admin.unsafe(`CREATE DATABASE "${DATABASE_NAME}"`)
@@ -52,7 +57,7 @@ async function recreateScratchDatabase() {
 }
 
 async function dropScratchDatabase() {
-  const admin = postgres(ADMIN_DATABASE_URL, { max: 1 })
+  const admin = postgres(ADMIN_DATABASE_URL, QUIET)
   try {
     await admin.unsafe(`DROP DATABASE IF EXISTS "${DATABASE_NAME}"`)
   } finally {
@@ -63,7 +68,7 @@ async function dropScratchDatabase() {
 async function seedDatabaseMigratedBy0x() {
   await recreateScratchDatabase()
 
-  const client = postgres(scratchDatabaseUrl(), { max: 1 })
+  const client = postgres(scratchDatabaseUrl(), QUIET)
   await client.unsafe(`
     CREATE SCHEMA "drizzle";
     CREATE TABLE "drizzle"."__drizzle_migrations" (

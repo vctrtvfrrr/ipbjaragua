@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { afterAll, describe, expect, it } from 'vitest'
+import { meetingMinuteLabel } from '@/lib/meeting-minute'
 import {
   PENDING_WATERMARK,
   renderMeetingMinuteDocumentHtml,
@@ -16,7 +17,7 @@ const NODE_SERVER_ALLOWANCE_BYTES = 192 * 1024 * 1024
 
 const MINUTE: MeetingMinuteDocument = {
   number: 12,
-  title: 'IPB de Jaraguá do Sul',
+  title: 'Reunião ordinária',
   started_at: new Date('2026-06-07T22:30:00Z'),
   ended_at: new Date('2026-06-08T00:00:00Z'),
   location: 'Salão social',
@@ -39,6 +40,12 @@ function longMinute(topics: number, words: number): MeetingMinuteDocument {
   }
 }
 
+// A line break in the PDF is a break in the layout, not in the sentence: the assertions
+// below are about what the document says, so the wrapping is flattened away.
+function readablePages(pdf: Buffer): string[] {
+  return pdfPageTexts(pdf).map((page) => page.replace(/\s+/g, ' '))
+}
+
 async function pendingPdf(minute: MeetingMinuteDocument, job = 'test'): Promise<Buffer> {
   return renderPdf(job, () => renderMeetingMinuteDocumentHtml(minute))
 }
@@ -59,11 +66,10 @@ describe('the PDF of a Pending Ata', () => {
   })
 
   it('follows the order of the documental model', { timeout: 60_000 }, async () => {
-    const [page] = pdfPageTexts(await pendingPdf(MINUTE))
+    const [page] = readablePages(await pendingPdf(MINUTE))
 
     const order = [
-      'IPB de Jaraguá do Sul',
-      '12ª ATA DE REUNIÃO',
+      meetingMinuteLabel(MINUTE),
       'DATA',
       '07/06/2026',
       'HORÁRIO',
@@ -84,7 +90,7 @@ describe('the PDF of a Pending Ata', () => {
   })
 
   it('puts the Markdown of every field on paper', { timeout: 60_000 }, async () => {
-    const [page] = pdfPageTexts(await pendingPdf(MINUTE))
+    const [page] = readablePages(await pendingPdf(MINUTE))
 
     expect(page).toContain('Pastor João')
     expect(page).toContain('A reunião foi aberta com oração.')
@@ -94,7 +100,7 @@ describe('the PDF of a Pending Ata', () => {
   })
 
   it('marks every page with the watermark', { timeout: 90_000 }, async () => {
-    const pages = pdfPageTexts(await pendingPdf(longMinute(8, 80)))
+    const pages = readablePages(await pendingPdf(longMinute(8, 80)))
 
     expect(pages.length).toBeGreaterThan(1)
     for (const page of pages) expect(page).toContain(PENDING_WATERMARK)

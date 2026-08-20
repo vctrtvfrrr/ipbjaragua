@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { meetingMinuteLabel } from './meeting-minute'
 import {
   meetingMinutePdfFilename,
   PENDING_WATERMARK,
@@ -8,7 +9,7 @@ import {
 
 const MINUTE: MeetingMinuteDocument = {
   number: 12,
-  title: 'IPB de Jaraguá do Sul',
+  title: 'Reunião ordinária',
   started_at: new Date('2026-06-07T22:30:00Z'),
   ended_at: new Date('2026-06-08T00:00:00Z'),
   location: 'Salão social',
@@ -45,6 +46,13 @@ describe('renderMeetingMinuteDocumentHtml', () => {
     expect(html).not.toContain('<img')
     expect(html).not.toContain('Assinatura')
     expect(html).not.toMatch(/counter\(page\)/)
+  })
+
+  it('heads the document with the label the panel already uses', async () => {
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE)
+
+    expect(html).toContain(`<h1>${meetingMinuteLabel(MINUTE)}</h1>`)
+    expect(html).toContain(`<title>${meetingMinuteLabel(MINUTE)}</title>`)
   })
 
   it('names the download after the Número', () => {
