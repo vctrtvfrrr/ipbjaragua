@@ -30,7 +30,7 @@ export default defineConfig({
           isolate: false,
           fileParallelism: false,
           maxWorkers: 1,
-          sequence: { groupOrder: 1 },
+          sequence: { groupOrder: 3 },
         },
       },
       {
@@ -42,7 +42,7 @@ export default defineConfig({
           // Each case recreates a scratch database on the same server.
           fileParallelism: false,
           maxWorkers: 1,
-          sequence: { groupOrder: 2 },
+          sequence: { groupOrder: 4 },
         },
       },
       {
@@ -53,7 +53,7 @@ export default defineConfig({
           include: PDF_TESTS,
           fileParallelism: false,
           maxWorkers: 1,
-          sequence: { groupOrder: 3 },
+          sequence: { groupOrder: 5 },
         },
       },
       {
@@ -61,6 +61,11 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
+          // A worker that touches the database holds a whole PGlite instance, and most of
+          // these files do. One per core is more Postgres than the machine has memory for,
+          // and the workers that lose the race are killed rather than failed.
+          maxWorkers: 3,
+          sequence: { groupOrder: 2 },
           include: ['**/*.test.ts'],
           exclude: [
             'node_modules/**',
@@ -80,6 +85,7 @@ export default defineConfig({
           name: 'jsdom',
           environment: 'jsdom',
           setupFiles: ['./vitest.setup.ts'],
+          sequence: { groupOrder: 1 },
           include: ['**/*.test.tsx'],
           exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', '.claude/**'],
         },

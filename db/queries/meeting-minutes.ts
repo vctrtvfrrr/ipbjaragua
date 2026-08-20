@@ -150,21 +150,25 @@ export class MeetingMinuteNotApprovedError extends Error {
   }
 }
 
+// `transitioned` is what tells a first Aprovação from a repeat: only the request that moved
+// the row may act on the consolidation, so a second click cannot add work of its own.
+export type MeetingMinuteApproval = { minute: MeetingMinute; transitioned: boolean }
+
 // Approving is a one-way door, so the transition rides a single conditional UPDATE: a second
 // request finds no Pending row to move and leaves the consolidated Ata exactly as it was.
-export async function approveMeetingMinute(id: number, db: Database = defaultDb): Promise<MeetingMinute> {
+export async function approveMeetingMinute(id: number, db: Database = defaultDb): Promise<MeetingMinuteApproval> {
   const [approved] = await db
     .update(meetingMinutes)
     .set({ status: 'approved' })
     .where(and(eq(meetingMinutes.id, id), eq(meetingMinutes.status, 'pending')))
     .returning()
 
-  if (approved) return approved
+  if (approved) return { minute: approved, transitioned: true }
 
   const [existing] = await db.select().from(meetingMinutes).where(eq(meetingMinutes.id, id))
   if (!existing) throw new MeetingMinuteNotFoundError(id)
 
-  return existing
+  return { minute: existing, transitioned: false }
 }
 
 // The name of the cache is decided in the database before any byte is written, so two

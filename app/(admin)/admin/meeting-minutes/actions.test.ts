@@ -440,6 +440,35 @@ describe('approving an Ata and keeping its PDF', () => {
     expect((await readMeetingMinutePdfCache(stored))?.toString()).toBe('%PDF-1.7 cache antigo')
   })
 
+  it('does not build the document a repeat found missing', { timeout: 60_000 }, async () => {
+    const minute = await seed()
+    const user = userWithPermission(true)
+    await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
+    const stored = await storedPdfPath(minute.id)
+    await rm(path.join(cacheDirectory(), stored))
+
+    const state = await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
+
+    expect(state).toEqual({ status: 'success' })
+    expect(await readdir(cacheDirectory())).toEqual([])
+  })
+
+  it('never reports a committed Aprovação as a failed one', { timeout: 60_000 }, async () => {
+    const minute = await seed()
+    vi.mocked(revalidatePath).mockImplementationOnce(() => {
+      throw new Error('revalidation is unavailable')
+    })
+
+    const state = await approveMeetingMinuteAction.execute(
+      { user: userWithPermission(true), db },
+      idFormData(minute.id)
+    )
+
+    expect(state.status).toBe('success')
+    expect((await db.select().from(meetingMinutes))[0].status).toBe('approved')
+    expect((await readMeetingMinutePdfCache(await storedPdfPath(minute.id)))?.subarray(0, 5).toString()).toBe('%PDF-')
+  })
+
   it('reports an Ata that does not exist', async () => {
     const state = await approveMeetingMinuteAction.execute({ user: userWithPermission(true), db }, idFormData(999))
 

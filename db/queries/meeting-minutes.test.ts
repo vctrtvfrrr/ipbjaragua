@@ -424,22 +424,29 @@ describe('approveMeetingMinute', () => {
   it('consolidates a Pending Ata', async () => {
     const created = await createMeetingMinute(input(), db)
 
-    expect((await approveMeetingMinute(created.id, db)).status).toBe('approved')
+    expect(await approveMeetingMinute(created.id, db)).toMatchObject({
+      minute: { status: 'approved' },
+      transitioned: true,
+    })
     expect((await getMeetingMinuteById(created.id, db))?.status).toBe('approved')
   })
 
-  it('adds nothing when the Ata was already Approved', async () => {
+  it('reports a repeat as having moved nothing', async () => {
     const created = await createMeetingMinute(input(), db)
     await approveMeetingMinute(created.id, db)
-    await db
-      .update(meetingMinutes)
-      .set({ pdf_path: `${'a'.repeat(48)}.pdf` })
-      .where(eq(meetingMinutes.id, created.id))
 
     const again = await approveMeetingMinute(created.id, db)
 
-    expect(again.status).toBe('approved')
-    expect(again.pdf_path).toBe(`${'a'.repeat(48)}.pdf`)
+    expect(again.transitioned).toBe(false)
+    expect(again.minute.status).toBe('approved')
+  })
+
+  it('moves the row exactly once when two requests arrive together', async () => {
+    const created = await createMeetingMinute(input(), db)
+
+    const both = await Promise.all([approveMeetingMinute(created.id, db), approveMeetingMinute(created.id, db)])
+
+    expect(both.filter((approval) => approval.transitioned)).toHaveLength(1)
   })
 
   it('leaves no content behind for an Ata that does not exist', async () => {

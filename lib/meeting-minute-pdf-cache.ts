@@ -19,13 +19,21 @@ function resolveCacheFile(name: string): string | null {
   return NAME.test(name) ? path.join(/* turbopackIgnore: true */ cacheDirectory(), name) : null
 }
 
+// Only a file that is not there is a missing cache. A volume that is unmounted or unreadable
+// answers with a different code, and swallowing it would turn a storage fault into an endless
+// rebuild loop the operator never gets told about.
+function rethrowUnlessMissing(error: unknown): void {
+  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+}
+
 export async function readMeetingMinutePdfCache(name: string | null): Promise<Buffer | null> {
   const file = name ? resolveCacheFile(name) : null
   if (!file) return null
 
   try {
     return await readFile(file)
-  } catch {
+  } catch (error) {
+    rethrowUnlessMissing(error)
     return null
   }
 }
@@ -37,7 +45,8 @@ export async function meetingMinutePdfCacheExists(name: string | null): Promise<
   try {
     await access(file)
     return true
-  } catch {
+  } catch (error) {
+    rethrowUnlessMissing(error)
     return false
   }
 }

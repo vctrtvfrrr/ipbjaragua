@@ -46,16 +46,23 @@ export const updateMeetingMinuteAction = defineEntityAction({
   errorMessage: meetingMinuteErrorMessage,
 })
 
-// The Status is committed on its own and the document is only attempted afterwards: a
-// failure of the printer must never undo a decision the Mesa already took.
+// The Status is committed alone, and everything after it lives in `notify`: the Aprovação is
+// irreversible, so no later step may come back to the operator as a failed Aprovação. Only
+// the request that moved the row does the extra work — a repeat has nothing left to add.
 export const approveMeetingMinuteAction = defineEntityAction({
   entity: 'meeting_minutes',
   action: 'update',
   schema: meetingMinuteIdSchema,
   write: ({ data, db }) => approveMeetingMinute(data.id, db),
-  revalidate: () => revalidatePath('/admin/meeting-minutes'),
-  notify: async (minute, { db }) => {
-    await ensureMeetingMinutePdfCache(minute.id, db)
+  notify: async (approval, { db }) => {
+    try {
+      if (approval.transitioned) await ensureMeetingMinutePdfCache(approval.minute.id, db)
+    } finally {
+      // The listing must be refreshed even when the document failed, or a consolidated Ata
+      // goes on reading as Pendente.
+      revalidatePath('/admin/meeting-minutes')
+    }
+
     return undefined
   },
   notifyErrorMessage: () => APPROVED_WITHOUT_PDF,

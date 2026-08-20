@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm, unlink } from 'node:fs/promises'
+import { mkdtemp, readdir, rm, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -73,6 +73,15 @@ describe('the PDF cache of an Ata Aprovada', () => {
 
     expect(['%PDF-1.7 primeira', '%PDF-1.7 segunda']).toContain((await readMeetingMinutePdfCache(name))?.toString())
     expect(await readdir(cacheDirectory())).toEqual([name])
+  })
+
+  it('surfaces a broken volume instead of calling the cache absent', async () => {
+    // Not a missing file but a storage root that is not what the application believes it is:
+    // the reads answer ENOTDIR, which must never pass for "this Ata has no cache yet".
+    await writeFile(cacheDirectory(), 'não é um diretório')
+
+    await expect(readMeetingMinutePdfCache(newMeetingMinutePdfCacheName())).rejects.toThrow()
+    await expect(meetingMinutePdfCacheExists(newMeetingMinutePdfCacheName())).rejects.toThrow()
   })
 
   it('refuses a name the application did not mint', async () => {
