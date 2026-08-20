@@ -7,11 +7,12 @@ import {
   MEETING_MINUTE_TOPIC_TITLE_LIMIT,
   resolveMeetingMinuteYearNavigation,
 } from './meeting-minute'
+import { CHURCH_NAME } from './church'
 
 function payload(overrides: Record<string, unknown> = {}) {
   return {
     number: 1,
-    title: 'IPB de Jaraguá do Sul',
+    title: CHURCH_NAME,
     started_at: '2026-06-07T19:30',
     ended_at: '2026-06-07T21:00',
     location: 'Salão social',
@@ -167,7 +168,9 @@ describe('resolveMeetingMinuteYearNavigation', () => {
 
 describe('meetingMinuteLabel', () => {
   it('names the Ata by its Número and Título', () => {
-    expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' })).toBe('Ata nº 42 — Reunião ordinária')
+    expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' })).toBe(
+      `42ª Ata de Reunião ordinária da ${CHURCH_NAME}`
+    )
   })
 })
 

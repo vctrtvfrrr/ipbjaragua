@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { MeetingMinuteStatus } from '@/db/schema'
 import { isChurchDateTime, parseChurchDateTime } from '@/lib/date'
 import { requiredTrimmedString } from '@/lib/validation'
+import { CHURCH_NAME } from './church'
 
 export const MEETING_MINUTE_STATUS_LABELS: Record<MeetingMinuteStatus, string> = {
   pending: 'Aprovação pendente',
@@ -113,7 +114,7 @@ export function meetingMinuteTopicLabel(topic: { title: string }, index: number)
 }
 
 export function meetingMinuteLabel(minute: { number: number; title: string }): string {
-  return `Ata nº ${minute.number} — ${minute.title}`
+  return `${minute.number}ª Ata de ${minute.title} da ${CHURCH_NAME}`
 }
 
 export const MEETING_MINUTE_TOPIC_TITLE_LIMIT = 60
