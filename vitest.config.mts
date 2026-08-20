@@ -6,6 +6,7 @@ import { defineConfig } from 'vitest/config'
 const PDF_TESTS = [
   'tests/pdf/**/*.test.ts',
   'lib/meeting-minute-pdf.test.ts',
+  'lib/meeting-minute-book-pdf.test.ts',
   'app/(admin)/admin/meeting-minutes/actions.test.ts',
 ]
 

@@ -160,6 +160,10 @@ _Avoid_: Item, pauta, seção, Ato (o Ato é da Liturgia).
 Os dois únicos estados de uma **Ata**. Toda Ata nasce **Aprovação pendente** e nesse estado pode ser integralmente reformulada — inclusive seu Número. A **Aprovação** é uma ação à parte do formulário, deliberada, e consolida a Ata: uma vez **Aprovada**, ela não volta atrás nem admite alteração de conteúdo, Número ou Status. O formulário não expõe o Status.
 _Avoid_: Rascunho/Publicado (são do Boletim e da Liturgia, e ali a transição vai nos dois sentidos), homologada, fechada.
 
+**Livro de Atas**:
+A encadernação de um período: um único PDF com uma **capa** e, atrás dela, os PDFs das **Atas Aprovadas** cuja **Data** cai no período escolhido — inclusivo nas duas pontas. É **transitório**: nasce na requisição que o pediu, é baixado e não fica armazenado em lugar nenhum, então não existe "o Livro de 2026", e sim o Livro que alguém exportou. A **Ordenação** é escolhida na exportação: _cronológica_ (Início crescente, Número crescente como desempate) ou _cronológica inversa_ (ambos decrescentes). A capa diz apenas "Livro de Atas da Mesa Administrativa", o nome institucional, o período e "Atas X a Y" — o menor e o maior **Número** efetivamente incluídos, admitindo lacunas entre eles. Não tem índice nem numeração de páginas: as Atas entram como foram aprovadas. Uma Ata sem cache tem o seu PDF gerado na hora, e caches existentes são preservados; qualquer falha aborta o Livro inteiro, porque um Livro incompleto se parece com um completo.
+_Avoid_: Ata (o Livro reúne Atas, não é uma delas), compilado, dossiê, arquivo anual (o período não é o ano).
+
 ### Acesso ao painel
 
 **Usuário** (`users`):

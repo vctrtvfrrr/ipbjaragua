@@ -1,7 +1,8 @@
-import { and, asc, eq, max, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, lt, max, min, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { meetingMinuteTopics, meetingMinutes, type MeetingMinuteStatus } from '@/db/schema'
 import { churchYear, churchYearRange } from '@/lib/date'
+import type { MeetingMinuteBookOrder } from '@/lib/meeting-minute-book'
 import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
 
 export type MeetingMinute = typeof meetingMinutes.$inferSelect
@@ -217,6 +218,56 @@ export async function earliestMeetingMinuteYear(db: Database = defaultDb): Promi
     .limit(1)
 
   return row ? churchYear(row.started_at) : null
+}
+
+export type MeetingMinutePeriod = { from: Date; to: Date }
+
+export type MeetingMinuteBookSelection = { count: number; firstNumber: number | null; lastNumber: number | null }
+
+export async function summarizeApprovedMeetingMinutes(
+  period: MeetingMinutePeriod,
+  db: Database = defaultDb
+): Promise<MeetingMinuteBookSelection> {
+  const [row] = await db
+    .select({
+      count: count(),
+      firstNumber: min(meetingMinutes.number),
+      lastNumber: max(meetingMinutes.number),
+    })
+    .from(meetingMinutes)
+    .where(approvedWithin(period))
+
+  return {
+    count: Number(row?.count ?? 0),
+    firstNumber: row?.firstNumber ?? null,
+    lastNumber: row?.lastNumber ?? null,
+  }
+}
+
+export type MeetingMinuteBookEntry = { id: number; number: number; pdf_path: string | null }
+
+// The Livro is bound from stored documents, so the listing carries only what it takes to find
+// each one: the whole Ata is read again only when its cache has to be rebuilt.
+export async function listApprovedMeetingMinutesForBook(
+  period: MeetingMinutePeriod,
+  order: MeetingMinuteBookOrder,
+  db: Database = defaultDb
+): Promise<MeetingMinuteBookEntry[]> {
+  const direction = order === 'reverse' ? desc : asc
+
+  return db
+    .select({ id: meetingMinutes.id, number: meetingMinutes.number, pdf_path: meetingMinutes.pdf_path })
+    .from(meetingMinutes)
+    .where(approvedWithin(period))
+    .orderBy(direction(meetingMinutes.started_at), direction(meetingMinutes.number))
+}
+
+function approvedWithin(period: MeetingMinutePeriod) {
+  return and(
+    eq(meetingMinutes.status, 'approved'),
+    gte(meetingMinutes.started_at, period.from),
+    lt(meetingMinutes.started_at, period.to)
+  )
 }
 
 function translateMeetingMinuteWriteError(error: unknown, number: number): unknown {

@@ -12,13 +12,47 @@ export function pdfPageTexts(pdf: Buffer): string[] {
 }
 
 export function pdfPageSizes(pdf: Buffer): { width: number; height: number }[] {
-  return [...pdf.toString('latin1').matchAll(/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)].map((match) => ({
-    width: Number(match[1]),
-    height: Number(match[2]),
-  }))
+  const objects = parseObjects(pdf)
+  const inherited = [...objects.values()].find((object) => object.dict.includes('/Type /Pages'))
+
+  return pageNumbers(objects).map((number) => mediaBox(objects.get(number)!) ?? mediaBox(inherited!) ?? NO_BOX)
+}
+
+const NO_BOX = { width: 0, height: 0 }
+
+function mediaBox(object: PdfObject | undefined): { width: number; height: number } | null {
+  const match = object && /MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/.exec(object.dict)
+
+  return match ? { width: Number(match[1]), height: Number(match[2]) } : null
 }
 
 function parseObjects(pdf: Buffer): Map<number, PdfObject> {
+  const objects = parseTopLevelObjects(pdf)
+  expandObjectStreams(objects)
+
+  return objects
+}
+
+// pdf-lib packs the small objects of a merged document into object streams, so the page and
+// font dictionaries of a Livro are not in the file as plain text the way Chromium wrote them.
+function expandObjectStreams(objects: Map<number, PdfObject>): void {
+  for (const object of [...objects.values()]) {
+    if (!object.dict.includes('/ObjStm') || !object.stream) continue
+
+    const total = Number(/\/N\s+(\d+)/.exec(object.dict)?.[1] ?? 0)
+    const first = Number(/\/First\s+(\d+)/.exec(object.dict)?.[1] ?? 0)
+    const body = object.stream.toString('latin1')
+    const header = body.slice(0, first).trim().split(/\s+/).map(Number)
+
+    for (let index = 0; index < total; index++) {
+      const start = first + header[index * 2 + 1]
+      const end = index + 1 < total ? first + header[index * 2 + 3] : body.length
+      objects.set(header[index * 2], { dict: body.slice(start, end), stream: null })
+    }
+  }
+}
+
+function parseTopLevelObjects(pdf: Buffer): Map<number, PdfObject> {
   const latin = pdf.toString('latin1')
   const objects = new Map<number, PdfObject>()
 

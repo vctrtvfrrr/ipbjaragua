@@ -1,4 +1,3 @@
-import { readdir, readFile } from 'node:fs/promises'
 import { afterAll, describe, expect, it } from 'vitest'
 import { meetingMinuteLabel } from '@/lib/meeting-minute'
 import {
@@ -7,6 +6,7 @@ import {
   type MeetingMinuteDocument,
 } from '@/lib/meeting-minute-document'
 import { closeSharedBrowser, pdfJobState, renderPdf } from '@/lib/pdf/browser'
+import { sampleMemory } from './memory'
 import { pdfPageSizes, pdfPageTexts } from './pdf-text'
 
 const A4 = { width: 595, height: 842 }
@@ -140,47 +140,3 @@ describe('the PDF of a Pending Ata', () => {
     expect(peak).toBeLessThan(SERVICE_MEMORY_LIMIT_BYTES - NODE_SERVER_ALLOWANCE_BYTES)
   })
 })
-
-// Only Chromium is measured: the process running the suite is a test runner, not the
-// server, so its own resident size says nothing about what the service will hold.
-function sampleMemory(): { stop: () => Promise<number> } {
-  let peak = 0
-  let running = true
-
-  const loop = (async () => {
-    while (running) {
-      peak = Math.max(peak, await chromiumResidentBytes())
-      await new Promise((resolve) => setTimeout(resolve, 100))
-    }
-  })()
-
-  return {
-    stop: async () => {
-      running = false
-      await loop
-      return peak
-    },
-  }
-}
-
-// Chromium is a process tree that shares most of its mappings, so resident set size counts
-// the same pages once per process; the proportional set size is what the container pays.
-async function chromiumResidentBytes(): Promise<number> {
-  let total = 0
-
-  for (const entry of await readdir('/proc')) {
-    if (!/^\d+$/.test(entry)) continue
-
-    try {
-      const command = await readFile(`/proc/${entry}/comm`, 'utf8')
-      if (!/chrome|headless/i.test(command)) continue
-
-      const rollup = await readFile(`/proc/${entry}/smaps_rollup`, 'utf8')
-      total += Number(/^Pss:\s+(\d+) kB/m.exec(rollup)?.[1] ?? 0) * 1024
-    } catch {
-      // A process that exits between the scan and the read simply stops counting.
-    }
-  }
-
-  return total
-}

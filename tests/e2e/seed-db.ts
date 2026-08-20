@@ -10,6 +10,8 @@ import {
   liturgies,
   liturgyActs,
   liturgyMoments,
+  meetingMinuteTopics,
+  meetingMinutes,
   members,
   songs,
   userPermissions,
@@ -140,7 +142,20 @@ export const E2E_ADMIN_PERMISSIONS = [
   { entity: 'articles', action: 'update' },
   { entity: 'articles', action: 'delete' },
   { entity: 'liturgies', action: 'read' },
+  { entity: 'meeting_minutes', action: 'read' },
+  { entity: 'meeting_minutes', action: 'create' },
+  { entity: 'meeting_minutes', action: 'update' },
 ] as const
+
+// The journey through the Atas needs a year behind the current one: it is what gives the annual
+// listing something to navigate back to and the Livro a period wider than a single year.
+export const E2E_MEETING_MINUTE = {
+  number: 1,
+  title: 'Reunião ordinária',
+  year: new Date().getUTCFullYear() - 1,
+  location: 'Salão social',
+  topic: 'Prestação de contas',
+}
 
 export const E2E_LIMITED_USER = {
   email: 'sem-permissao-e2e@example.com',
@@ -279,6 +294,27 @@ export async function seedE2eDatabase() {
       event_date: parseISODate(item.event_date),
     })
   }
+
+  const [seededMinute] = await db
+    .insert(meetingMinutes)
+    .values({
+      number: E2E_MEETING_MINUTE.number,
+      title: E2E_MEETING_MINUTE.title,
+      started_at: new Date(Date.UTC(E2E_MEETING_MINUTE.year, 5, 10, 22, 30)),
+      ended_at: new Date(Date.UTC(E2E_MEETING_MINUTE.year, 5, 11, 0, 0)),
+      location: E2E_MEETING_MINUTE.location,
+      attendees: '- Pastor João\n- Presbítero Pedro',
+      opening: 'A reunião foi aberta com oração.',
+      closing: 'Nada mais havendo a tratar, a reunião foi encerrada.',
+      status: 'approved',
+    })
+    .returning({ id: meetingMinutes.id })
+  await db.insert(meetingMinuteTopics).values({
+    meeting_minute_id: seededMinute.id,
+    position: 0,
+    title: E2E_MEETING_MINUTE.topic,
+    discussion: 'As contas do exercício foram aprovadas por unanimidade.',
+  })
 
   await db.insert(announcements).values([E2E_ANNOUNCEMENT, E2E_ANNOUNCEMENT_WITHOUT_FLYER])
   await db.insert(members).values({ ...E2E_MEMBER, birth_date: parseISODate(E2E_MEMBER.birth_date) })

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   bulletinSectionWindows,
+  churchDayRange,
   churchYear,
   churchYearRange,
   currentTimeHHMM,
@@ -9,6 +10,7 @@ import {
   formatChurchDateTimeInput,
   formatChurchDateTimePtBR,
   isChurchDateTime,
+  isISODate,
   formatISODate,
   formatLongDatePtBR,
   formatShortDatePtBR,
@@ -232,5 +234,61 @@ describe('isChurchDateTime', () => {
   it('reads an hour a daylight saving end repeated as the earlier instant', () => {
     expect(isChurchDateTime('2018-02-17T23:30')).toBe(true)
     expect(parseChurchDateTime('2018-02-17T23:30').toISOString()).toBe('2018-02-18T01:30:00.000Z')
+  })
+})
+
+describe('churchDayRange', () => {
+  it('opens on the first instant of the first day', () => {
+    const { from } = churchDayRange('2026-06-07', '2026-06-07')
+
+    expect(todayISO(from)).toBe('2026-06-07')
+    expect(todayISO(new Date(from.getTime() - 1000))).toBe('2026-06-06')
+  })
+
+  it('closes only after the last day has been spent whole', () => {
+    const { to } = churchDayRange('2026-01-01', '2026-06-07')
+
+    expect(todayISO(new Date(to.getTime() - 1000))).toBe('2026-06-07')
+    expect(todayISO(to)).toBe('2026-06-08')
+  })
+
+  it('holds a single day even when a daylight saving jump skipped its midnight', () => {
+    const { from, to } = churchDayRange('2018-11-04', '2018-11-04')
+
+    expect(todayISO(from)).toBe('2018-11-04')
+    expect(todayISO(new Date(from.getTime() - 1000))).toBe('2018-11-03')
+    expect(todayISO(new Date(to.getTime() - 1000))).toBe('2018-11-04')
+  })
+
+  it('agrees with the day an instant reads as, every day of a year', () => {
+    const disagreements: string[] = []
+
+    for (let day = new Date('2026-01-01T03:00:00Z'); day < new Date('2027-01-01T03:00:00Z');) {
+      const iso = todayISO(day)
+      const { from, to } = churchDayRange(iso, iso)
+
+      for (const instant of [new Date(from.getTime() - 1000), from, new Date(to.getTime() - 1000), to]) {
+        const withinRange = instant >= from && instant < to
+        if ((todayISO(instant) === iso) !== withinRange) disagreements.push(`${iso}: ${instant.toISOString()}`)
+      }
+
+      day = new Date(day.getTime() + 24 * 60 * 60 * 1000)
+    }
+
+    expect(disagreements).toEqual([])
+  })
+})
+
+describe('isISODate', () => {
+  it('accepts a calendar day', () => {
+    expect(isISODate('2026-06-07')).toBe(true)
+  })
+
+  it('rejects anything that is not a calendar day', () => {
+    expect(isISODate('')).toBe(false)
+    expect(isISODate('07/06/2026')).toBe(false)
+    expect(isISODate('2026-06-07T19:30')).toBe(false)
+    expect(isISODate('2026-02-30')).toBe(false)
+    expect(isISODate('2026-13-01')).toBe(false)
   })
 })

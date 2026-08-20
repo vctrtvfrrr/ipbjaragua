@@ -11,7 +11,18 @@ export default defineConfig({
   // route to compile — well past the 5s default on a loaded CI runner.
   expect: { timeout: 15_000 },
   use: { baseURL },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /meeting-minutes\.spec\.ts/ },
+    // Exporting a Livro holds the server's single render queue for a minute at a time, so the
+    // journey through the Atas runs after the rest instead of starving specs that only need a
+    // page to answer.
+    {
+      name: 'meeting-minutes',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /meeting-minutes\.spec\.ts/,
+      dependencies: ['chromium'],
+    },
+  ],
   webServer: {
     command: `tsx -e "import('./tests/e2e/seed-db.ts').then((m) => m.seedE2eDatabase())" && next dev --port ${PORT}`,
     url: baseURL,

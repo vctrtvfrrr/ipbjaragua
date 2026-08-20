@@ -2,6 +2,7 @@ import type { MeetingMinuteStatus } from '@/db/schema'
 import { formatChurchDatePtBR, formatChurchTimePtBR } from '@/lib/date'
 import { MEETING_MINUTE_STATUS_LABELS, meetingMinuteLabel } from '@/lib/meeting-minute'
 import { loadPdfFontFaceCss } from '@/lib/pdf/fonts'
+import { escapeHtml } from '@/lib/pdf/html'
 import { renderMarkdownToHtml } from '@/lib/pdf/markdown'
 import { createImageBudget } from '@/lib/pdf/remote-image'
 
@@ -78,12 +79,6 @@ ${watermark}
 function section(title: string, html: string): string {
   return `<section><h2>${escapeHtml(title)}</h2><div class="prose">${html}</div></section>`
 }
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"]/g, (character) => ESCAPES[character])
-}
-
-const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
 
 // The measure, not the viewport, sets the scale: this stylesheet only ever describes paper.
 const DOCUMENT_CSS = `

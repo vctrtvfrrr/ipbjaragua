@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { ApproveMeetingMinuteButton } from '@/components/admin/ApproveMeetingMinuteButton'
+import { ExportMeetingMinuteBookButton } from '@/components/admin/ExportMeetingMinuteBookButton'
 import { MeetingMinutePdfButton } from '@/components/admin/MeetingMinutePdfButton'
 import { MeetingMinutePdfCacheButton } from '@/components/admin/MeetingMinutePdfCacheButton'
 import { MeetingMinuteTopicList } from '@/components/admin/MeetingMinuteTopicList'
@@ -44,12 +45,15 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
     <section className="grid gap-6">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">Atas de {year}</h2>
-        {canCreate ? (
-          <Link href="/admin/meeting-minutes/new" className={cn(buttonVariants())}>
-            <Plus data-icon="inline-start" />
-            Nova Ata
-          </Link>
-        ) : null}
+        <div className="flex items-center gap-2">
+          <ExportMeetingMinuteBookButton year={year} />
+          {canCreate ? (
+            <Link href="/admin/meeting-minutes/new" className={cn(buttonVariants())}>
+              <Plus data-icon="inline-start" />
+              Nova Ata
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {minutes.length === 0 ? (

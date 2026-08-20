@@ -163,27 +163,60 @@ export function churchYear(instant: Date): number {
   return new Date(churchWallClock(instant)).getUTCFullYear()
 }
 
-// A year does not always open at a civil midnight — São Paulo's 1914 offset change skipped
-// the minutes before it — so the midnight the operator would write can still read as the
-// previous year. The boundary is the first instant the zone already reads as the year,
-// which is what keeps churchYearRange and churchYear from classifying an Ata differently.
-function churchYearStart(year: number): Date {
+// A civil period does not always open at the clock time that names it — São Paulo's 1914
+// offset change skipped the minutes before midnight, and a daylight saving jump skips a whole
+// hour — so the midnight the operator would write can still read as the period before. The
+// boundary is the first instant the zone already reads as the period asked for, which is what
+// keeps a range and the value derived from an instant from classifying an Ata differently.
+function firstInstantWhere(guess: number, reached: (instant: Date) => boolean): Date {
   const DAY = 24 * 60 * 60 * 1000
-  const guess = parseChurchDateTime(`${year}-01-01T00:00`).getTime()
   let before = guess - DAY
   let after = guess + DAY
 
   while (after - before > 1000) {
     const middle = before + Math.floor((after - before) / 2 / 1000) * 1000
-    if (churchYear(new Date(middle)) < year) before = middle
-    else after = middle
+    if (reached(new Date(middle))) after = middle
+    else before = middle
   }
 
   return new Date(after)
 }
 
+function churchYearStart(year: number): Date {
+  return firstInstantWhere(
+    parseChurchDateTime(`${year}-01-01T00:00`).getTime(),
+    (instant) => churchYear(instant) >= year
+  )
+}
+
 export function churchYearRange(year: number): { from: Date; to: Date } {
   return { from: churchYearStart(year), to: churchYearStart(year + 1) }
+}
+
+function churchDayStart(isoDate: string): Date {
+  return firstInstantWhere(parseChurchDateTime(`${isoDate}T00:00`).getTime(), (instant) => todayISO(instant) >= isoDate)
+}
+
+// A period given by civil dates is inclusive on both ends, so the last day belongs to it
+// whole: the range closes at the first instant of the day after it.
+export function churchDayRange(from: string, to: string): { from: Date; to: Date } {
+  return { from: churchDayStart(from), to: churchDayStart(nextISODate(to)) }
+}
+
+function nextISODate(value: string): string {
+  const date = parseISODate(value)
+  date.setUTCDate(date.getUTCDate() + 1)
+
+  return formatISODate(date)
+}
+
+// A calendar day only exists if reading it back yields it again: a month or a day the calendar
+// does not have either rolls over into the next one or has no instant at all.
+export function isISODate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+
+  const date = parseISODate(value)
+  return !Number.isNaN(date.getTime()) && formatISODate(date) === value
 }
 
 const churchDateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {

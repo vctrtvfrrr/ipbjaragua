@@ -1,7 +1,7 @@
 import { asc, eq, sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { meetingMinuteTopics, meetingMinutes } from '@/db/schema'
-import { parseChurchDateTime } from '@/lib/date'
+import { churchDayRange, parseChurchDateTime } from '@/lib/date'
 import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
 import { createTestDb, type TestDb } from '@/tests/db'
 import {
@@ -10,12 +10,14 @@ import {
   createMeetingMinute,
   earliestMeetingMinuteYear,
   getMeetingMinuteById,
+  listApprovedMeetingMinutesForBook,
   listMeetingMinutesByYear,
   MeetingMinuteImmutableError,
   MeetingMinuteNotApprovedError,
   MeetingMinuteNotFoundError,
   MeetingMinuteNumberTakenError,
   nextMeetingMinuteNumber,
+  summarizeApprovedMeetingMinutes,
   updateMeetingMinute,
 } from './meeting-minutes'
 
@@ -515,5 +517,84 @@ describe('claimMeetingMinutePdfPath', () => {
     await expect(claimMeetingMinutePdfPath(999, `${'1'.repeat(48)}.pdf`, db)).rejects.toThrow(
       MeetingMinuteNotFoundError
     )
+  })
+})
+
+describe('the Atas a Livro is built from', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  async function minute(number: number, startedAt: string, status: 'pending' | 'approved'): Promise<number> {
+    const started_at = parseChurchDateTime(startedAt)
+    const created = await createMeetingMinute(
+      input({ number, started_at, ended_at: new Date(started_at.getTime() + 30 * 60 * 1000) }),
+      db
+    )
+    if (status === 'approved') await approveMeetingMinute(created.id, db)
+
+    return created.id
+  }
+
+  async function numbersIn(from: string, to: string, order: 'chronological' | 'reverse'): Promise<number[]> {
+    const entries = await listApprovedMeetingMinutesForBook(churchDayRange(from, to), order, db)
+
+    return entries.map((entry) => entry.number)
+  }
+
+  it('takes only the Atas Aprovadas of the period', async () => {
+    await minute(1, '2026-06-07T19:30', 'approved')
+    await minute(2, '2026-06-08T19:30', 'pending')
+
+    expect(await numbersIn('2026-06-01', '2026-06-30', 'chronological')).toEqual([1])
+  })
+
+  it('includes the Atas of the first and of the last day of the period', async () => {
+    await minute(1, '2026-06-06T22:00', 'approved')
+    await minute(2, '2026-06-07T00:30', 'approved')
+    await minute(3, '2026-06-09T23:30', 'approved')
+    await minute(4, '2026-06-10T00:30', 'approved')
+
+    expect(await numbersIn('2026-06-07', '2026-06-09', 'chronological')).toEqual([2, 3])
+  })
+
+  it('orders chronologically and settles a shared Data by Número', async () => {
+    await minute(7, '2026-06-08T19:30', 'approved')
+    await minute(5, '2026-06-07T19:30', 'approved')
+    await minute(6, '2026-06-07T19:30', 'approved')
+
+    expect(await numbersIn('2026-06-01', '2026-06-30', 'chronological')).toEqual([5, 6, 7])
+  })
+
+  it('reverses both the Início and the Número', async () => {
+    await minute(7, '2026-06-08T19:30', 'approved')
+    await minute(5, '2026-06-07T19:30', 'approved')
+    await minute(6, '2026-06-07T19:30', 'approved')
+
+    expect(await numbersIn('2026-06-01', '2026-06-30', 'reverse')).toEqual([7, 6, 5])
+  })
+
+  it('summarizes the period by count and by the Números at its edges', async () => {
+    await minute(4, '2026-06-07T19:30', 'approved')
+    await minute(9, '2026-06-08T19:30', 'approved')
+    await minute(12, '2026-07-01T19:30', 'pending')
+
+    expect(await summarizeApprovedMeetingMinutes(churchDayRange('2026-06-01', '2026-06-30'), db)).toEqual({
+      count: 2,
+      firstNumber: 4,
+      lastNumber: 9,
+    })
+  })
+
+  it('summarizes an empty period as nothing at all', async () => {
+    await minute(1, '2026-06-07T19:30', 'approved')
+
+    expect(await summarizeApprovedMeetingMinutes(churchDayRange('2026-01-01', '2026-01-31'), db)).toEqual({
+      count: 0,
+      firstNumber: null,
+      lastNumber: null,
+    })
   })
 })
