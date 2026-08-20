@@ -1,6 +1,14 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
+// Every one of these renders with a real Chromium, and the service is sized for exactly one
+// browser at a time. Left to the default parallelism they boot three and starve each other.
+const PDF_TESTS = [
+  'tests/pdf/**/*.test.ts',
+  'lib/meeting-minute-pdf.test.ts',
+  'app/(admin)/admin/meeting-minutes/actions.test.ts',
+]
+
 export default defineConfig({
   plugins: [react()],
   resolve: { tsconfigPaths: true },
@@ -40,6 +48,17 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: 'pdf',
+          environment: 'node',
+          include: PDF_TESTS,
+          fileParallelism: false,
+          maxWorkers: 1,
+          sequence: { groupOrder: 3 },
+        },
+      },
+      {
+        extends: true,
+        test: {
           name: 'node',
           environment: 'node',
           include: ['**/*.test.ts'],
@@ -51,6 +70,7 @@ export default defineConfig({
             '.claude/**',
             'db/**/*.test.ts',
             'tests/db.test.ts',
+            ...PDF_TESTS,
           ],
         },
       },

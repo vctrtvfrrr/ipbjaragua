@@ -9,6 +9,7 @@ import {
 
 const MINUTE: MeetingMinuteDocument = {
   number: 12,
+  status: 'pending',
   title: 'Reunião ordinária',
   started_at: new Date('2026-06-07T22:30:00Z'),
   ended_at: new Date('2026-06-08T00:00:00Z'),

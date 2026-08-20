@@ -1,4 +1,4 @@
-import { and, asc, eq, max } from 'drizzle-orm'
+import { and, asc, eq, max, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { meetingMinuteTopics, meetingMinutes, type MeetingMinuteStatus } from '@/db/schema'
 import { churchYear, churchYearRange } from '@/lib/date'
@@ -16,6 +16,7 @@ export type MeetingMinuteListItem = {
   title: string
   started_at: Date
   status: MeetingMinuteStatus
+  pdf_path: string | null
   topics: { title: string }[]
 }
 
@@ -142,6 +143,49 @@ export async function updateMeetingMinute(
   }
 }
 
+export class MeetingMinuteNotApprovedError extends Error {
+  constructor(id: number) {
+    super(`Meeting minute ${id} is not approved and keeps no stored PDF`)
+    this.name = 'MeetingMinuteNotApprovedError'
+  }
+}
+
+// Approving is a one-way door, so the transition rides a single conditional UPDATE: a second
+// request finds no Pending row to move and leaves the consolidated Ata exactly as it was.
+export async function approveMeetingMinute(id: number, db: Database = defaultDb): Promise<MeetingMinute> {
+  const [approved] = await db
+    .update(meetingMinutes)
+    .set({ status: 'approved' })
+    .where(and(eq(meetingMinutes.id, id), eq(meetingMinutes.status, 'pending')))
+    .returning()
+
+  if (approved) return approved
+
+  const [existing] = await db.select().from(meetingMinutes).where(eq(meetingMinutes.id, id))
+  if (!existing) throw new MeetingMinuteNotFoundError(id)
+
+  return existing
+}
+
+// The name of the cache is decided in the database before any byte is written, so two
+// generations racing on a cache-less Ata converge on one file instead of orphaning one.
+export async function claimMeetingMinutePdfPath(
+  id: number,
+  candidate: string,
+  db: Database = defaultDb
+): Promise<string> {
+  const [row] = await db
+    .update(meetingMinutes)
+    .set({ pdf_path: sql`coalesce(${meetingMinutes.pdf_path}, ${candidate})` })
+    .where(and(eq(meetingMinutes.id, id), eq(meetingMinutes.status, 'approved')))
+    .returning({ pdf_path: meetingMinutes.pdf_path })
+
+  if (row?.pdf_path) return row.pdf_path
+
+  const [existing] = await db.select({ id: meetingMinutes.id }).from(meetingMinutes).where(eq(meetingMinutes.id, id))
+  throw existing ? new MeetingMinuteNotApprovedError(id) : new MeetingMinuteNotFoundError(id)
+}
+
 export async function nextMeetingMinuteNumber(db: Database = defaultDb): Promise<number> {
   const [row] = await db.select({ value: max(meetingMinutes.number) }).from(meetingMinutes)
   return (row?.value ?? 0) + 1
@@ -154,7 +198,7 @@ export async function listMeetingMinutesByYear(
   const { from, to } = churchYearRange(year)
 
   return db.query.meetingMinutes.findMany({
-    columns: { id: true, number: true, title: true, started_at: true, status: true },
+    columns: { id: true, number: true, title: true, started_at: true, status: true, pdf_path: true },
     with: { topics: { columns: { title: true }, orderBy: { position: 'asc' } } },
     where: { started_at: { gte: from, lt: to } },
     orderBy: { number: 'asc' },

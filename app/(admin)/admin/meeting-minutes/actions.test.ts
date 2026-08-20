@@ -1,10 +1,21 @@
+import { mkdtemp, readdir, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { asc, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { meetingMinuteTopics, meetingMinutes } from '@/db/schema'
 import type { CurrentUser } from '@/lib/auth/current-user'
+import { readMeetingMinutePdfCache, writeMeetingMinutePdfCache } from '@/lib/meeting-minute-pdf-cache'
+import { closeSharedBrowser } from '@/lib/pdf/browser'
 import { createTestDb, type TestDb } from '@/tests/db'
-import { createMeetingMinuteAction, updateMeetingMinuteAction } from './actions'
+import {
+  approveMeetingMinuteAction,
+  APPROVED_WITHOUT_PDF,
+  createMeetingMinuteAction,
+  regenerateMeetingMinutePdfAction,
+  updateMeetingMinuteAction,
+} from './actions'
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -316,5 +327,160 @@ describe('updateMeetingMinuteAction.execute', () => {
     )
 
     expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
+  })
+})
+
+describe('approving an Ata and keeping its PDF', () => {
+  let db: TestDb
+  let storagePath: string
+
+  function cacheDirectory(): string {
+    return path.join(storagePath, 'meeting-minute-pdfs')
+  }
+
+  function idFormData(id: number) {
+    const data = new FormData()
+    data.append('id', String(id))
+    return data
+  }
+
+  async function seed(overrides: Record<string, unknown> = {}) {
+    const state = await createMeetingMinuteAction.execute(
+      { user: userWithPermission(true), db },
+      formData(payload(overrides))
+    )
+    if (state.status !== 'success') throw new Error('expected the seed to succeed')
+
+    const [minute] = await db.select().from(meetingMinutes)
+    return minute
+  }
+
+  async function storedPdfPath(id: number): Promise<string> {
+    const [minute] = await db.select().from(meetingMinutes).where(eq(meetingMinutes.id, id))
+    if (!minute.pdf_path) throw new Error('expected the Ata to carry a cache path')
+
+    return minute.pdf_path
+  }
+
+  beforeEach(async () => {
+    db = await createTestDb()
+    vi.mocked(revalidatePath).mockClear()
+    storagePath = await mkdtemp(path.join(tmpdir(), 'meeting-minute-actions-'))
+    process.env.MEDIA_STORAGE_PATH = storagePath
+  })
+
+  afterEach(async () => {
+    delete process.env.MEDIA_STORAGE_PATH
+    await rm(storagePath, { recursive: true, force: true })
+  })
+
+  afterAll(async () => {
+    await closeSharedBrowser()
+  })
+
+  it('denies a Usuário without update permission and leaves the Ata Pendente', async () => {
+    const minute = await seed()
+    const user = userWithPermission(false)
+
+    const state = await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
+
+    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
+    expect(user.can).toHaveBeenCalledWith('meeting_minutes', 'update')
+    expect((await db.select().from(meetingMinutes))[0].status).toBe('pending')
+  })
+
+  it('denies a request without a session', async () => {
+    const minute = await seed()
+
+    const state = await approveMeetingMinuteAction.execute({ user: null, db }, idFormData(minute.id))
+
+    expect(state).toEqual({ status: 'error', formError: 'Sua sessão expirou. Faça login novamente.' })
+    expect((await db.select().from(meetingMinutes))[0].status).toBe('pending')
+  })
+
+  it('consolidates the Ata and stores its PDF', { timeout: 60_000 }, async () => {
+    const minute = await seed()
+
+    const state = await approveMeetingMinuteAction.execute(
+      { user: userWithPermission(true), db },
+      idFormData(minute.id)
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    expect((await db.select().from(meetingMinutes))[0].status).toBe('approved')
+    const stored = await readMeetingMinutePdfCache(await storedPdfPath(minute.id))
+    expect(stored?.subarray(0, 5).toString()).toBe('%PDF-')
+    expect(revalidatePath).toHaveBeenCalledWith('/admin/meeting-minutes')
+  })
+
+  it('keeps the Aprovação when the document fails and says to try the PDF again', { timeout: 60_000 }, async () => {
+    const minute = await seed({ opening: 'Aberta com ![diagrama](https://localhost/diagrama.png) em anexo.' })
+
+    const state = await approveMeetingMinuteAction.execute(
+      { user: userWithPermission(true), db },
+      idFormData(minute.id)
+    )
+
+    expect(state).toEqual({ status: 'success', warning: APPROVED_WITHOUT_PDF })
+    expect((await db.select().from(meetingMinutes))[0].status).toBe('approved')
+    expect(await readdir(cacheDirectory()).catch(() => [])).toEqual([])
+  })
+
+  it('adds nothing when the Aprovação is repeated', { timeout: 60_000 }, async () => {
+    const minute = await seed()
+    const user = userWithPermission(true)
+    await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
+    const stored = await storedPdfPath(minute.id)
+    await writeMeetingMinutePdfCache(stored, Buffer.from('%PDF-1.7 cache antigo'))
+
+    const state = await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
+
+    expect(state).toEqual({ status: 'success' })
+    expect(await storedPdfPath(minute.id)).toBe(stored)
+    expect((await readMeetingMinutePdfCache(stored))?.toString()).toBe('%PDF-1.7 cache antigo')
+  })
+
+  it('reports an Ata that does not exist', async () => {
+    const state = await approveMeetingMinuteAction.execute({ user: userWithPermission(true), db }, idFormData(999))
+
+    expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
+  })
+
+  it('lets a Usuário with read replace the stored PDF', { timeout: 60_000 }, async () => {
+    const minute = await seed()
+    await approveMeetingMinuteAction.execute({ user: userWithPermission(true), db }, idFormData(minute.id))
+    const stored = await storedPdfPath(minute.id)
+    await writeMeetingMinutePdfCache(stored, Buffer.from('%PDF-1.7 cache antigo'))
+
+    const state = await regenerateMeetingMinutePdfAction.execute(
+      { user: userWithPermission(true), db },
+      idFormData(minute.id)
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    expect((await readMeetingMinutePdfCache(stored))?.toString()).not.toBe('%PDF-1.7 cache antigo')
+    expect(await readdir(cacheDirectory())).toEqual([stored])
+  })
+
+  it('denies a Regeneração from a Usuário without read', async () => {
+    const minute = await seed()
+    const user = userWithPermission(false)
+
+    const state = await regenerateMeetingMinutePdfAction.execute({ user, db }, idFormData(minute.id))
+
+    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
+    expect(user.can).toHaveBeenCalledWith('meeting_minutes', 'read')
+  })
+
+  it('refuses to store a PDF for an Ata still Pendente', async () => {
+    const minute = await seed()
+
+    const state = await regenerateMeetingMinutePdfAction.execute(
+      { user: userWithPermission(true), db },
+      idFormData(minute.id)
+    )
+
+    expect(state).toEqual({ status: 'error', formError: 'Somente Atas Aprovadas mantêm um PDF armazenado.' })
+    expect((await db.select().from(meetingMinutes))[0].pdf_path).toBeNull()
   })
 })

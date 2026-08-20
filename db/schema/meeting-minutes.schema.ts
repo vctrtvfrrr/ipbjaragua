@@ -18,6 +18,9 @@ export const meetingMinutes = pgTable(
     opening: text('opening').notNull(),
     closing: text('closing').notNull(),
     status: meetingMinuteStatus('status').notNull().default('pending'),
+    // Only the opaque file name lives here: the canonical Ata is the rows above, and the
+    // cache is a derived artifact the volume may lose without taking the record with it.
+    pdf_path: text('pdf_path'),
     ...timestamps(),
   },
   (t) => [

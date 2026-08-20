@@ -1,12 +1,15 @@
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
+import { ApproveMeetingMinuteButton } from '@/components/admin/ApproveMeetingMinuteButton'
 import { MeetingMinutePdfButton } from '@/components/admin/MeetingMinutePdfButton'
+import { MeetingMinutePdfCacheButton } from '@/components/admin/MeetingMinutePdfCacheButton'
 import { MeetingMinuteTopicList } from '@/components/admin/MeetingMinuteTopicList'
 import { MeetingMinuteYearNav } from '@/components/admin/MeetingMinuteYearNav'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { buttonVariants } from '@/components/ui/button'
 import { earliestMeetingMinuteYear, listMeetingMinutesByYear } from '@/db/queries/meeting-minutes'
 import { requirePageRead } from '@/lib/auth/require-page-read'
+import { meetingMinutePdfCacheExists } from '@/lib/meeting-minute-pdf-cache'
 import { churchYear, formatChurchDatePtBR } from '@/lib/date'
 import {
   MEETING_MINUTE_STATUS_LABELS,
@@ -26,7 +29,14 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
     earliestYear: await earliestMeetingMinuteYear(),
     currentYear: churchYear(new Date()),
   })
-  const minutes = await listMeetingMinutesByYear(year)
+  // The label distinguishes a first Gerar from a Regenerar, so it asks the volume, not the
+  // stored path: a lost file leaves the path behind and there is nothing yet to replace.
+  const minutes = await Promise.all(
+    (await listMeetingMinutesByYear(year)).map(async (minute) => ({
+      ...minute,
+      cached: await meetingMinutePdfCacheExists(minute.pdf_path),
+    }))
+  )
   const canCreate = user.can('meeting_minutes', 'create')
   const canUpdate = user.can('meeting_minutes', 'update')
 
@@ -74,7 +84,11 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
                         Editar
                       </Link>
                     ) : null}
-                    {minute.status === 'pending' ? <MeetingMinutePdfButton minute={minute} /> : null}
+                    <MeetingMinutePdfButton minute={minute} />
+                    {minute.status === 'approved' ? (
+                      <MeetingMinutePdfCacheButton minute={minute} cached={minute.cached} />
+                    ) : null}
+                    {canUpdate && minute.status === 'pending' ? <ApproveMeetingMinuteButton minute={minute} /> : null}
                   </div>
                 </TableCell>
               </TableRow>

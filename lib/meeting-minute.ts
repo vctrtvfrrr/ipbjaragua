@@ -78,6 +78,8 @@ export const updateMeetingMinuteSchema = meetingMinuteFields
 
 export type CreateMeetingMinuteInput = z.output<typeof createMeetingMinuteSchema>
 
+export const meetingMinuteIdSchema = z.object({ id: z.coerce.number().int().positive('ID é obrigatório') })
+
 export function parseSerializedMeetingMinutePayload(formData: FormData): unknown {
   const payload = formData.get('payload')
   if (typeof payload !== 'string') throw new Error('payload is required')

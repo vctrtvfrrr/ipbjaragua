@@ -5,11 +5,14 @@ import { parseChurchDateTime } from '@/lib/date'
 import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
 import { createTestDb, type TestDb } from '@/tests/db'
 import {
+  approveMeetingMinute,
+  claimMeetingMinutePdfPath,
   createMeetingMinute,
   earliestMeetingMinuteYear,
   getMeetingMinuteById,
   listMeetingMinutesByYear,
   MeetingMinuteImmutableError,
+  MeetingMinuteNotApprovedError,
   MeetingMinuteNotFoundError,
   MeetingMinuteNumberTakenError,
   nextMeetingMinuteNumber,
@@ -408,5 +411,102 @@ describe('earliestMeetingMinuteYear', () => {
     )
 
     expect(await earliestMeetingMinuteYear(db)).toBe(2019)
+  })
+})
+
+describe('approveMeetingMinute', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('consolidates a Pending Ata', async () => {
+    const created = await createMeetingMinute(input(), db)
+
+    expect((await approveMeetingMinute(created.id, db)).status).toBe('approved')
+    expect((await getMeetingMinuteById(created.id, db))?.status).toBe('approved')
+  })
+
+  it('adds nothing when the Ata was already Approved', async () => {
+    const created = await createMeetingMinute(input(), db)
+    await approveMeetingMinute(created.id, db)
+    await db
+      .update(meetingMinutes)
+      .set({ pdf_path: `${'a'.repeat(48)}.pdf` })
+      .where(eq(meetingMinutes.id, created.id))
+
+    const again = await approveMeetingMinute(created.id, db)
+
+    expect(again.status).toBe('approved')
+    expect(again.pdf_path).toBe(`${'a'.repeat(48)}.pdf`)
+  })
+
+  it('leaves no content behind for an Ata that does not exist', async () => {
+    await expect(approveMeetingMinute(999, db)).rejects.toThrow(MeetingMinuteNotFoundError)
+  })
+
+  it('closes the Ata to further content changes', async () => {
+    const created = await createMeetingMinute(input(), db)
+    await approveMeetingMinute(created.id, db)
+
+    await expect(updateMeetingMinute(created.id, input({ number: 9, title: 'Tarde demais' }), db)).rejects.toThrow(
+      MeetingMinuteImmutableError
+    )
+
+    const minute = await getMeetingMinuteById(created.id, db)
+    expect(minute?.number).toBe(1)
+    expect(minute?.title).toBe('IPB de Jaraguá do Sul')
+  })
+})
+
+describe('claimMeetingMinutePdfPath', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  async function approved(): Promise<number> {
+    const created = await createMeetingMinute(input(), db)
+    await approveMeetingMinute(created.id, db)
+
+    return created.id
+  }
+
+  it('keeps the first claimed path for every later claim', async () => {
+    const id = await approved()
+
+    const first = await claimMeetingMinutePdfPath(id, `${'1'.repeat(48)}.pdf`, db)
+
+    expect(first).toBe(`${'1'.repeat(48)}.pdf`)
+    expect(await claimMeetingMinutePdfPath(id, `${'2'.repeat(48)}.pdf`, db)).toBe(first)
+  })
+
+  it('settles two simultaneous claims on a single path', async () => {
+    const id = await approved()
+
+    const claims = await Promise.all([
+      claimMeetingMinutePdfPath(id, `${'1'.repeat(48)}.pdf`, db),
+      claimMeetingMinutePdfPath(id, `${'2'.repeat(48)}.pdf`, db),
+    ])
+
+    expect(claims[0]).toBe(claims[1])
+    expect((await getMeetingMinuteById(id, db))?.pdf_path).toBe(claims[0])
+  })
+
+  it('refuses an Ata that is not Approved', async () => {
+    const created = await createMeetingMinute(input(), db)
+
+    await expect(claimMeetingMinutePdfPath(created.id, `${'1'.repeat(48)}.pdf`, db)).rejects.toThrow(
+      MeetingMinuteNotApprovedError
+    )
+    expect((await getMeetingMinuteById(created.id, db))?.pdf_path).toBeNull()
+  })
+
+  it('refuses an Ata that does not exist', async () => {
+    await expect(claimMeetingMinutePdfPath(999, `${'1'.repeat(48)}.pdf`, db)).rejects.toThrow(
+      MeetingMinuteNotFoundError
+    )
   })
 })

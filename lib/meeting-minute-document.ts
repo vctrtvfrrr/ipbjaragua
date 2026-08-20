@@ -1,3 +1,4 @@
+import type { MeetingMinuteStatus } from '@/db/schema'
 import { formatChurchDatePtBR, formatChurchTimePtBR } from '@/lib/date'
 import { MEETING_MINUTE_STATUS_LABELS, meetingMinuteLabel } from '@/lib/meeting-minute'
 import { loadPdfFontFaceCss } from '@/lib/pdf/fonts'
@@ -10,6 +11,7 @@ export const PENDING_WATERMARK = MEETING_MINUTE_STATUS_LABELS.pending.toLocaleUp
 
 export type MeetingMinuteDocument = {
   number: number
+  status: MeetingMinuteStatus
   title: string
   started_at: Date
   ended_at: Date
@@ -24,8 +26,8 @@ export function meetingMinutePdfFilename(minute: { number: number }): string {
   return `ata-${minute.number}.pdf`
 }
 
-// Only a Pending Ata is rendered on demand, so the mark is not an option: an unmarked
-// document belongs to the Approved cache, which is not built here.
+// The mark is not a rendering option but a reading of the Status: an Approved Ata printed
+// with it would deny its own consolidation, and a Pending one without it would claim one.
 export async function renderMeetingMinuteDocumentHtml(minute: MeetingMinuteDocument): Promise<string> {
   const budget = createImageBudget()
   const fontFaces = await loadPdfFontFaceCss()
@@ -40,8 +42,13 @@ export async function renderMeetingMinuteDocumentHtml(minute: MeetingMinuteDocum
 
   const documentTitle = meetingMinuteLabel(minute)
 
+  const watermark =
+    minute.status === 'pending'
+      ? `<div class="watermark" aria-hidden="true">${escapeHtml(PENDING_WATERMARK)}</div>`
+      : ''
+
   const body = `
-<div class="watermark" aria-hidden="true">${escapeHtml(PENDING_WATERMARK)}</div>
+${watermark}
 <main>
   <header>
     <h1>${escapeHtml(documentTitle)}</h1>

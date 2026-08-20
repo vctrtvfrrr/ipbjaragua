@@ -1,0 +1,1 @@
+ALTER TABLE "meeting_minutes" ADD COLUMN "pdf_path" text;

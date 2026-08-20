@@ -17,6 +17,7 @@ const NODE_SERVER_ALLOWANCE_BYTES = 192 * 1024 * 1024
 
 const MINUTE: MeetingMinuteDocument = {
   number: 12,
+  status: 'pending',
   title: 'Reunião ordinária',
   started_at: new Date('2026-06-07T22:30:00Z'),
   ended_at: new Date('2026-06-08T00:00:00Z'),
@@ -104,6 +105,15 @@ describe('the PDF of a Pending Ata', () => {
 
     expect(pages.length).toBeGreaterThan(1)
     for (const page of pages) expect(page).toContain(PENDING_WATERMARK)
+  })
+
+  it('drops the watermark once the Ata is Aprovada', { timeout: 90_000 }, async () => {
+    const approved = { ...longMinute(8, 80), status: 'approved' as const }
+
+    const pages = readablePages(await pendingPdf(approved, 'approved'))
+
+    expect(pages.length).toBeGreaterThan(1)
+    for (const page of pages) expect(page).not.toContain(PENDING_WATERMARK)
   })
 
   it('never renders two documents at the same time', { timeout: 90_000 }, async () => {
