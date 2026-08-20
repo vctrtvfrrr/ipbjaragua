@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth/current-user'
+import { readCurrentUser } from '@/lib/auth/current-user'
 import { MEETING_MINUTE_BOOK_EMPTY, MEETING_MINUTE_BOOK_INVALID } from '@/lib/meeting-minute-book'
 import { generateMeetingMinuteBook } from '@/lib/meeting-minute-book-pdf'
 
@@ -6,10 +6,11 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const result = await generateMeetingMinuteBook(await getCurrentUser(), {
+  const result = await generateMeetingMinuteBook(readCurrentUser, {
     from: searchParams.get('from') ?? '',
     to: searchParams.get('to') ?? '',
     order: searchParams.get('order') ?? '',
+    token: searchParams.get('token') ?? '',
   })
 
   if (result.status === 'forbidden') return Response.json({ message: 'Acesso negado.' }, { status: 403 })

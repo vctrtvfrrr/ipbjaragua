@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { meetingMinuteBookSummaryFormAction } from '@/app/(admin)/admin/meeting-minutes/form-actions'
+import type { MeetingMinuteBookInput } from '@/lib/meeting-minute-book'
 import { ExportMeetingMinuteBookButton } from './ExportMeetingMinuteBookButton'
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
@@ -66,6 +67,37 @@ describe('ExportMeetingMinuteBookButton', () => {
     expect(screen.getByRole('button', { name: 'Exportar Livro' })).toBeDisabled()
   })
 
+  it('closes the confirmation until the new period has an answer', async () => {
+    let answer = () => {}
+    summary.mockImplementationOnce(async (input) => ({
+      status: 'ok',
+      summary: { ...(input as MeetingMinuteBookInput), count: 2, firstNumber: 7, lastNumber: 9 },
+    }))
+    summary.mockImplementationOnce(async (input) => {
+      await new Promise<void>((resolve) => {
+        answer = resolve
+      })
+      return {
+        status: 'ok',
+        summary: { ...(input as MeetingMinuteBookInput), count: 40, firstNumber: 1, lastNumber: 40 },
+      }
+    })
+
+    const dialog = await openDialog()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Exportar Livro' })).toBeEnabled())
+
+    fireEvent.change(screen.getByLabelText('Início do período'), { target: { value: '2020-01-01' } })
+
+    // The old count described the old period, so nothing may be confirmed against it.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Exportar Livro' })).toBeDisabled())
+    expect(dialog).not.toHaveTextContent('7 a 9')
+
+    await waitFor(() => expect(summary).toHaveBeenCalledTimes(2))
+    answer()
+    await waitFor(() => expect(dialog).toHaveTextContent('1 a 40'))
+    expect(screen.getByRole('button', { name: 'Exportar Livro' })).toBeEnabled()
+  })
+
   it('asks again whenever the period or the order changes', async () => {
     await openDialog()
     await waitFor(() => expect(summary).toHaveBeenCalledTimes(1))
@@ -93,13 +125,18 @@ describe('ExportMeetingMinuteBookButton', () => {
       vi.fn((url: string) => (String(url).endsWith('/state') ? Promise.reject(new Error('no state')) : fetching))
     )
     vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:pdf', revokeObjectURL: () => {} })
+    vi.stubGlobal('crypto', { randomUUID: () => '0e1d2c3b-4a59-4867-8f90-a1b2c3d4e5f6' })
 
     await openDialog()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Exportar Livro' })).toBeEnabled())
     fireEvent.click(screen.getByRole('button', { name: 'Exportar Livro' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Aguardando…' })).toBeDisabled())
-    expect(fetch).toHaveBeenCalledWith('/admin/meeting-minutes/book?from=2026-01-01&to=2026-12-31&order=chronological')
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^\/admin\/meeting-minutes\/book\?from=2026-01-01&to=2026-12-31&order=chronological&token=[0-9a-f-]{36}$/
+      )
+    )
 
     release()
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())

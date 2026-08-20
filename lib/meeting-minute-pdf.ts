@@ -49,10 +49,10 @@ export async function generateMeetingMinutePdf(
 
   try {
     if (minute.status === 'pending') {
-      return { status: 'ok', pdf: await renderMeetingMinutePdf(minute, meetingMinutePdfJob(id)), filename }
+      return { status: 'ok', pdf: await renderMeetingMinutePdf(minute), filename }
     }
 
-    return { status: 'ok', pdf: await storedMeetingMinutePdf(minute, db, meetingMinutePdfJob(id)), filename }
+    return { status: 'ok', pdf: await storedMeetingMinutePdf(minute, db), filename }
   } catch (error) {
     return { status: 'failed', message: meetingMinutePdfFailureMessage(error) }
   }
@@ -68,25 +68,23 @@ export async function ensureMeetingMinutePdfCache(id: number, db: Database = def
   const minute = await loadMeetingMinute(id, db)
   if (await meetingMinutePdfCacheExists(minute.pdf_path)) return
 
-  await storeMeetingMinutePdf(minute, db, meetingMinutePdfJob(id))
+  await storeMeetingMinutePdf(minute, db)
 }
 
 export async function regenerateMeetingMinutePdfCache(id: number, db: Database = defaultDb): Promise<void> {
-  await storeMeetingMinutePdf(await loadMeetingMinute(id, db), db, meetingMinutePdfJob(id))
+  await storeMeetingMinutePdf(await loadMeetingMinute(id, db), db)
 }
 
 // A missing file is a missing cache, nothing more: the Ata itself is intact in the database,
-// so the document is rebuilt and stored on the way out. The job is the caller's, not the
-// Ata's: a Livro renders many Atas and the operator watches one operation.
+// so the document is rebuilt and stored on the way out.
 export async function storedMeetingMinutePdf(
   minute: { id: number; pdf_path: string | null },
-  db: Database,
-  job: string
+  db: Database
 ): Promise<Buffer> {
   const cached = await readMeetingMinutePdfCache(minute.pdf_path)
   if (cached) return cached
 
-  return storeMeetingMinutePdf(await loadMeetingMinute(minute.id, db), db, job)
+  return storeMeetingMinutePdf(await loadMeetingMinute(minute.id, db), db)
 }
 
 async function loadMeetingMinute(id: number, db: Database): Promise<MeetingMinuteWithTopics> {
@@ -96,14 +94,16 @@ async function loadMeetingMinute(id: number, db: Database): Promise<MeetingMinut
   return minute
 }
 
-async function storeMeetingMinutePdf(minute: MeetingMinuteWithTopics, db: Database, job: string): Promise<Buffer> {
+async function storeMeetingMinutePdf(minute: MeetingMinuteWithTopics, db: Database): Promise<Buffer> {
   const name = await claimMeetingMinutePdfPath(minute.id, newMeetingMinutePdfCacheName(), db)
-  const pdf = await renderMeetingMinutePdf(minute, job)
+  const pdf = await renderMeetingMinutePdf(minute)
   await writeMeetingMinutePdfCache(name, pdf)
 
   return pdf
 }
 
-function renderMeetingMinutePdf(minute: MeetingMinuteWithTopics, job: string): Promise<Buffer> {
-  return renderPdf(job, () => renderMeetingMinuteDocumentHtml(minute))
+// Inside a Livro this render is already holding the queue, and the job it names is the Livro's;
+// on its own the Ata is its own job, which is what the operator's control watches.
+function renderMeetingMinutePdf(minute: MeetingMinuteWithTopics): Promise<Buffer> {
+  return renderPdf(meetingMinutePdfJob(minute.id), () => renderMeetingMinuteDocumentHtml(minute))
 }

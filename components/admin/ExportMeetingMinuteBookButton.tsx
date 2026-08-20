@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   meetingMinuteBookPeriodLabel,
+  MEETING_MINUTE_BOOK_COUNTING,
   MEETING_MINUTE_BOOK_EMPTY,
   MEETING_MINUTE_BOOK_FAILURE,
   MEETING_MINUTE_BOOK_INVALID,
@@ -37,8 +38,14 @@ const CONFIRM_LABELS: Record<PdfPhase, string> = {
   generating: 'Gerando…',
 }
 
+const ASK_DELAY_MS = 300
+
 type Props = {
   year: number
+}
+
+function sameSelection(summary: MeetingMinuteBookSummary, period: MeetingMinuteBookInput): boolean {
+  return summary.from === period.from && summary.to === period.to && summary.order === period.order
 }
 
 export function ExportMeetingMinuteBookButton({ year }: Props) {
@@ -52,9 +59,13 @@ export function ExportMeetingMinuteBookButton({ year }: Props) {
   const [formError, setFormError] = useState<string>()
   const [phase, setPhase] = useState<PdfPhase>('idle')
   const lastAsked = useRef(0)
+  const asking = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  // The count is what the operator confirms, so a slower answer may never overwrite a newer
-  // one: an export confirmed against a stale period would not be the one on screen.
+  // What the dialog shows is what the export will bind, so the answer is kept only while it
+  // still describes the period on screen: a slower answer may not overwrite a newer one, and
+  // a period whose answer has not arrived confirms nothing.
+  const shown = summary && sameSelection(summary, period) ? summary : null
+
   async function refresh(asked: MeetingMinuteBookInput) {
     const token = ++lastAsked.current
     const result = await meetingMinuteBookSummaryFormAction(asked)
@@ -64,10 +75,17 @@ export function ExportMeetingMinuteBookButton({ year }: Props) {
     setFormError(result.status === 'invalid' ? MEETING_MINUTE_BOOK_INVALID : undefined)
   }
 
+  // A date field reports every keystroke, and each report would be a query: the last one wins
+  // after a pause, and until it answers the confirmation stays closed.
+  function ask(asked: MeetingMinuteBookInput) {
+    clearTimeout(asking.current)
+    asking.current = setTimeout(() => void refresh(asked), ASK_DELAY_MS)
+  }
+
   function change(next: Partial<MeetingMinuteBookInput>) {
     const updated = { ...period, ...next }
     setPeriod(updated)
-    void refresh(updated)
+    ask(updated)
   }
 
   function toggle(next: boolean) {
@@ -78,8 +96,8 @@ export function ExportMeetingMinuteBookButton({ year }: Props) {
   async function exportBook() {
     setPhase('waiting')
     setFormError(undefined)
-    const query = new URLSearchParams(period)
-    const stopWatching = watchPdfJobState('/admin/meeting-minutes/book/state', setPhase)
+    const query = new URLSearchParams({ ...period, token: crypto.randomUUID() })
+    const stopWatching = watchPdfJobState(`/admin/meeting-minutes/book/state?token=${query.get('token')}`, setPhase)
 
     try {
       const response = await fetch(`/admin/meeting-minutes/book?${query}`)
@@ -147,12 +165,12 @@ export function ExportMeetingMinuteBookButton({ year }: Props) {
           ))}
         </fieldset>
 
-        <BookPreview summary={summary} />
+        <BookPreview summary={shown} />
         <FormError message={formError} />
 
         <DialogFooter>
           <DialogClose render={<Button variant="outline" type="button" />}>Cancelar</DialogClose>
-          <Button type="button" disabled={phase !== 'idle' || !summary?.count} onClick={exportBook}>
+          <Button type="button" disabled={phase !== 'idle' || !shown?.count} onClick={exportBook}>
             {CONFIRM_LABELS[phase]}
           </Button>
         </DialogFooter>
@@ -164,7 +182,7 @@ export function ExportMeetingMinuteBookButton({ year }: Props) {
 // The operator confirms an expensive operation, so what is confirmed is spelled out: how many
 // Atas, which period, which order and which Números — and an empty period says so instead.
 function BookPreview({ summary }: { summary: MeetingMinuteBookSummary | null }) {
-  if (!summary) return null
+  if (!summary) return <p className="text-muted-foreground text-sm">{MEETING_MINUTE_BOOK_COUNTING}</p>
   if (summary.count === 0) return <p className="text-muted-foreground text-sm">{MEETING_MINUTE_BOOK_EMPTY}</p>
 
   return (

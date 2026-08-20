@@ -16,15 +16,18 @@ import { pdfPageSizes, pdfPageTexts } from './pdf-text'
 const A4 = { width: 595, height: 842 }
 const SERVICE_MEMORY_LIMIT_BYTES = 512 * 1024 * 1024
 // What the Node server itself is expected to hold while a Livro is bound; the rest of the
-// service's 512 MB is the budget the export may claim for Chromium and for the merge.
+// service's 512 MB is the budget the export may claim for Chromium and for the merge. One
+// export is the whole measurement because the queue admits one: the merge holds the queue too.
 const NODE_SERVER_ALLOWANCE_BYTES = 128 * 1024 * 1024
 
-const READER: CurrentUser = {
+const READER = async (): Promise<CurrentUser> => ({
   id: 1,
   email: 'ana@example.com',
   name: 'Ana',
   can: vi.fn((_entity, action) => action === 'read'),
-}
+})
+
+const TOKEN = '0e1d2c3b-4a59-4867-8f90-a1b2c3d4e5f6'
 
 let db: TestDb
 let storagePath: string
@@ -52,7 +55,7 @@ async function approvedMinute(number: number, day: number, topics = 1): Promise<
 }
 
 async function exportBook(input: { from: string; to: string; order?: 'chronological' | 'reverse' }): Promise<Buffer> {
-  const result = await generateMeetingMinuteBook(READER, { order: 'chronological', ...input }, db)
+  const result = await generateMeetingMinuteBook(READER, { order: 'chronological', token: TOKEN, ...input }, db)
   if (result.status !== 'ok') throw new Error(`the Livro was not produced: ${result.status}`)
 
   return result.pdf

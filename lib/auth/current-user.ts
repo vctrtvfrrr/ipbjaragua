@@ -44,7 +44,11 @@ export async function getCurrentUserFromToken(
   }
 }
 
-export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+// An operation that spans minutes cannot ask `getCurrentUser` again: it is memoized per
+// request, so it would answer with the situation it read before the operation began.
+export async function readCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies()
   return getCurrentUserFromToken(db, cookieStore.get(SESSION_COOKIE_NAME)?.value)
-})
+}
+
+export const getCurrentUser = cache(readCurrentUser)

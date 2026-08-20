@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { chromium, type Browser } from 'playwright'
 
 export type PdfJobState = 'idle' | 'waiting' | 'generating'
@@ -6,6 +7,7 @@ let browserPromise: Promise<Browser> | null = null
 let tail: Promise<unknown> = Promise.resolve()
 const queued = new Map<string, number>()
 let running: string | null = null
+const holding = new AsyncLocalStorage<string>()
 
 // One Chromium per instance, one page at a time: the service runs under 512 MB, and a
 // second browser — or a second concurrent render — is what puts it over.
@@ -36,19 +38,33 @@ export function pdfJobState(job: string): PdfJobState {
 // The document is built inside the queue, not before it: fetching the images is the part
 // with unbounded memory and network, so leaving it outside would serialize only the cheap half.
 export async function renderPdf(job: string, build: () => Promise<string>): Promise<Buffer> {
+  // A render issued from inside a job that already holds the queue must not wait for itself.
+  if (holding.getStore() !== undefined) return print(await build())
+
+  return enqueue(job, async () => print(await build()))
+}
+
+// A Livro is many renders and one merge, and the merge holds as much memory as the renders do:
+// the whole operation takes the queue once and keeps it until the bytes exist, so two Livros
+// are never resident at the same time.
+export function runPdfJob<T>(job: string, run: () => Promise<T>): Promise<T> {
+  return enqueue(job, () => holding.run(job, run))
+}
+
+function enqueue<T>(job: string, task: () => Promise<T>): Promise<T> {
   queued.set(job, (queued.get(job) ?? 0) + 1)
 
   const result = tail.then(async () => {
     release(job)
     running = job
     try {
-      return await print(await build())
+      return await task()
     } finally {
       running = null
     }
   })
 
-  // The queue only serializes; a failed render must not poison the renders behind it.
+  // The queue only serializes; a failed job must not poison the jobs behind it.
   tail = result.catch(() => undefined)
   return result
 }

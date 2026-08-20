@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { MeetingMinuteBookSelection } from '@/db/queries/meeting-minutes'
 import { formatLongDatePtBR, isISODate, parseISODate } from '@/lib/date'
 
 export const MEETING_MINUTE_BOOK_TITLE = 'Livro de Atas da Mesa Administrativa'
@@ -20,22 +19,44 @@ export const MEETING_MINUTE_BOOK_FAILURE =
 
 export const MEETING_MINUTE_BOOK_EMPTY = 'Nenhuma Ata Aprovada no período selecionado.'
 
+export const MEETING_MINUTE_BOOK_COUNTING = 'Consultando as Atas do período…'
+
 export const MEETING_MINUTE_BOOK_INVALID = 'Informe um período válido.'
 
 const isoDateField = z.string().trim().refine(isISODate, 'Informe uma data existente')
 
-export const meetingMinuteBookSchema = z
-  .object({
-    from: isoDateField,
-    to: isoDateField,
-    order: z.enum(MEETING_MINUTE_BOOK_ORDERS),
-  })
-  .refine((period) => period.from <= period.to, {
-    path: ['to'],
-    message: 'O fim do período não pode ser anterior ao início',
-  })
+const periodFields = {
+  from: isoDateField,
+  to: isoDateField,
+  order: z.enum(MEETING_MINUTE_BOOK_ORDERS),
+}
+
+const ORDERED_PERIOD = {
+  path: ['to'],
+  message: 'O fim do período não pode ser anterior ao início',
+}
+
+function isOrderedPeriod(period: { from: string; to: string }): boolean {
+  return period.from <= period.to
+}
+
+export const meetingMinuteBookSchema = z.object(periodFields).refine(isOrderedPeriod, ORDERED_PERIOD)
+
+// Aguardando and Gerando are the state of one export, not of the Livro in general: the browser
+// mints a token per request so the server can answer about that operation and no other.
+export const meetingMinuteBookRequestSchema = z
+  .object({ ...periodFields, token: z.string().regex(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/) })
+  .refine(isOrderedPeriod, ORDERED_PERIOD)
 
 export type MeetingMinuteBookInput = z.output<typeof meetingMinuteBookSchema>
+
+export function meetingMinuteBookJob(token: string): string {
+  return `meeting-minute-book:${token}`
+}
+
+// What a period holds: how many Atas Aprovadas and the Números at its edges, which are null
+// only when it holds none.
+export type MeetingMinuteBookSelection = { count: number; firstNumber: number | null; lastNumber: number | null }
 
 export type MeetingMinuteBookSummary = MeetingMinuteBookInput & MeetingMinuteBookSelection
 

@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, gte, lt, max, min, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { meetingMinuteTopics, meetingMinutes, type MeetingMinuteStatus } from '@/db/schema'
 import { churchYear, churchYearRange } from '@/lib/date'
-import type { MeetingMinuteBookOrder } from '@/lib/meeting-minute-book'
+import type { MeetingMinuteBookOrder, MeetingMinuteBookSelection } from '@/lib/meeting-minute-book'
 import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
 
 export type MeetingMinute = typeof meetingMinutes.$inferSelect
@@ -221,8 +221,6 @@ export async function earliestMeetingMinuteYear(db: Database = defaultDb): Promi
 }
 
 export type MeetingMinutePeriod = { from: Date; to: Date }
-
-export type MeetingMinuteBookSelection = { count: number; firstNumber: number | null; lastNumber: number | null }
 
 export async function summarizeApprovedMeetingMinutes(
   period: MeetingMinutePeriod,
