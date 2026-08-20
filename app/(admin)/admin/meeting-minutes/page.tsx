@@ -59,7 +59,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
             {minutes.map((minute) => (
               <TableRow key={minute.id}>
                 <TableCell>{formatChurchDatePtBR(minute.started_at)}</TableCell>
-                <TableCell className="font-medium whitespace-normal">{meetingMinuteLabel(minute)}</TableCell>
+                <TableCell className="font-bold whitespace-normal">{meetingMinuteLabel(minute)}</TableCell>
                 <TableCell className="whitespace-normal">
                   <MeetingMinuteTopicList topics={minute.topics} />
                 </TableCell>
