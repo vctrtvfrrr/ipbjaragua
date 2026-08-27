@@ -8,6 +8,7 @@ import {
   softDeleteAnnouncement,
   updateAnnouncement,
 } from '@/db/queries/announcements'
+import { isISODate, parseISODate } from '@/lib/date'
 import { defineEntityAction } from '@/lib/entity-action'
 import { ANNOUNCEMENT_ICON_NAMES, DEFAULT_ANNOUNCEMENT_ICON } from '@/lib/announcement-icon'
 import {
@@ -61,6 +62,18 @@ const optionalFlyer = z.preprocess(
     .optional()
 )
 
+// z.coerce.date() takes February 31st and hands back March 3rd, publishing the announcement on
+// a day nobody asked for. The date input is not the trust boundary; this schema is.
+const isoDateField = z.string().trim().refine(isISODate, 'Informe uma data existente').transform(parseISODate)
+
+// Zod hands an object check the raw value of a field that failed, so the window is only
+// comparable once both of its ends became dates.
+function isOrderedWindow({ starts_at, expires_at }: { starts_at: Date; expires_at: Date }): boolean {
+  if (!(starts_at instanceof Date) || !(expires_at instanceof Date)) return true
+
+  return starts_at <= expires_at
+}
+
 const announcementFieldsSchema = z
   .object({
     title: z.string().trim().min(1, 'Título é obrigatório'),
@@ -68,10 +81,10 @@ const announcementFieldsSchema = z
     url: optionalAbsoluteHttpUrl,
     icon: iconSchema,
     flyer: optionalFlyer,
-    starts_at: z.coerce.date(),
-    expires_at: z.coerce.date(),
+    starts_at: isoDateField,
+    expires_at: isoDateField,
   })
-  .refine((data) => data.starts_at <= data.expires_at, {
+  .refine(isOrderedWindow, {
     message: 'Início da exibição não pode ser depois do fim',
     path: ['starts_at'],
   })

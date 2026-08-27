@@ -106,6 +106,19 @@ describe('createAnnouncementAction.execute', () => {
     expect(await db.select().from(announcements).where(isNull(announcements.deleted_at))).toEqual([])
   })
 
+  it.each(['starts_at', 'expires_at'])('rejects a calendar day that does not exist in %s', async (field) => {
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ [field]: '2026-02-31' })
+    )
+
+    expect(state.status).toBe('error')
+    if (state.status === 'error') {
+      expect(state.fieldErrors?.[field]).toEqual(['Informe uma data existente'])
+    }
+    expect(await db.select().from(announcements).where(isNull(announcements.deleted_at))).toEqual([])
+  })
+
   it('rejects a window that closes before it opens without writing', async () => {
     const state = await createAnnouncementAction.execute(
       { user: userWithPermission(true), db },
@@ -435,6 +448,23 @@ describe('updateAnnouncementAction.execute', () => {
     expect(state).toEqual({ status: 'success' })
     const rows = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
     expect(rows[0]?.starts_at.toISOString().slice(0, 10)).toBe('2026-07-05')
+  })
+
+  it('rejects a calendar day that does not exist without writing', async () => {
+    await seedAnnouncements(db, [{ title: 'Original', starts_at: '2026-06-01', expires_at: '2026-07-12' }])
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Original'))
+
+    const state = await updateAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ id: String(announcement.id), starts_at: '2026-02-31' })
+    )
+
+    expect(state.status).toBe('error')
+    if (state.status === 'error') {
+      expect(state.fieldErrors?.starts_at).toEqual(['Informe uma data existente'])
+    }
+    const rows = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
+    expect(rows[0]?.starts_at.toISOString().slice(0, 10)).toBe('2026-06-01')
   })
 
   it('rejects a window that closes before it opens without writing', async () => {
