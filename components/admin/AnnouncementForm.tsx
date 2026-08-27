@@ -23,11 +23,13 @@ import { MarkdownField } from './MarkdownField'
 
 const INITIAL_STATE: ActionState = { status: 'idle' }
 
-type Props = { mode: 'create'; canCreateAgenda: boolean } | { mode: 'edit'; announcement: Announcement }
+type Props =
+  { mode: 'create'; canCreateAgenda: boolean; todayISO: string } | { mode: 'edit'; announcement: Announcement }
 
 export function AnnouncementForm(props: Props) {
   const announcement = props.mode === 'edit' ? props.announcement : undefined
   const action = props.mode === 'edit' ? updateAnnouncementFormAction : createAnnouncementFormAction
+  const defaultStartsAt = props.mode === 'edit' ? formatISODate(props.announcement.starts_at) : props.todayISO
 
   const [state, formAction, isPending] = useActionState(action, INITIAL_STATE)
   const router = useRouter()
@@ -61,11 +63,17 @@ export function AnnouncementForm(props: Props) {
         errors={fieldErrors?.description}
       />
 
+      <FormField>
+        <Label htmlFor="url">URL</Label>
+        <Input id="url" name="url" type="url" inputMode="url" defaultValue={values?.url ?? announcement?.url ?? ''} />
+        <FieldError messages={fieldErrors?.url} />
+      </FormField>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField>
-          <Label htmlFor="url">URL</Label>
-          <Input id="url" name="url" type="url" inputMode="url" defaultValue={values?.url ?? announcement?.url ?? ''} />
-          <FieldError messages={fieldErrors?.url} />
+          <Label htmlFor="starts_at">Exibir de</Label>
+          <Input id="starts_at" name="starts_at" type="date" defaultValue={values?.starts_at ?? defaultStartsAt} />
+          <FieldError messages={fieldErrors?.starts_at} />
         </FormField>
 
         <FormField>

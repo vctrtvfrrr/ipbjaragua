@@ -6,6 +6,10 @@ Site da Igreja Presbiteriana do Brasil em Jaraguá. Publica conteúdo da igreja 
 
 ### Publicações
 
+**Acervo Histórico**:
+O conjunto de todas as edições do **Boletim** originalmente publicadas pela igreja e incorporadas ao site segundo o modelo editorial atual. O conteúdo é revisado antes da incorporação, tendo o responsável pelo acervo como fonte canônica.
+_Avoid_: Arquivo morto, legado.
+
 **Boletim** (`bulletins`):
 Publicação semanal da igreja, identificada pela data do culto. Compõe — não duplica — um **Artigo**, a(s) **Liturgia(s)** do dia, uma janela de eventos da **Agenda** e os Aniversariantes de um intervalo de datas (aniversários de nascimento de **Membros** e **Aniversários de Casamento** de casais). Só o **Artigo** é _referenciado por escolha_ (o autor do Boletim seleciona qual); **Liturgia**, **Agenda** e Aniversariantes são _derivados da data/das janelas_ — a Liturgia de um Boletim é toda Liturgia daquela data (podendo haver mais de uma, ex.: matutino e vespertino), não uma escolhida à parte. Cada seção pode ser exibida ou ocultada. Tem uma **Edição** e cai num **Ano**.
 _Avoid_: Folheto, informativo.
@@ -16,7 +20,7 @@ _Avoid_: Boletim especial, edição extra.
 
 **Publicado / Rascunho** (do Boletim):
 Um **Boletim** com data até hoje (inclusive) está publicado e aparece no site. Com data futura é rascunho de uma edição ainda não publicada e não aparece em nenhum lugar do site (índice, busca ou URL direta) — salvo pelo **Preview**. Não há coluna de status: a data é o único critério de publicação. A **Liturgia** não segue esta regra — nela a publicação é um status explícito (ver [ADR-0020](./docs/adr/0020-liturgy-publication-by-explicit-status.md)).
-_Avoid_: Agendado, oculto, despublicado.
+_Avoid_: Agendado (o termo é do **Aviso**, cujo Início da Exibição o operador de fato agenda; o Boletim não é agendado, sua data é a identidade da edição), oculto, despublicado.
 
 **Preview** (do Boletim):
 A pré-visualização compartilhável de um **Boletim** ainda em Rascunho: a própria página pública, renderizada via um query param que dispensa a trava de data futura. Existe para que o link seja enviado a outras pessoas durante a revisão. É **aberto** — não exige autenticação, pois o conteúdo não é sigiloso —, mas emite `noindex` e não é linkado de nenhuma página pública, de modo que buscadores não o indexam e a URL sem o param segue invisível. Renderiza apenas as **Liturgias** publicadas daquela data: o Preview não é porta de saída para Liturgia em Rascunho.
@@ -54,7 +58,7 @@ _Avoid_: Culto (o culto é o evento; a Liturgia é sua ordem documentada), ordem
 
 **Publicado / Rascunho** (da Liturgia, `liturgies.status`):
 Uma **Liturgia** publicada aparece no site independentemente da data, inclusive futura. Em Rascunho, é renderizada só para quem tem permissão de leitura de Liturgia — e sinalizada como Rascunho onde aparece — sendo 404 para o visitante. A data não interfere: publicar e despublicar são escolhas do operador, nos dois sentidos (ver [ADR-0020](./docs/adr/0020-liturgy-publication-by-explicit-status.md)).
-_Avoid_: Agendado, oculto, despublicado, não publicado.
+_Avoid_: Agendado (o termo é do **Aviso**; aqui publicar e despublicar são escolhas do operador, sem data que as dispare), oculto, despublicado, não publicado.
 
 **Próxima Liturgia**:
 A Liturgia publicada mais cedo entre as que ainda vão acontecer — a de hoje cujo horário não venceu ou, não havendo, a mais próxima em data futura. É ela que a home destaca; Rascunhos nunca entram nessa escolha, porque o destaque aponta para uma página que o visitante precisa conseguir abrir. Quando não há nenhuma à frente, a home recua para a **última realizada**, e diz ao leitor qual das duas está mostrando.
@@ -127,12 +131,20 @@ A ação de duplicar um **Evento** como um novo, sem recorrência armazenada. Ab
 _Avoid_: Recorrência, agendamento (não há regra automática; cada Evento é uma entrada avulsa).
 
 **Expirado** (do Evento, derivado de `event_date` e `time`):
-Um **Evento** cujo horário já passou — o de hoje que teve seu horário alcançado, ou o de qualquer data anterior. Um Evento de dia inteiro (`time` nulo) só expira quando a data fica para trás: sem horário não há instante a expirar. A fronteira é o **instante**, não o dia, e vale **só no painel** — lá o Evento expirado deixa a fila de próximos e passa à tabela de passados, seguindo editável e repetível. O **site público não conhece expiração de Evento**: Boletim e home exibem a Agenda por **janela de datas**, e uma janela mostra o dia inteiro. O **Aviso** também expira, mas por outra regra. Derivado, não uma coluna.
+Um **Evento** cujo horário já passou — o de hoje que teve seu horário alcançado, ou o de qualquer data anterior. Um Evento de dia inteiro (`time` nulo) só expira quando a data fica para trás: sem horário não há instante a expirar. A fronteira é o **instante**, não o dia, e vale **só no painel** — lá o Evento expirado deixa a fila de próximos e passa à tabela de passados, seguindo editável e repetível. O **site público não conhece expiração de Evento**: Boletim e home exibem a Agenda por **janela de datas**, e uma janela mostra o dia inteiro. O **Aviso** também tem seu **Expirado**, por outra regra — a ponta final da sua **Janela de Exibição**, por dia e visível ao público. Derivado, não uma coluna.
 _Avoid_: Evento vencido, encerrado, realizado (nada garante que aconteceu — só que o horário passou), oculto (não some do painel).
 
 **Aviso** (`announcements`):
-Mensagem com prazo de validade (`expires_at`, o último dia em que ainda é exibida), opcionalmente com link. Expira **por dia**, por **coluna explícita** e de forma **visível ao público** — diferente do **Evento**, que expira por instante, por derivação e só no painel. Todo Aviso possui um **Ícone de Aviso** e, opcionalmente, um **Flyer Digital**. Exibida no **Boletim** e na home (seção "Avisos Gerais"). É uma mensagem **viva, não um instantâneo**: cada Boletim mostra os Avisos vigentes na _sua_ data (não na data de hoje), e o vínculo é derivado da data, não uma referência guardada — por isso editar ou excluir um Aviso altera retroativamente o que Boletins passados exibem. Essa retroatividade é conhecida e aceita. Somente na criação, pode gerar um **Evento** independente contendo apenas seu título e usando o último dia de exibição como data; mudanças posteriores em qualquer dos dois não se propagam ao outro, e editar o Aviso não permite gerar outro Evento.
+Mensagem delimitada por uma **Janela de Exibição**, opcionalmente com link. Aparece **por dia**, por **colunas explícitas** e de forma **visível ao público** — diferente do **Evento**, que expira por instante, por derivação e só no painel. Todo Aviso possui um **Ícone de Aviso** e, opcionalmente, um **Flyer Digital**. Exibida no **Boletim** e na home (seção "Avisos Gerais"). É uma mensagem **viva, não um instantâneo**: cada Boletim mostra os Avisos vigentes na _sua_ data (não na data de hoje), e o vínculo é derivado da data, não uma referência guardada — por isso editar ou excluir um Aviso altera retroativamente o que Boletins passados exibem. Essa retroatividade é conhecida e aceita; a **existência**, não: um Boletim anterior ao início da Janela não exibe o Aviso (ver [ADR-0021](./docs/adr/0021-announcement-display-window.md)). Somente na criação, pode gerar um **Evento** independente contendo apenas seu título e usando o **fim** da Janela como data; mudanças posteriores em qualquer dos dois não se propagam ao outro, e editar o Aviso não permite gerar outro Evento.
 _Avoid_: Anúncio (termo anterior), notificação, comunicado.
+
+**Janela de Exibição** (`announcements.starts_at` e `announcements.expires_at`):
+O intervalo de dias em que um **Aviso** é exibido: um **Início da Exibição** e um **Fim da Exibição**, ambos obrigatórios e **inclusivos nas duas pontas** — Início igual ao Fim é uma Janela válida, de um dia só. A regra de seleção é **uma só** e vale para os dois consumidores, que diferem apenas na data de referência que passam: hoje na home, a data do próprio **Boletim** no Boletim. O banco recusa Janela invertida por restrição, não só a tela. Uma Janela inteiramente no passado é permitida, para registrar algo retroativamente. Nada aqui equivale à **Janela de Correção** do Boletim: as duas pontas seguem editáveis a qualquer momento, porque o Aviso é mensagem viva.
+_Avoid_: Vigência, prazo de validade (nomeavam a ponta única anterior), agendamento, período de publicação.
+
+**Agendado / Vigente / Expirado** (do Aviso, derivado da **Janela de Exibição** contra hoje):
+Os três estados que o painel exibe para um **Aviso**: **Agendado** quando hoje é anterior ao Início, **Vigente** quando hoje cai dentro da Janela, **Expirado** quando hoje é posterior ao Fim. Derivados, não uma coluna — a virada de estado acontece sozinha na virada do dia, sem que ninguém reabra o Aviso. Só existem no painel: o site público não rotula Avisos, apenas exibe os Vigentes.
+_Avoid_: Rascunho / Publicado (são os estados de **Boletim** e **Liturgia**, e ali dependem de decisão ou data de publicação, não de janela), ativo, inativo.
 
 **Ícone de Aviso**:
 O símbolo da biblioteca visual associado a um **Aviso**, escolhido num catálogo curado. É obrigatório; na ausência de escolha explícita do operador, usa **Pin**. É o **marcador do Aviso na lista** — presente em todo Aviso, de tamanho fixo, dando ritmo à coluna —, função distinta da do **Flyer Digital**, que é conteúdo. Por isso os dois convivem: um Aviso com Flyer continua exibindo seu Ícone.
@@ -191,6 +203,7 @@ _Avoid_: Papel/role (a alçada é uma lista de Permissões por Usuário, não um
 - **`liturgies.theme` guarda o Tipo de Culto, não um tema.** A coluna se chama `theme`, mas seu conteúdo ("Culto Solene") é a designação do culto, não o assunto do sermão. O termo de domínio é **Tipo de Culto**; o nome da coluna é um resíduo a ser corrigido num futuro rename, não um conceito novo.
 - **A Descrição do Momento é polimórfica.** `liturgy_moments.description` significa coisas diferentes por tipo: no sermão é o **Tema do Sermão**; no Momento de tipo _outro_ é o próprio rótulo exibido; nos demais é anotação livre. Por isso o formulário rotula esse campo conforme o tipo. Não há coluna própria para o Tema porque um sermão não carrega Tema e anotação ao mesmo tempo.
 - **A tabela `announcements` guarda Avisos.** O termo de domínio é **Aviso**; `announcements` (tradução de "Anúncio") é resíduo do código, a ser reconciliado num futuro rename, não um conceito distinto.
+- **As pontas da Janela de Exibição têm nomes assimétricos.** `starts_at` e `expires_at` são as duas pontas do mesmo intervalo, mas só uma leva o par do nome: `expires_at` nasceu quando o Aviso tinha uma ponta só, e renomeá-la para `ends_at` custaria um rename espalhado por query, seed, testes e migrações. A assimetria é resíduo aceito; o par de domínio é **Início da Exibição / Fim da Exibição**.
 - **Dominical vs Excepcional não é coluna.** O tipo do **Boletim** é derivado do dia da semana da data (domingo = Dominical), não um campo armazenado. Se um dia surgir um boletim de domingo que não seja Dominical (ou vice-versa), será preciso modelar o tipo explicitamente.
 
 ## Diálogo de exemplo

@@ -30,6 +30,7 @@ function announcementForm(overrides: Record<string, FormDataEntryValue> = {}) {
       description: 'O ensaio será após o culto.',
       url: '',
       icon: 'Pin',
+      starts_at: '2026-07-01',
       expires_at: '2026-07-12',
       ...overrides,
     })
@@ -92,16 +93,53 @@ describe('createAnnouncementAction.execute', () => {
   it('returns required field errors without writing', async () => {
     const state = await createAnnouncementAction.execute(
       { user: userWithPermission(true), db },
-      announcementForm({ title: '', description: '', expires_at: '' })
+      announcementForm({ title: '', description: '', starts_at: '', expires_at: '' })
     )
 
     expect(state.status).toBe('error')
     if (state.status === 'error') {
       expect(state.fieldErrors?.title).toEqual(['Título é obrigatório'])
       expect(state.fieldErrors?.description).toEqual(['Descrição é obrigatória'])
+      expect(state.fieldErrors?.starts_at).toBeDefined()
       expect(state.fieldErrors?.expires_at).toBeDefined()
     }
     expect(await db.select().from(announcements).where(isNull(announcements.deleted_at))).toEqual([])
+  })
+
+  it('rejects a window that closes before it opens without writing', async () => {
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ starts_at: '2026-07-13', expires_at: '2026-07-12' })
+    )
+
+    expect(state.status).toBe('error')
+    if (state.status === 'error') {
+      expect(state.fieldErrors?.starts_at).toEqual(['Início da exibição não pode ser depois do fim'])
+    }
+    expect(await db.select().from(announcements).where(isNull(announcements.deleted_at))).toEqual([])
+  })
+
+  it('accepts a window that lasts a single day', async () => {
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ starts_at: '2026-07-12', expires_at: '2026-07-12' })
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [row] = await db.select().from(announcements).where(eq(announcements.title, 'Ensaio do coral'))
+    expect(row.starts_at.toISOString().slice(0, 10)).toBe('2026-07-12')
+    expect(row.expires_at.toISOString().slice(0, 10)).toBe('2026-07-12')
+  })
+
+  it('accepts a window that is entirely in the past', async () => {
+    const state = await createAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ starts_at: '2020-01-01', expires_at: '2020-01-02' })
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [row] = await db.select().from(announcements).where(eq(announcements.title, 'Ensaio do coral'))
+    expect(row.starts_at.toISOString().slice(0, 10)).toBe('2020-01-01')
   })
 
   it('echoes back submitted values so the form can restore them after a validation error', async () => {
@@ -113,6 +151,7 @@ describe('createAnnouncementAction.execute', () => {
     expect(state.status).toBe('error')
     if (state.status === 'error') {
       expect(state.values?.description).toBe('O ensaio será após o culto.')
+      expect(state.values?.starts_at).toBe('2026-07-01')
       expect(state.values?.expires_at).toBe('2026-07-12')
     }
   })
@@ -145,6 +184,7 @@ describe('createAnnouncementAction.execute', () => {
       icon: 'Pin',
       flyer_path: null,
     })
+    expect(rows[0]?.starts_at.toISOString().slice(0, 10)).toBe('2026-07-01')
     expectAnnouncementRevalidation()
   })
 
@@ -271,7 +311,12 @@ describe('createAnnouncementAction.execute', () => {
 
     const state = await createAnnouncementAction.execute(
       { user, db },
-      announcementForm({ title: 'Bazar beneficente', expires_at: '2026-07-12', add_to_agenda: 'on' })
+      announcementForm({
+        title: 'Bazar beneficente',
+        starts_at: '2026-07-01',
+        expires_at: '2026-07-12',
+        add_to_agenda: 'on',
+      })
     )
 
     expect(state).toEqual({ status: 'success' })
@@ -286,7 +331,12 @@ describe('createAnnouncementAction.execute', () => {
 
     await createAnnouncementAction.execute(
       { user, db },
-      announcementForm({ title: 'Evento passado', expires_at: '2020-01-02', add_to_agenda: 'on' })
+      announcementForm({
+        title: 'Evento passado',
+        starts_at: '2020-01-01',
+        expires_at: '2020-01-02',
+        add_to_agenda: 'on',
+      })
     )
 
     const agendaRows = await db.select().from(agenda).where(eq(agenda.title, 'Evento passado'))
@@ -358,7 +408,12 @@ describe('updateAnnouncementAction.execute', () => {
 
     const state = await updateAnnouncementAction.execute(
       { user: userWithPermission(true), db },
-      announcementForm({ id: String(announcement.id), title: 'Atualizado', expires_at: '2020-01-02' })
+      announcementForm({
+        id: String(announcement.id),
+        title: 'Atualizado',
+        starts_at: '2020-01-01',
+        expires_at: '2020-01-02',
+      })
     )
 
     expect(state).toEqual({ status: 'success' })
@@ -366,6 +421,37 @@ describe('updateAnnouncementAction.execute', () => {
     expect(rows[0]).toMatchObject({ title: 'Atualizado', url: null })
     expect(rows[0]?.expires_at.toISOString().slice(0, 10)).toBe('2020-01-02')
     expectAnnouncementRevalidation()
+  })
+
+  it('moves the start of an announcement already published', async () => {
+    await seedAnnouncements(db, [{ title: 'Original', starts_at: '2026-06-01', expires_at: '2026-07-12' }])
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Original'))
+
+    const state = await updateAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ id: String(announcement.id), starts_at: '2026-07-05', expires_at: '2026-07-12' })
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const rows = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
+    expect(rows[0]?.starts_at.toISOString().slice(0, 10)).toBe('2026-07-05')
+  })
+
+  it('rejects a window that closes before it opens without writing', async () => {
+    await seedAnnouncements(db, [{ title: 'Original', starts_at: '2026-06-01', expires_at: '2026-07-12' }])
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.title, 'Original'))
+
+    const state = await updateAnnouncementAction.execute(
+      { user: userWithPermission(true), db },
+      announcementForm({ id: String(announcement.id), starts_at: '2026-07-13', expires_at: '2026-07-12' })
+    )
+
+    expect(state.status).toBe('error')
+    if (state.status === 'error') {
+      expect(state.fieldErrors?.starts_at).toEqual(['Início da exibição não pode ser depois do fim'])
+    }
+    const rows = await db.select().from(announcements).where(eq(announcements.id, announcement.id))
+    expect(rows[0]?.starts_at.toISOString().slice(0, 10)).toBe('2026-06-01')
   })
 
   it('updates the icon', async () => {

@@ -61,14 +61,20 @@ const optionalFlyer = z.preprocess(
     .optional()
 )
 
-const announcementFieldsSchema = z.object({
-  title: z.string().trim().min(1, 'Título é obrigatório'),
-  description: z.string().trim().min(1, 'Descrição é obrigatória'),
-  url: optionalAbsoluteHttpUrl,
-  icon: iconSchema,
-  flyer: optionalFlyer,
-  expires_at: z.coerce.date(),
-})
+const announcementFieldsSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Título é obrigatório'),
+    description: z.string().trim().min(1, 'Descrição é obrigatória'),
+    url: optionalAbsoluteHttpUrl,
+    icon: iconSchema,
+    flyer: optionalFlyer,
+    starts_at: z.coerce.date(),
+    expires_at: z.coerce.date(),
+  })
+  .refine((data) => data.starts_at <= data.expires_at, {
+    message: 'Início da exibição não pode ser depois do fim',
+    path: ['starts_at'],
+  })
 
 const createAnnouncementSchema = announcementFieldsSchema.extend({
   add_to_agenda: checkboxBoolean,
@@ -100,6 +106,7 @@ export const createAnnouncementAction = defineEntityAction({
             url: data.url,
             icon: data.icon,
             flyer_path: flyerPath,
+            starts_at: data.starts_at,
             expires_at: data.expires_at,
           },
           tx as Database
@@ -143,6 +150,7 @@ export const updateAnnouncementAction = defineEntityAction({
           url: data.url,
           icon: data.icon,
           flyer_path: flyerPath,
+          starts_at: data.starts_at,
           expires_at: data.expires_at,
         },
         db

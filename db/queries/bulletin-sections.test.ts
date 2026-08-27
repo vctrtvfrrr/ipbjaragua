@@ -56,15 +56,32 @@ describe('listActiveAnnouncements', () => {
     db = await createTestDb()
   })
 
-  it('returns announcements not yet expired as of the given date', async () => {
+  it('returns the announcement whose window contains the given date', async () => {
     await seedAnnouncements(db, [
-      { title: 'Vigente', expires_at: '2026-06-07' },
-      { title: 'Expirado', expires_at: '2026-06-06' },
+      { title: 'Vigente', starts_at: '2026-06-01', expires_at: '2026-06-30' },
+      { title: 'Agendado', starts_at: '2026-06-08', expires_at: '2026-06-30' },
+      { title: 'Expirado', starts_at: '2026-06-01', expires_at: '2026-06-06' },
     ])
 
     const result = await listActiveAnnouncements(parseISODate('2026-06-07'), db)
 
     expect(result.map((a) => a.title)).toEqual(['Vigente'])
+  })
+
+  it.each(['2026-06-07', '2026-06-30'])('includes the announcement on the window edge %s', async (edge) => {
+    await seedAnnouncements(db, [{ title: 'Na borda', starts_at: '2026-06-07', expires_at: '2026-06-30' }])
+
+    const result = await listActiveAnnouncements(parseISODate(edge), db)
+
+    expect(result.map((a) => a.title)).toEqual(['Na borda'])
+  })
+
+  it('returns an announcement whose window is a single day', async () => {
+    await seedAnnouncements(db, [{ title: 'Um dia só', starts_at: '2026-06-07', expires_at: '2026-06-07' }])
+
+    const result = await listActiveAnnouncements(parseISODate('2026-06-07'), db)
+
+    expect(result.map((a) => a.title)).toEqual(['Um dia só'])
   })
 
   it('orders by nearest expiration first', async () => {

@@ -8,6 +8,8 @@ status: accepted
 
 > **Atualização (ADR-0012):** as "janelas armazenadas" citadas abaixo deixaram de ser colunas e passaram a ser derivadas da data do Boletim. O princípio deste ADR (toda seção ancorada na data do boletim, não em "hoje") permanece — a janela derivada é função pura da data imutável, logo continua reproduzível.
 
+> **Atualização ([ADR-0021](./0021-announcement-display-window.md)):** os Avisos deixaram de ser filtrados por `expires_at >= bulletins.date` e passaram a ser filtrados pela **Janela de Exibição** (`starts_at <= bulletins.date <= expires_at`). O filtro de uma ponta só cumpria a âncora deste ADR, mas não a fidelidade histórica que ele prometia: sem piso, um Aviso criado depois entrava em Boletins anteriores ao seu próprio nascimento. A Janela é o que finalmente faz "reabrir um boletim antigo reproduz exatamente o que ele exibia naquela semana" valer para os Avisos.
+
 ## Contexto
 
 A **Boletim** (bulletin) compõe um **Artigo**, uma **Liturgia**, uma janela de eventos da **Agenda**, os aniversariantes (**Membros**) de um intervalo e os **Anúncios** vigentes. Cada uma dessas seções poderia ser resolvida de duas formas: relativa ao momento em que a página é aberta ("hoje") ou relativa à própria semana do boletim.

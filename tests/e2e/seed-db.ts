@@ -111,16 +111,21 @@ function daysFromToday(days: number): Date {
   return date
 }
 
+// Before the oldest seeded Boletim, so the archived editions display the announcement too.
+const ANNOUNCEMENT_WINDOW_START = parseISODate('2026-01-01')
+
 export const E2E_ANNOUNCEMENT = {
   title: 'Retiro de Jovens',
   description: 'Inscrições abertas até sexta.\n\n| Item | Valor |\n| --- | --- |\n| Inscrição | R$ 80 |\n',
   flyer_path: `${'a'.repeat(48)}.png`,
+  starts_at: ANNOUNCEMENT_WINDOW_START,
   expires_at: daysFromToday(30),
 }
 
 export const E2E_ANNOUNCEMENT_WITHOUT_FLYER = {
   title: 'Reunião de oração',
   description: 'Participe conosco nesta semana.',
+  starts_at: ANNOUNCEMENT_WINDOW_START,
   expires_at: daysFromToday(30),
 }
 

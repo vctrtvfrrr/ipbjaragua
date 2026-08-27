@@ -174,16 +174,20 @@ export async function seedAgenda(db: TestDb, rows: SeedAgendaItem[]) {
 export type SeedAnnouncement = {
   title: string
   expires_at: string
+  starts_at?: string
   description?: string
   url?: string | null
   icon?: string
   flyer_path?: string | null
 }
 
+const WINDOW_ALREADY_OPEN = '2000-01-01'
+
 export async function seedAnnouncements(db: TestDb, rows: SeedAnnouncement[]) {
   for (const row of rows) {
     await db.insert(announcements).values({
       title: row.title,
+      starts_at: parseISODate(row.starts_at ?? WINDOW_ALREADY_OPEN),
       expires_at: parseISODate(row.expires_at),
       description: row.description ?? 'Descrição do aviso',
       url: row.url ?? null,

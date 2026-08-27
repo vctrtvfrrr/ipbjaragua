@@ -1,6 +1,7 @@
 import { forbidden } from 'next/navigation'
 import { AnnouncementForm } from '@/components/admin/AnnouncementForm'
 import { requirePageRead } from '@/lib/auth/require-page-read'
+import { todayISO } from '@/lib/date'
 
 export default async function NewAnnouncementPage() {
   const user = await requirePageRead('announcements')
@@ -10,7 +11,7 @@ export default async function NewAnnouncementPage() {
   return (
     <section className="grid gap-6">
       <h2 className="text-xl font-semibold tracking-normal">Novo aviso</h2>
-      <AnnouncementForm mode="create" canCreateAgenda={user.can('agenda', 'create')} />
+      <AnnouncementForm mode="create" canCreateAgenda={user.can('agenda', 'create')} todayISO={todayISO()} />
     </section>
   )
 }

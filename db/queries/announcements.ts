@@ -18,6 +18,7 @@ export type CreateAnnouncementInput = {
   url: string | null
   icon: AnnouncementIconName
   flyer_path: string | null
+  starts_at: Date
   expires_at: Date
 }
 
@@ -74,7 +75,7 @@ export async function listAnnouncementsForAdmin(
     .select()
     .from(announcements)
     .where(isNull(announcements.deleted_at))
-    .orderBy(desc(announcements.expires_at), desc(announcements.id))
+    .orderBy(desc(announcements.starts_at), desc(announcements.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
 }

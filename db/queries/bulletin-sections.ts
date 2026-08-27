@@ -1,4 +1,4 @@
-import { and, asc, between, gte, isNull } from 'drizzle-orm'
+import { and, asc, between, gte, isNull, lte } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
 import { formatCoupleLabel } from '@/lib/bulletin'
 import { formatWeekdayPtBR, parseISODate } from '@/lib/date'
@@ -34,7 +34,9 @@ export async function listActiveAnnouncements(
   return db
     .select()
     .from(announcements)
-    .where(and(isNull(announcements.deleted_at), gte(announcements.expires_at, asOf)))
+    .where(
+      and(isNull(announcements.deleted_at), lte(announcements.starts_at, asOf), gte(announcements.expires_at, asOf))
+    )
     .orderBy(asc(announcements.expires_at))
 }
 

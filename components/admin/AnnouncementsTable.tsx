@@ -24,6 +24,7 @@ export function AnnouncementsTable({ announcements, todayDate, canUpdate, canDel
         <TableRow>
           <TableHead>Título</TableHead>
           <TableHead>Flyer</TableHead>
+          <TableHead>Exibir de</TableHead>
           <TableHead>Exibir até</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Link</TableHead>
@@ -32,6 +33,7 @@ export function AnnouncementsTable({ announcements, todayDate, canUpdate, canDel
       </TableHeader>
       <TableBody>
         {announcements.map((announcement) => {
+          const scheduled = announcement.starts_at > todayDate
           const expired = announcement.expires_at < todayDate
           const Icon = resolveAnnouncementIcon(announcement.icon)
           return (
@@ -57,9 +59,12 @@ export function AnnouncementsTable({ announcements, todayDate, canUpdate, canDel
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
+              <TableCell>{formatLongDatePtBR(announcement.starts_at)}</TableCell>
               <TableCell>{formatLongDatePtBR(announcement.expires_at)}</TableCell>
               <TableCell>
-                {expired ? (
+                {scheduled ? (
+                  <Badge variant="outline">Agendado</Badge>
+                ) : expired ? (
                   <Badge variant="secondary">Expirado</Badge>
                 ) : (
                   <span className="text-muted-foreground">Vigente</span>
