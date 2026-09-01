@@ -1,6 +1,7 @@
 import { db as defaultDb, type Database } from '@/db'
 import {
   claimMeetingMinutePdfPath,
+  getMeetingMinuteBookOf,
   getMeetingMinuteById,
   MeetingMinuteNotFoundError,
   type MeetingMinuteWithTopics,
@@ -29,12 +30,19 @@ export function meetingMinutePdfJob(id: number): string {
   return `meeting-minute:${id}`
 }
 
-export function meetingMinutePdfState(
+// A queue keyed only by id would let a reader of one Livro watch the job of an Ata in another
+// just by guessing its id under their own Livro's route — the same existence leak the PDF and
+// the page routes already refuse, so the check reads the Ata's actual Livro before answering.
+export async function meetingMinutePdfState(
   user: CurrentUser | null,
   book: MeetingMinuteBookDefinition,
-  id: number
-): PdfJobState | null {
-  return user?.can('meeting_minutes', 'read', book.slug) ? pdfJobState(meetingMinutePdfJob(id)) : null
+  id: number,
+  db: Database = defaultDb
+): Promise<PdfJobState | null> {
+  if (!user?.can('meeting_minutes', 'read', book.slug)) return null
+  if ((await getMeetingMinuteBookOf(id, db)) !== book.slug) return null
+
+  return pdfJobState(meetingMinutePdfJob(id))
 }
 
 // Authorization is re-decided on every request: the URL of a PDF is not a capability, and

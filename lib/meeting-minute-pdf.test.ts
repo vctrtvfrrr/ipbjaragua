@@ -8,6 +8,7 @@ import { readMeetingMinutePdfCache, writeMeetingMinutePdfCache } from '@/lib/mee
 import {
   ensureMeetingMinutePdfCache,
   generateMeetingMinutePdf,
+  meetingMinutePdfState,
   regenerateMeetingMinutePdfCache,
 } from '@/lib/meeting-minute-pdf'
 import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
@@ -204,5 +205,29 @@ describe('the PDF cache of an Ata Aprovada', () => {
 
     expect((await getMeetingMinuteById(id, db))?.status).toBe('approved')
     expect(await readdir(cacheDirectory()).catch(() => [])).toEqual([])
+  })
+})
+
+describe('meetingMinutePdfState', () => {
+  it('answers nothing for a Usuário without read on the Livro', async () => {
+    expect(await meetingMinutePdfState(user('none'), MESA, 1, db)).toBeNull()
+  })
+
+  it('answers nothing for an id that does not exist', async () => {
+    expect(await meetingMinutePdfState(user('read'), MESA, 999, db)).toBeNull()
+  })
+
+  // The queue is keyed by id alone, so without this check a reader of one Livro could watch
+  // the job state of an Ata in another just by asking for its id under their own Livro's route.
+  it('answers nothing for an Ata that belongs to another Livro', async () => {
+    const created = await createMeetingMinute(minute({ book: MUSICA.slug }), db)
+
+    expect(await meetingMinutePdfState(user('read', MESA.slug), MESA, created.id, db)).toBeNull()
+  })
+
+  it('reports the state of an Ata in the requested Livro', async () => {
+    const created = await createMeetingMinute(minute(), db)
+
+    expect(await meetingMinutePdfState(user('read'), MESA, created.id, db)).toBe('idle')
   })
 })

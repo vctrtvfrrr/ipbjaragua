@@ -9,6 +9,8 @@ import {
   MeetingMinuteNumberTakenError,
   updateMeetingMinute,
 } from '@/db/queries/meeting-minutes'
+import type { CurrentUser } from '@/lib/auth/current-user'
+import type { Action } from '@/lib/authz'
 import { defineEntityAction } from '@/lib/entity-action'
 import {
   createMeetingMinuteSchema,
@@ -26,12 +28,19 @@ import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 export const APPROVED_WITHOUT_PDF =
   'Ata aprovada, mas não foi possível gerar o PDF. Use “Gerar PDF” para tentar novamente.'
 
-// Missing here means the same thing missing means everywhere else in this module: the write
-// that follows would have thrown `MeetingMinuteNotFoundError` anyway, so the scope resolver
-// throws it itself, before a permission is even evaluated against a Livro that does not exist.
-async function scopeOfExistingMinute(id: number, db: Parameters<typeof getMeetingMinuteBookOf>[1]): Promise<string> {
+// An Ata of a Livro the Usuário cannot act on answers exactly like one that does not exist —
+// the same "não encontrado" rule the routes already follow. Without this, the resolved scope
+// would reach `defineEntityAction`'s own `can()` check, which denies with "sem permissão": a
+// message an authenticated Usuário could use to tell an existing-but-sigiloso Ata apart from a
+// truly missing one, just by trying every id against these actions.
+async function scopeOfExistingMinute(
+  user: CurrentUser,
+  action: Action,
+  id: number,
+  db: Parameters<typeof getMeetingMinuteBookOf>[1]
+): Promise<string> {
   const book = await getMeetingMinuteBookOf(id, db)
-  if (!book) throw new MeetingMinuteNotFoundError(id)
+  if (!book || !user.can('meeting_minutes', action, book)) throw new MeetingMinuteNotFoundError(id)
 
   return book
 }
@@ -57,7 +66,7 @@ export const updateMeetingMinuteAction = defineEntityAction({
   action: 'update',
   schema: updateMeetingMinuteSchema,
   parse: parseSerializedMeetingMinutePayload,
-  scope: ({ data, db }) => scopeOfExistingMinute(data.id, db),
+  scope: ({ user, data, db }) => scopeOfExistingMinute(user, 'update', data.id, db),
   write: ({ data, db }) => updateMeetingMinute(data.id, data, db),
   revalidate: ({ book }) => revalidateBook(book),
   validationErrorMessage: () => 'Revise a Ata antes de salvar.',
@@ -71,7 +80,7 @@ export const approveMeetingMinuteAction = defineEntityAction({
   entity: 'meeting_minutes',
   action: 'update',
   schema: meetingMinuteIdSchema,
-  scope: ({ data, db }) => scopeOfExistingMinute(data.id, db),
+  scope: ({ user, data, db }) => scopeOfExistingMinute(user, 'update', data.id, db),
   write: ({ data, db }) => approveMeetingMinute(data.id, db),
   notify: async (approval, { db }) => {
     try {
@@ -95,15 +104,15 @@ export const regenerateMeetingMinutePdfAction = defineEntityAction({
   entity: 'meeting_minutes',
   action: 'read',
   schema: meetingMinuteIdSchema,
-  scope: ({ data, db }) => scopeOfExistingMinute(data.id, db),
-  write: async ({ data, db }) => {
+  scope: ({ user, data, db }) => scopeOfExistingMinute(user, 'read', data.id, db),
+  write: async ({ user, data, db }) => {
     // The scope resolver above already proved the row exists and named its Livro; this second
     // read is cheap and keeps `write` free of a duplicate not-found branch of its own.
-    const book = meetingMinuteBookBySlug(await scopeOfExistingMinute(data.id, db))!
+    const book = meetingMinuteBookBySlug(await scopeOfExistingMinute(user, 'read', data.id, db))!
 
     return regenerateMeetingMinutePdfCache(data.id, book, db)
   },
-  revalidate: (_result, { data, db }) => scopeOfExistingMinute(data.id, db).then(revalidateBook),
+  revalidate: (_result, { user, data, db }) => scopeOfExistingMinute(user, 'read', data.id, db).then(revalidateBook),
   errorMessage: (error) => meetingMinuteErrorMessage(error) ?? meetingMinutePdfFailureMessage(error),
 })
 

@@ -216,13 +216,15 @@ describe('updateMeetingMinuteAction.execute', () => {
       formData(payload({ id: minute.id, title: 'Nova' }))
     )
 
-    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
+    expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
 
     const [current] = await db.select().from(meetingMinutes)
     expect(current.title).toBe('IPB de Jaraguá do Sul')
   })
 
-  it('denies a user with permission on a different Livro from the Ata being edited', async () => {
+  // A distinct "sem permissão" here would let a Usuário tell an Ata of another Livro apart
+  // from one that truly does not exist, just by trying ids — so both answer "não encontrada".
+  it('answers an Ata of a Livro the Usuário cannot act on as not found, not as denied', async () => {
     const minute = await seed()
     const user = userWithScope(MUSICA)
 
@@ -231,7 +233,7 @@ describe('updateMeetingMinuteAction.execute', () => {
       formData(payload({ id: minute.id, title: 'Nova' }))
     )
 
-    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
+    expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
   })
 
   it('denies a request without a session', async () => {
@@ -444,7 +446,17 @@ describe('approving an Ata and keeping its PDF', () => {
 
     const state = await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
 
-    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
+    expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
+    expect((await db.select().from(meetingMinutes))[0].status).toBe('pending')
+  })
+
+  it('answers an Ata of another Livro as not found, not as denied, on Aprovação', async () => {
+    const minute = await seed()
+    const user = userWithScope(MUSICA)
+
+    const state = await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
+
+    expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
     expect((await db.select().from(meetingMinutes))[0].status).toBe('pending')
   })
 
@@ -547,7 +559,16 @@ describe('approving an Ata and keeping its PDF', () => {
 
     const state = await regenerateMeetingMinutePdfAction.execute({ user, db }, idFormData(minute.id))
 
-    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
+    expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
+  })
+
+  it('answers an Ata of another Livro as not found, not as denied, on Regeneração', async () => {
+    const minute = await seed()
+    const user = userWithScope(MUSICA)
+
+    const state = await regenerateMeetingMinutePdfAction.execute({ user, db }, idFormData(minute.id))
+
+    expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
   })
 
   it('refuses to store a PDF for an Ata still Pendente', async () => {

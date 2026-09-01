@@ -9,7 +9,7 @@ export async function GET(_request: Request, context: { params: Promise<{ book: 
   const book = meetingMinuteBookBySlug(bookSlug)
   if (!book) return Response.json({ message: 'Acesso negado.' }, { status: 403 })
 
-  const state = meetingMinutePdfState(await getCurrentUser(), book, Number(id))
+  const state = await meetingMinutePdfState(await getCurrentUser(), book, Number(id))
   if (!state) return Response.json({ message: 'Acesso negado.' }, { status: 403 })
 
   return Response.json({ state }, { headers: { 'Cache-Control': 'no-store, private' } })
