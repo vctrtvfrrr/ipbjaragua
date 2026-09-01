@@ -42,32 +42,32 @@ test('an authenticated user walks an Ata from creation to an exported Livro', as
   await page.getByRole('button', { name: `Criar a ${NUMBER}ª Ata da Mesa Administrativa` }).click()
   await expect(page).toHaveURL(new RegExp(`/admin/meeting-minutes/mesa-administrativa\\?year=${YEAR}$`))
 
-  const row = page.getByRole('row', { name: new RegExp(`${NUMBER}ª Ata de Reunião extraordinária`) })
-  await expect(row).toContainText('Aprovação pendente')
-  await expect(row).toContainText('Orçamento anual')
+  const card = page.getByRole('article', { name: new RegExp(`${NUMBER}ª Ata Reunião extraordinária`) })
+  await expect(card).toContainText('Aprovação pendente')
+  await expect(card).toContainText('Orçamento anual')
 
   const pending = page.waitForEvent('download')
-  await row.getByRole('button', { name: 'Baixar PDF' }).click()
+  await card.getByRole('button', { name: 'Baixar PDF' }).click()
   expect((await pending).suggestedFilename()).toBe(`ata-${NUMBER}.pdf`)
 
-  await row.getByRole('button', { name: 'Aprovar' }).click()
+  await card.getByRole('button', { name: 'Aprovar' }).click()
   const approval = page.getByRole('dialog')
   await approval.getByRole('button', { name: 'Aprovar definitivamente' }).click()
   await expect(approval).toBeHidden()
-  await expect(row).toContainText('Aprovada')
-  await expect(row.getByRole('link', { name: 'Editar' })).toHaveCount(0)
+  await expect(card).toContainText('Aprovada')
+  await expect(card.getByRole('link', { name: 'Editar' })).toHaveCount(0)
 
-  await row.getByRole('button', { name: 'Regenerar PDF' }).click()
+  await card.getByRole('button', { name: 'Regenerar PDF' }).click()
   const regeneration = page.getByRole('dialog')
   await regeneration.getByRole('button', { name: 'Regenerar PDF' }).click()
   await expect(regeneration).toBeHidden()
 
   const approved = page.waitForEvent('download')
-  await row.getByRole('button', { name: 'Baixar PDF' }).click()
+  await card.getByRole('button', { name: 'Baixar PDF' }).click()
   expect((await approved).suggestedFilename()).toBe(`ata-${NUMBER}.pdf`)
 
   await page.getByRole('link', { name: `Atas de ${E2E_MEETING_MINUTE.year}` }).click()
-  await expect(page.getByRole('cell', { name: new RegExp(`${E2E_MEETING_MINUTE.number}ª Ata`) })).toBeVisible()
+  await expect(page.getByRole('article', { name: new RegExp(`${E2E_MEETING_MINUTE.number}ª Ata`) })).toBeVisible()
 
   await page.getByRole('button', { name: 'Exportar Livro de Atas' }).click()
   const exportDialog = page.getByRole('dialog')

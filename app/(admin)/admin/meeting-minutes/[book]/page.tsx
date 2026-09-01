@@ -1,22 +1,14 @@
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
-import { ApproveMeetingMinuteButton } from '@/components/admin/ApproveMeetingMinuteButton'
 import { ExportMeetingMinuteBookButton } from '@/components/admin/ExportMeetingMinuteBookButton'
-import { MeetingMinutePdfButton } from '@/components/admin/MeetingMinutePdfButton'
-import { MeetingMinutePdfCacheButton } from '@/components/admin/MeetingMinutePdfCacheButton'
-import { MeetingMinuteTopicList } from '@/components/admin/MeetingMinuteTopicList'
+import { MeetingMinuteCard } from '@/components/admin/MeetingMinuteCard'
 import { MeetingMinuteYearNav } from '@/components/admin/MeetingMinuteYearNav'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { buttonVariants } from '@/components/ui/button'
 import { earliestMeetingMinuteYear, listMeetingMinutesByYear } from '@/db/queries/meeting-minutes'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { meetingMinutePdfCacheExists } from '@/lib/meeting-minute-pdf-cache'
-import { churchYear, formatChurchDatePtBR } from '@/lib/date'
-import {
-  MEETING_MINUTE_STATUS_LABELS,
-  meetingMinuteLabel,
-  resolveMeetingMinuteYearNavigation,
-} from '@/lib/meeting-minute'
+import { churchYear } from '@/lib/date'
+import { resolveMeetingMinuteYearNavigation } from '@/lib/meeting-minute'
 import { requireMeetingMinuteBookAccess } from '../require-book-access'
 import { cn } from '@/lib/utils'
 
@@ -46,7 +38,7 @@ export default async function AdminMeetingMinutesBookPage({ params, searchParams
 
   return (
     <section className="grid gap-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-normal">
           Atas {book.genitive} de {year}
         </h2>
@@ -64,46 +56,11 @@ export default async function AdminMeetingMinutesBookPage({ params, searchParams
       {minutes.length === 0 ? (
         <p className="text-muted-foreground rounded-lg border py-12 text-center text-sm">Nenhuma Ata em {year}.</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Título</TableHead>
-              <TableHead>Tópicos discutidos</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {minutes.map((minute) => (
-              <TableRow key={minute.id}>
-                <TableCell>{formatChurchDatePtBR(minute.started_at)}</TableCell>
-                <TableCell className="font-bold whitespace-normal">{meetingMinuteLabel(minute)}</TableCell>
-                <TableCell className="whitespace-normal">
-                  <MeetingMinuteTopicList topics={minute.topics} />
-                </TableCell>
-                <TableCell>{MEETING_MINUTE_STATUS_LABELS[minute.status]}</TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end gap-2">
-                    {canUpdate && minute.status === 'pending' ? (
-                      <Link
-                        href={`/admin/meeting-minutes/${book.slug}/${minute.id}/edit`}
-                        className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-                      >
-                        Editar
-                      </Link>
-                    ) : null}
-                    <MeetingMinutePdfButton book={book.slug} minute={minute} />
-                    {minute.status === 'approved' ? (
-                      <MeetingMinutePdfCacheButton minute={minute} cached={minute.cached} />
-                    ) : null}
-                    {canUpdate && minute.status === 'pending' ? <ApproveMeetingMinuteButton minute={minute} /> : null}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {minutes.map((minute) => (
+            <MeetingMinuteCard key={minute.id} book={book.slug} minute={minute} canUpdate={canUpdate} />
+          ))}
+        </div>
       )}
 
       <MeetingMinuteYearNav book={book.slug} previousYear={previousYear} nextYear={nextYear} />

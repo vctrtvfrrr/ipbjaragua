@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  abbreviateMeetingMinuteTopicTitle,
   createMeetingMinuteSchema,
   hasMeaningfulMarkdown,
   meetingMinuteLabel,
-  MEETING_MINUTE_TOPIC_TITLE_LIMIT,
   resolveMeetingMinuteYearNavigation,
 } from './meeting-minute'
 import { CHURCH_NAME } from './church'
@@ -180,41 +178,5 @@ describe('meetingMinuteLabel', () => {
     expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' })).toBe(
       `42ª Ata de Reunião ordinária da ${CHURCH_NAME}`
     )
-  })
-})
-
-describe('abbreviateMeetingMinuteTopicTitle', () => {
-  const limit = MEETING_MINUTE_TOPIC_TITLE_LIMIT
-
-  it('leaves a title within the limit untouched', () => {
-    const title = 'a'.repeat(limit - 1)
-    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe(title)
-  })
-
-  it('leaves a title exactly at the limit untouched', () => {
-    const title = 'a'.repeat(limit)
-    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe(title)
-  })
-
-  it('cuts at the last whole word and marks the cut', () => {
-    const title = `${'palavra '.repeat(9)}excedente`
-    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe('palavra palavra palavra palavra palavra palavra palavra…')
-  })
-
-  it('cuts mid-word when a single word already exceeds the limit', () => {
-    expect(abbreviateMeetingMinuteTopicTitle('b'.repeat(limit + 10))).toBe(`${'b'.repeat(limit)}…`)
-  })
-
-  it('counts and cuts by grapheme, never splitting one in half', () => {
-    const emoji = `${'a'.repeat(limit - 1)}😀fim`
-    expect(abbreviateMeetingMinuteTopicTitle(emoji)).toBe(`${'a'.repeat(limit - 1)}😀…`)
-
-    const combining = 'á'.repeat(limit + 1)
-    expect(abbreviateMeetingMinuteTopicTitle(combining)).toBe(`${'á'.repeat(limit)}…`)
-  })
-
-  it('leaves a title of exactly the limit in graphemes untouched, however long in code units', () => {
-    const title = '😀'.repeat(limit)
-    expect(abbreviateMeetingMinuteTopicTitle(title)).toBe(title)
   })
 })

@@ -125,19 +125,3 @@ export function meetingMinuteTopicLabel(topic: { title: string }, index: number)
 export function meetingMinuteLabel(minute: { number: number; title: string }): string {
   return `${minute.number}ª Ata de ${minute.title} da ${CHURCH_NAME}`
 }
-
-export const MEETING_MINUTE_TOPIC_TITLE_LIMIT = 60
-
-// The limit counts what a reader sees, so it counts graphemes: slicing by code unit cuts an
-// accent off its letter and halves an emoji into a replacement character.
-const graphemes = new Intl.Segmenter('pt-BR', { granularity: 'grapheme' })
-
-export function abbreviateMeetingMinuteTopicTitle(title: string): string {
-  const segments = [...graphemes.segment(title)]
-  if (segments.length <= MEETING_MINUTE_TOPIC_TITLE_LIMIT) return title
-
-  const head = title.slice(0, segments[MEETING_MINUTE_TOPIC_TITLE_LIMIT].index)
-  const lastSpace = head.lastIndexOf(' ')
-
-  return `${lastSpace === -1 ? head : head.slice(0, lastSpace)}…`
-}
