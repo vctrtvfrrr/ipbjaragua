@@ -13,9 +13,11 @@ export {
   type ScripturePassage,
 } from './liturgies.schema'
 export {
+  meetingMinuteBook,
   meetingMinutes,
   meetingMinuteStatus,
   meetingMinuteTopics,
+  type MeetingMinuteBook,
   type MeetingMinuteStatus,
 } from './meeting-minutes.schema'
 export { members, memberStatus } from './members.schema'

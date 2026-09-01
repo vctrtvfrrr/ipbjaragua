@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { MeetingMinuteWithTopics } from '@/db/queries/meeting-minutes'
+import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 import { MeetingMinuteForm } from './MeetingMinuteForm'
 
 vi.mock('next/navigation', () => ({
@@ -11,6 +12,8 @@ vi.mock('@/app/(admin)/admin/meeting-minutes/form-actions', () => ({
   createMeetingMinuteFormAction: vi.fn(),
   updateMeetingMinuteFormAction: vi.fn(),
 }))
+
+const BOOK = meetingMinuteBookBySlug('mesa-administrativa')!
 
 function fakeMinute(): MeetingMinuteWithTopics {
   return {
@@ -66,13 +69,13 @@ function payloadTopics(): string[] {
 
 describe('MeetingMinuteForm in edit mode', () => {
   it('loads the Tópicos in their persisted order', () => {
-    render(<MeetingMinuteForm mode="edit" minute={fakeMinute()} />)
+    render(<MeetingMinuteForm mode="edit" book={BOOK} minute={fakeMinute()} />)
 
     expect(payloadTopics()).toEqual(['Orçamento', 'Reforma', 'Missões'])
   })
 
   it('reorders Tópicos with the move buttons', () => {
-    render(<MeetingMinuteForm mode="edit" minute={fakeMinute()} />)
+    render(<MeetingMinuteForm mode="edit" book={BOOK} minute={fakeMinute()} />)
 
     const firstTopic = screen.getByText('Orçamento').closest('fieldset')
     if (!firstTopic) throw new Error('fieldset not found')
@@ -86,7 +89,7 @@ describe('MeetingMinuteForm in edit mode', () => {
       'confirm',
       vi.fn(() => true)
     )
-    render(<MeetingMinuteForm mode="edit" minute={fakeMinute()} />)
+    render(<MeetingMinuteForm mode="edit" book={BOOK} minute={fakeMinute()} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Tópico' }))
     expect(payloadTopics()).toEqual(['Orçamento', 'Reforma', 'Missões', ''])

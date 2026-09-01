@@ -2,13 +2,14 @@ import { asc, eq, sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { meetingMinuteTopics, meetingMinutes } from '@/db/schema'
 import { churchDayRange, parseChurchDateTime } from '@/lib/date'
-import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
+import type { CreateMeetingMinuteInput, MeetingMinuteContentInput } from '@/lib/meeting-minute'
 import { createTestDb, type TestDb } from '@/tests/db'
 import {
   approveMeetingMinute,
   claimMeetingMinutePdfPath,
   createMeetingMinute,
   earliestMeetingMinuteYear,
+  getMeetingMinuteBookOf,
   getMeetingMinuteById,
   listApprovedMeetingMinutesForBook,
   listMeetingMinutesByYear,
@@ -21,8 +22,12 @@ import {
   updateMeetingMinute,
 } from './meeting-minutes'
 
+const MESA = 'mesa-administrativa' as const
+const MUSICA = 'secretaria-de-musica' as const
+
 function input(overrides: Partial<CreateMeetingMinuteInput> = {}): CreateMeetingMinuteInput {
   return {
+    book: MESA,
     number: 1,
     title: 'IPB de Jaraguá do Sul',
     started_at: parseChurchDateTime('2026-06-07T19:30'),
@@ -36,6 +41,12 @@ function input(overrides: Partial<CreateMeetingMinuteInput> = {}): CreateMeeting
   }
 }
 
+function contentInput(overrides: Partial<MeetingMinuteContentInput> = {}): MeetingMinuteContentInput {
+  const { book, ...content } = input(overrides)
+  void book
+  return content
+}
+
 describe('createMeetingMinute', () => {
   let db: TestDb
 
@@ -43,7 +54,7 @@ describe('createMeetingMinute', () => {
     db = await createTestDb()
   })
 
-  it('stores the Ata as Aprovação pendente with its Tópicos in order', async () => {
+  it('stores the Ata in its Livro, as Aprovação pendente, with its Tópicos in order', async () => {
     const minute = await createMeetingMinute(
       input({
         topics: [
@@ -56,6 +67,7 @@ describe('createMeetingMinute', () => {
     )
 
     expect(minute.status).toBe('pending')
+    expect(minute.book).toBe(MESA)
 
     const topics = await db
       .select({ position: meetingMinuteTopics.position, title: meetingMinuteTopics.title })
@@ -70,11 +82,20 @@ describe('createMeetingMinute', () => {
     ])
   })
 
-  it('rejects a Número already taken and keeps a single Ata', async () => {
+  it('rejects a Número already taken in the same Livro and keeps a single Ata', async () => {
     await createMeetingMinute(input({ number: 7 }), db)
 
     await expect(createMeetingMinute(input({ number: 7 }), db)).rejects.toThrow(MeetingMinuteNumberTakenError)
     expect(await db.select().from(meetingMinutes)).toHaveLength(1)
+  })
+
+  it('accepts the same Número in a different Livro', async () => {
+    await createMeetingMinute(input({ book: MESA, number: 1 }), db)
+
+    const minute = await createMeetingMinute(input({ book: MUSICA, number: 1 }), db)
+
+    expect(minute.book).toBe(MUSICA)
+    expect(await db.select().from(meetingMinutes)).toHaveLength(2)
   })
 
   it('accepts more than one Ata on the same Data', async () => {
@@ -150,6 +171,7 @@ describe('getMeetingMinuteById', () => {
 
     expect(minute).toMatchObject({
       id: created.id,
+      book: MESA,
       number: 1,
       title: 'IPB de Jaraguá do Sul',
       status: 'pending',
@@ -162,6 +184,24 @@ describe('getMeetingMinuteById', () => {
   })
 })
 
+describe('getMeetingMinuteBookOf', () => {
+  let db: TestDb
+
+  beforeEach(async () => {
+    db = await createTestDb()
+  })
+
+  it('names the Livro of an existing Ata', async () => {
+    const created = await createMeetingMinute(input({ book: MUSICA }), db)
+
+    expect(await getMeetingMinuteBookOf(created.id, db)).toBe(MUSICA)
+  })
+
+  it('returns null when the Ata does not exist', async () => {
+    expect(await getMeetingMinuteBookOf(999, db)).toBeNull()
+  })
+})
+
 describe('updateMeetingMinute', () => {
   let db: TestDb
 
@@ -169,12 +209,12 @@ describe('updateMeetingMinute', () => {
     db = await createTestDb()
   })
 
-  it('rewrites every field of the Ata, keeping its identity', async () => {
+  it('rewrites every field of the Ata, keeping its identity and its Livro', async () => {
     const created = await createMeetingMinute(input(), db)
 
     const updated = await updateMeetingMinute(
       created.id,
-      input({
+      contentInput({
         number: 9,
         title: 'Ata reformulada',
         started_at: parseChurchDateTime('2026-06-14T18:00'),
@@ -189,6 +229,7 @@ describe('updateMeetingMinute', () => {
 
     expect(updated).toMatchObject({
       id: created.id,
+      book: MESA,
       number: 9,
       title: 'Ata reformulada',
       location: 'Sala de reuniões',
@@ -211,7 +252,7 @@ describe('updateMeetingMinute', () => {
 
     await updateMeetingMinute(
       created.id,
-      input({
+      contentInput({
         topics: [
           { title: 'Reforma', discussion: 'Retomada.' },
           { title: 'Missões', discussion: 'Novo Tópico.' },
@@ -239,12 +280,12 @@ describe('updateMeetingMinute', () => {
   it('accepts keeping the same Número the Ata already has', async () => {
     const created = await createMeetingMinute(input({ number: 7 }), db)
 
-    const updated = await updateMeetingMinute(created.id, input({ number: 7, title: 'Mesmo Número' }), db)
+    const updated = await updateMeetingMinute(created.id, contentInput({ number: 7, title: 'Mesmo Número' }), db)
 
     expect(updated?.number).toBe(7)
   })
 
-  it('rejects a Número taken by another Ata and leaves the Ata untouched', async () => {
+  it('rejects a Número taken by another Ata of the same Livro and leaves the Ata untouched', async () => {
     await createMeetingMinute(input({ number: 3 }), db)
     const created = await createMeetingMinute(
       input({
@@ -255,7 +296,7 @@ describe('updateMeetingMinute', () => {
       db
     )
 
-    await expect(updateMeetingMinute(created.id, input({ number: 3 }), db)).rejects.toThrow(
+    await expect(updateMeetingMinute(created.id, contentInput({ number: 3 }), db)).rejects.toThrow(
       MeetingMinuteNumberTakenError
     )
 
@@ -265,11 +306,19 @@ describe('updateMeetingMinute', () => {
     expect(minute?.topics.map((topic) => topic.title)).toEqual(['Orçamento'])
   })
 
+  it('leaves the Livro untouched no matter what the write is asked to change', async () => {
+    const created = await createMeetingMinute(input({ book: MUSICA }), db)
+
+    await updateMeetingMinute(created.id, contentInput({ title: 'Nova redação' }), db)
+
+    expect(await getMeetingMinuteBookOf(created.id, db)).toBe(MUSICA)
+  })
+
   it('rejects an Ata Aprovada and leaves it untouched', async () => {
     const created = await createMeetingMinute(input(), db)
     await db.update(meetingMinutes).set({ status: 'approved' }).where(eq(meetingMinutes.id, created.id))
 
-    await expect(updateMeetingMinute(created.id, input({ title: 'Tarde demais' }), db)).rejects.toThrow(
+    await expect(updateMeetingMinute(created.id, contentInput({ title: 'Tarde demais' }), db)).rejects.toThrow(
       MeetingMinuteImmutableError
     )
 
@@ -279,7 +328,7 @@ describe('updateMeetingMinute', () => {
   })
 
   it('rejects an Ata that does not exist', async () => {
-    await expect(updateMeetingMinute(999, input(), db)).rejects.toThrow(MeetingMinuteNotFoundError)
+    await expect(updateMeetingMinute(999, contentInput(), db)).rejects.toThrow(MeetingMinuteNotFoundError)
     expect(await db.select().from(meetingMinuteTopics)).toEqual([])
   })
 })
@@ -291,12 +340,18 @@ describe('nextMeetingMinuteNumber', () => {
     db = await createTestDb()
   })
 
-  it('starts at 1 and follows the highest Número, gaps included', async () => {
-    expect(await nextMeetingMinuteNumber(db)).toBe(1)
+  it('starts at 1 and follows the highest Número of the Livro, gaps included', async () => {
+    expect(await nextMeetingMinuteNumber(MESA, db)).toBe(1)
 
     await createMeetingMinute(input({ number: 12 }), db)
 
-    expect(await nextMeetingMinuteNumber(db)).toBe(13)
+    expect(await nextMeetingMinuteNumber(MESA, db)).toBe(13)
+  })
+
+  it('keeps the sequence of one Livro independent of another', async () => {
+    await createMeetingMinute(input({ book: MESA, number: 40 }), db)
+
+    expect(await nextMeetingMinuteNumber(MUSICA, db)).toBe(1)
   })
 })
 
@@ -307,7 +362,7 @@ describe('listMeetingMinutesByYear', () => {
     db = await createTestDb()
   })
 
-  it('lists the Atas of the civil year in ascending Número', async () => {
+  it('lists the Atas of the civil year in ascending Número, restricted to the Livro', async () => {
     await createMeetingMinute(
       input({
         number: 2,
@@ -324,8 +379,17 @@ describe('listMeetingMinutesByYear', () => {
       }),
       db
     )
+    await createMeetingMinute(
+      input({
+        book: MUSICA,
+        number: 1,
+        started_at: parseChurchDateTime('2026-05-01T19:00'),
+        ended_at: parseChurchDateTime('2026-05-01T20:00'),
+      }),
+      db
+    )
 
-    const minutes = await listMeetingMinutesByYear(2026, db)
+    const minutes = await listMeetingMinutesByYear(2026, MESA, db)
 
     expect(minutes.map((minute) => minute.number)).toEqual([1, 2])
     expect(minutes[0].status).toBe('pending')
@@ -340,8 +404,8 @@ describe('listMeetingMinutesByYear', () => {
       db
     )
 
-    expect(await listMeetingMinutesByYear(2026, db)).toHaveLength(1)
-    expect(await listMeetingMinutesByYear(2027, db)).toEqual([])
+    expect(await listMeetingMinutesByYear(2026, MESA, db)).toHaveLength(1)
+    expect(await listMeetingMinutesByYear(2027, MESA, db)).toEqual([])
   })
 
   it('brings the Tópico titles in deliberation order', async () => {
@@ -353,7 +417,7 @@ describe('listMeetingMinutesByYear', () => {
       { meeting_minute_id: created.id, position: 1, title: 'Reforma', discussion: 'Adiada.' },
     ])
 
-    const [minute] = await listMeetingMinutesByYear(2026, db)
+    const [minute] = await listMeetingMinutesByYear(2026, MESA, db)
 
     expect(minute.topics).toEqual([{ title: 'Orçamento' }, { title: 'Reforma' }, { title: 'Missões' }])
   })
@@ -362,7 +426,7 @@ describe('listMeetingMinutesByYear', () => {
     await createMeetingMinute(input(), db)
     await db.delete(meetingMinuteTopics)
 
-    const [minute] = await listMeetingMinutesByYear(2026, db)
+    const [minute] = await listMeetingMinutesByYear(2026, MESA, db)
 
     expect(minute.topics).toEqual([])
   })
@@ -375,8 +439,21 @@ describe('earliestMeetingMinuteYear', () => {
     db = await createTestDb()
   })
 
-  it('has no year to offer while no Ata exists', async () => {
-    expect(await earliestMeetingMinuteYear(db)).toBeNull()
+  it('has no year to offer while no Ata of the Livro exists', async () => {
+    expect(await earliestMeetingMinuteYear(MESA, db)).toBeNull()
+  })
+
+  it('ignores the Atas of another Livro', async () => {
+    await createMeetingMinute(
+      input({
+        book: MUSICA,
+        started_at: parseChurchDateTime('1990-01-01T19:00'),
+        ended_at: parseChurchDateTime('1990-01-01T20:00'),
+      }),
+      db
+    )
+
+    expect(await earliestMeetingMinuteYear(MESA, db)).toBeNull()
   })
 
   it('agrees with the yearly listing on an Início the zone barely reaches', async () => {
@@ -388,10 +465,10 @@ describe('earliestMeetingMinuteYear', () => {
       db
     )
 
-    const year = await earliestMeetingMinuteYear(db)
+    const year = await earliestMeetingMinuteYear(MESA, db)
 
     expect(year).toBe(1913)
-    expect(await listMeetingMinutesByYear(year!, db)).toHaveLength(1)
+    expect(await listMeetingMinutesByYear(year!, MESA, db)).toHaveLength(1)
   })
 
   it('reads the year of the oldest Início in America/Sao_Paulo', async () => {
@@ -412,7 +489,7 @@ describe('earliestMeetingMinuteYear', () => {
       db
     )
 
-    expect(await earliestMeetingMinuteYear(db)).toBe(2019)
+    expect(await earliestMeetingMinuteYear(MESA, db)).toBe(2019)
   })
 })
 
@@ -459,9 +536,9 @@ describe('approveMeetingMinute', () => {
     const created = await createMeetingMinute(input(), db)
     await approveMeetingMinute(created.id, db)
 
-    await expect(updateMeetingMinute(created.id, input({ number: 9, title: 'Tarde demais' }), db)).rejects.toThrow(
-      MeetingMinuteImmutableError
-    )
+    await expect(
+      updateMeetingMinute(created.id, contentInput({ number: 9, title: 'Tarde demais' }), db)
+    ).rejects.toThrow(MeetingMinuteImmutableError)
 
     const minute = await getMeetingMinuteById(created.id, db)
     expect(minute?.number).toBe(1)
@@ -527,10 +604,15 @@ describe('the Atas a Livro is built from', () => {
     db = await createTestDb()
   })
 
-  async function minute(number: number, startedAt: string, status: 'pending' | 'approved'): Promise<number> {
+  async function minute(
+    number: number,
+    startedAt: string,
+    status: 'pending' | 'approved',
+    book: typeof MESA | typeof MUSICA = MESA
+  ): Promise<number> {
     const started_at = parseChurchDateTime(startedAt)
     const created = await createMeetingMinute(
-      input({ number, started_at, ended_at: new Date(started_at.getTime() + 30 * 60 * 1000) }),
+      input({ book, number, started_at, ended_at: new Date(started_at.getTime() + 30 * 60 * 1000) }),
       db
     )
     if (status === 'approved') await approveMeetingMinute(created.id, db)
@@ -538,17 +620,23 @@ describe('the Atas a Livro is built from', () => {
     return created.id
   }
 
-  async function numbersIn(from: string, to: string, order: 'chronological' | 'reverse'): Promise<number[]> {
-    const entries = await listApprovedMeetingMinutesForBook(churchDayRange(from, to), order, db)
+  async function numbersIn(
+    book: typeof MESA | typeof MUSICA,
+    from: string,
+    to: string,
+    order: 'chronological' | 'reverse'
+  ): Promise<number[]> {
+    const entries = await listApprovedMeetingMinutesForBook(book, churchDayRange(from, to), order, db)
 
     return entries.map((entry) => entry.number)
   }
 
-  it('takes only the Atas Aprovadas of the period', async () => {
+  it('takes only the Atas Aprovadas of the period, in the same Livro', async () => {
     await minute(1, '2026-06-07T19:30', 'approved')
     await minute(2, '2026-06-08T19:30', 'pending')
+    await minute(1, '2026-06-07T19:30', 'approved', MUSICA)
 
-    expect(await numbersIn('2026-06-01', '2026-06-30', 'chronological')).toEqual([1])
+    expect(await numbersIn(MESA, '2026-06-01', '2026-06-30', 'chronological')).toEqual([1])
   })
 
   it('includes the Atas of the first and of the last day of the period', async () => {
@@ -557,7 +645,7 @@ describe('the Atas a Livro is built from', () => {
     await minute(3, '2026-06-09T23:30', 'approved')
     await minute(4, '2026-06-10T00:30', 'approved')
 
-    expect(await numbersIn('2026-06-07', '2026-06-09', 'chronological')).toEqual([2, 3])
+    expect(await numbersIn(MESA, '2026-06-07', '2026-06-09', 'chronological')).toEqual([2, 3])
   })
 
   it('orders chronologically and settles a shared Data by Número', async () => {
@@ -565,7 +653,7 @@ describe('the Atas a Livro is built from', () => {
     await minute(5, '2026-06-07T19:30', 'approved')
     await minute(6, '2026-06-07T19:30', 'approved')
 
-    expect(await numbersIn('2026-06-01', '2026-06-30', 'chronological')).toEqual([5, 6, 7])
+    expect(await numbersIn(MESA, '2026-06-01', '2026-06-30', 'chronological')).toEqual([5, 6, 7])
   })
 
   it('reverses both the Início and the Número', async () => {
@@ -573,15 +661,16 @@ describe('the Atas a Livro is built from', () => {
     await minute(5, '2026-06-07T19:30', 'approved')
     await minute(6, '2026-06-07T19:30', 'approved')
 
-    expect(await numbersIn('2026-06-01', '2026-06-30', 'reverse')).toEqual([7, 6, 5])
+    expect(await numbersIn(MESA, '2026-06-01', '2026-06-30', 'reverse')).toEqual([7, 6, 5])
   })
 
-  it('summarizes the period by count and by the Números at its edges', async () => {
+  it('summarizes the period by count and by the Números at its edges, in the same Livro', async () => {
     await minute(4, '2026-06-07T19:30', 'approved')
     await minute(9, '2026-06-08T19:30', 'approved')
     await minute(12, '2026-07-01T19:30', 'pending')
+    await minute(1, '2026-06-07T19:30', 'approved', MUSICA)
 
-    expect(await summarizeApprovedMeetingMinutes(churchDayRange('2026-06-01', '2026-06-30'), db)).toEqual({
+    expect(await summarizeApprovedMeetingMinutes(MESA, churchDayRange('2026-06-01', '2026-06-30'), db)).toEqual({
       count: 2,
       firstNumber: 4,
       lastNumber: 9,
@@ -591,7 +680,7 @@ describe('the Atas a Livro is built from', () => {
   it('summarizes an empty period as nothing at all', async () => {
     await minute(1, '2026-06-07T19:30', 'approved')
 
-    expect(await summarizeApprovedMeetingMinutes(churchDayRange('2026-01-01', '2026-01-31'), db)).toEqual({
+    expect(await summarizeApprovedMeetingMinutes(MESA, churchDayRange('2026-01-01', '2026-01-31'), db)).toEqual({
       count: 0,
       firstNumber: null,
       lastNumber: null,

@@ -18,6 +18,43 @@ function isCurrent(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+function NavEntry({
+  item,
+  pathname,
+  onNavigate,
+  dense,
+}: {
+  item: AdminNavItem
+  pathname: string
+  onNavigate?: () => void
+  dense: boolean
+}) {
+  const current = item.href ? isCurrent(pathname, item.href) : false
+
+  if (!item.href) {
+    return (
+      <span className={cn('text-muted-foreground flex items-center px-3 text-sm', dense ? 'min-h-9' : 'min-h-11')}>
+        {item.label}
+      </span>
+    )
+  }
+
+  return (
+    <Link
+      href={item.href}
+      aria-current={current ? 'page' : undefined}
+      onClick={onNavigate}
+      className={cn(
+        'flex items-center rounded-md px-3 text-sm',
+        dense ? 'min-h-9' : 'min-h-11',
+        current ? 'bg-brand-sky text-brand-ridge font-medium' : 'text-foreground hover:bg-muted transition-colors'
+      )}
+    >
+      {item.label}
+    </Link>
+  )
+}
+
 function SidebarContent({
   items,
   pathname,
@@ -48,38 +85,20 @@ function SidebarContent({
 
       <nav aria-label={PANEL_LABEL} className="flex-1 overflow-y-auto p-2">
         <ul className="grid gap-0.5">
-          {items.map((item) => {
-            const current = item.href ? isCurrent(pathname, item.href) : false
-            return (
-              <li key={item.entity}>
-                {item.href ? (
-                  <Link
-                    href={item.href}
-                    aria-current={current ? 'page' : undefined}
-                    onClick={onNavigate}
-                    className={cn(
-                      'flex items-center rounded-md px-3 text-sm',
-                      dense ? 'min-h-9' : 'min-h-11',
-                      current
-                        ? 'bg-brand-sky text-brand-ridge font-medium'
-                        : 'text-foreground hover:bg-muted transition-colors'
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span
-                    className={cn(
-                      'text-muted-foreground flex items-center px-3 text-sm',
-                      dense ? 'min-h-9' : 'min-h-11'
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                )}
-              </li>
-            )
-          })}
+          {items.map((item) => (
+            <li key={item.href ?? item.label}>
+              <NavEntry item={item} pathname={pathname} onNavigate={onNavigate} dense={dense} />
+              {item.children ? (
+                <ul className="ml-3 grid gap-0.5 border-l pl-2">
+                  {item.children.map((child) => (
+                    <li key={child.href ?? child.label}>
+                      <NavEntry item={child} pathname={pathname} onNavigate={onNavigate} dense={dense} />
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
+          ))}
         </ul>
       </nav>
 

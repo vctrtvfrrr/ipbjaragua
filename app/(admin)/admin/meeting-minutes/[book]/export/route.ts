@@ -1,12 +1,16 @@
 import { readCurrentUser } from '@/lib/auth/current-user'
 import { MEETING_MINUTE_BOOK_EMPTY, MEETING_MINUTE_BOOK_INVALID } from '@/lib/meeting-minute-book'
 import { generateMeetingMinuteBook } from '@/lib/meeting-minute-book-pdf'
+import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
+export async function GET(request: Request, context: { params: Promise<{ book: string }> }) {
+  const book = meetingMinuteBookBySlug((await context.params).book)
+  if (!book) return Response.json({ message: 'Acesso negado.' }, { status: 403 })
+
   const { searchParams } = new URL(request.url)
-  const result = await generateMeetingMinuteBook(readCurrentUser, {
+  const result = await generateMeetingMinuteBook(readCurrentUser, book, {
     from: searchParams.get('from') ?? '',
     to: searchParams.get('to') ?? '',
     order: searchParams.get('order') ?? '',

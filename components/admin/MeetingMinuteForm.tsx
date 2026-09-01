@@ -17,6 +17,7 @@ import type { MeetingMinuteWithTopics } from '@/db/queries/meeting-minutes'
 import { formatChurchDateTimeInput } from '@/lib/date'
 import type { ActionState } from '@/lib/entity-action'
 import { createMeetingMinuteSchema, meetingMinuteTopicLabel, updateMeetingMinuteSchema } from '@/lib/meeting-minute'
+import type { MeetingMinuteBookDefinition } from '@/lib/meeting-minute-books'
 import { cn } from '@/lib/utils'
 import { FieldError, FormError } from './FormFeedback'
 import { MarkdownField } from './MarkdownField'
@@ -26,9 +27,12 @@ const INITIAL_STATE: ActionState = { status: 'idle' }
 type TopicDraft = { key: string; title: string; discussion: string }
 type FormErrors = Record<string, string[]>
 
-type Props = { mode: 'create'; suggestedNumber: number } | { mode: 'edit'; minute: MeetingMinuteWithTopics }
+type Props =
+  | { mode: 'create'; book: MeetingMinuteBookDefinition; suggestedNumber: number }
+  | { mode: 'edit'; book: MeetingMinuteBookDefinition; minute: MeetingMinuteWithTopics }
 
 export function MeetingMinuteForm(props: Props) {
+  const { book } = props
   const minute = props.mode === 'edit' ? props.minute : null
   const schema = minute ? updateMeetingMinuteSchema : createMeetingMinuteSchema
   const [state, formAction, isPending] = useActionState(
@@ -59,6 +63,7 @@ export function MeetingMinuteForm(props: Props) {
     () =>
       JSON.stringify({
         id: minute?.id,
+        book: minute ? undefined : book.slug,
         number,
         title,
         started_at: startedAt,
@@ -69,7 +74,7 @@ export function MeetingMinuteForm(props: Props) {
         closing,
         topics: topics.map((topic) => ({ title: topic.title, discussion: topic.discussion })),
       }),
-    [attendees, closing, minute, endedAt, location, number, opening, startedAt, title, topics]
+    [attendees, book, closing, minute, endedAt, location, number, opening, startedAt, title, topics]
   )
   const errors = useMemo<FormErrors>(() => {
     if (!attempted) return {}
@@ -80,8 +85,8 @@ export function MeetingMinuteForm(props: Props) {
   useEffect(() => {
     if (state.status !== 'success') return
     toast.success(minute ? 'Ata atualizada' : 'Ata criada')
-    router.push(`/admin/meeting-minutes?year=${startedAt.slice(0, 4)}`)
-  }, [state.status, startedAt, router, minute])
+    router.push(`/admin/meeting-minutes/${book.slug}?year=${startedAt.slice(0, 4)}`)
+  }, [state.status, startedAt, router, minute, book.slug])
 
   function submit(event: FormEvent<HTMLFormElement>) {
     if (schema.safeParse(JSON.parse(payload)).success) return
@@ -242,15 +247,26 @@ export function MeetingMinuteForm(props: Props) {
       />
 
       <FormActions>
-        <Link href="/admin/meeting-minutes" className={cn(buttonVariants({ variant: 'outline' }))}>
+        <Link href={`/admin/meeting-minutes/${book.slug}`} className={cn(buttonVariants({ variant: 'outline' }))}>
           Cancelar
         </Link>
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Salvando...' : 'Salvar'}
+          {isPending ? 'Salvando...' : submitLabel(props, number)}
         </Button>
       </FormActions>
     </Form>
   )
+}
+
+// The button names the Livro it writes into, since a Livro chosen wrong at creation cannot
+// be moved nor undone afterwards — the confirmation lives here, not in an extra dialog step.
+function submitLabel(props: Props, number: string): string {
+  if (props.mode === 'edit') return 'Salvar'
+
+  const parsed = Number(number)
+  const ordinal = Number.isInteger(parsed) && parsed > 0 ? `${parsed}ª` : 'nova'
+
+  return `Criar a ${ordinal} Ata ${props.book.genitive}`
 }
 
 function emptyTopic(): TopicDraft {

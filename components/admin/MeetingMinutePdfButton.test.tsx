@@ -34,7 +34,7 @@ describe('MeetingMinutePdfButton', () => {
       vi.fn((url: string) => Promise.resolve(url.endsWith('/state') ? stateResponse('generating') : pdfResponse()))
     )
 
-    render(<MeetingMinutePdfButton minute={MINUTE} />)
+    render(<MeetingMinutePdfButton book="mesa-administrativa" minute={MINUTE} />)
     fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
 
     await waitFor(() => expect(click).toHaveBeenCalled())
@@ -42,7 +42,7 @@ describe('MeetingMinutePdfButton', () => {
   })
 
   it('offers the document without generating it first', () => {
-    render(<MeetingMinutePdfButton minute={MINUTE} />)
+    render(<MeetingMinutePdfButton book="mesa-administrativa" minute={MINUTE} />)
 
     expect(screen.getByRole('button', { name: 'Baixar PDF' })).toBeEnabled()
   })
@@ -60,7 +60,7 @@ describe('MeetingMinutePdfButton', () => {
       )
     )
 
-    render(<MeetingMinutePdfButton minute={MINUTE} />)
+    render(<MeetingMinutePdfButton book="mesa-administrativa" minute={MINUTE} />)
     fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
 
     const button = screen.getByRole('button', { name: 'Aguardando…' })
@@ -83,7 +83,7 @@ describe('MeetingMinutePdfButton', () => {
       )
     )
 
-    render(<MeetingMinutePdfButton minute={MINUTE} />)
+    render(<MeetingMinutePdfButton book="mesa-administrativa" minute={MINUTE} />)
     fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Gerando…' })).toBeDisabled(), { timeout: 3000 })
@@ -104,7 +104,7 @@ describe('MeetingMinutePdfButton', () => {
       )
     )
 
-    render(<MeetingMinutePdfButton minute={MINUTE} />)
+    render(<MeetingMinutePdfButton book="mesa-administrativa" minute={MINUTE} />)
     fireEvent.click(screen.getByRole('button', { name: 'Baixar PDF' }))
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Não foi possível carregar a imagem.'))

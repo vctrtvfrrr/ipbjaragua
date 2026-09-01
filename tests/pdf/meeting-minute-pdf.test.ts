@@ -5,10 +5,12 @@ import {
   renderMeetingMinuteDocumentHtml,
   type MeetingMinuteDocument,
 } from '@/lib/meeting-minute-document'
+import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 import { closeSharedBrowser, pdfJobState, renderPdf } from '@/lib/pdf/browser'
 import { sampleMemory } from './memory'
 import { pdfPageSizes, pdfPageTexts } from './pdf-text'
 
+const MESA = meetingMinuteBookBySlug('mesa-administrativa')!
 const A4 = { width: 595, height: 842 }
 const SERVICE_MEMORY_LIMIT_BYTES = 512 * 1024 * 1024
 // What the Node server itself is expected to hold while Chromium runs; the rest of the
@@ -48,7 +50,7 @@ function readablePages(pdf: Buffer): string[] {
 }
 
 async function pendingPdf(minute: MeetingMinuteDocument, job = 'test'): Promise<Buffer> {
-  return renderPdf(job, () => renderMeetingMinuteDocumentHtml(minute))
+  return renderPdf(job, () => renderMeetingMinuteDocumentHtml(minute, MESA))
 }
 
 afterAll(async () => {
@@ -70,7 +72,7 @@ describe('the PDF of a Pending Ata', () => {
     const [page] = readablePages(await pendingPdf(MINUTE))
 
     const order = [
-      meetingMinuteLabel(MINUTE),
+      meetingMinuteLabel(MINUTE, MESA),
       'DATA',
       '07/06/2026',
       'HORÁRIO',
@@ -117,7 +119,7 @@ describe('the PDF of a Pending Ata', () => {
   })
 
   it('never renders two documents at the same time', { timeout: 90_000 }, async () => {
-    const build = () => renderMeetingMinuteDocumentHtml(MINUTE)
+    const build = () => renderMeetingMinuteDocumentHtml(MINUTE, MESA)
 
     const first = renderPdf('queue-first', build)
     const second = renderPdf('queue-second', build)

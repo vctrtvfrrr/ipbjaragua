@@ -9,7 +9,7 @@ import { MeetingMinuteYearNav } from '@/components/admin/MeetingMinuteYearNav'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { buttonVariants } from '@/components/ui/button'
 import { earliestMeetingMinuteYear, listMeetingMinutesByYear } from '@/db/queries/meeting-minutes'
-import { requirePageRead } from '@/lib/auth/require-page-read'
+import { getCurrentUser } from '@/lib/auth/current-user'
 import { meetingMinutePdfCacheExists } from '@/lib/meeting-minute-pdf-cache'
 import { churchYear, formatChurchDatePtBR } from '@/lib/date'
 import {
@@ -17,38 +17,43 @@ import {
   meetingMinuteLabel,
   resolveMeetingMinuteYearNavigation,
 } from '@/lib/meeting-minute'
+import { requireMeetingMinuteBookAccess } from '../require-book-access'
 import { cn } from '@/lib/utils'
 
 type AdminMeetingMinutesPageProps = {
+  params: Promise<{ book: string }>
   searchParams: Promise<{ year?: string }>
 }
 
-export default async function AdminMeetingMinutesPage({ searchParams }: AdminMeetingMinutesPageProps) {
-  const user = await requirePageRead('meeting_minutes')
+export default async function AdminMeetingMinutesBookPage({ params, searchParams }: AdminMeetingMinutesPageProps) {
+  const book = requireMeetingMinuteBookAccess(await getCurrentUser(), (await params).book)
+  const user = await getCurrentUser()
   const { year: rawYear } = await searchParams
   const { year, previousYear, nextYear } = resolveMeetingMinuteYearNavigation(rawYear, {
-    earliestYear: await earliestMeetingMinuteYear(),
+    earliestYear: await earliestMeetingMinuteYear(book.slug),
     currentYear: churchYear(new Date()),
   })
   // The label distinguishes a first Gerar from a Regenerar, so it asks the volume, not the
   // stored path: a lost file leaves the path behind and there is nothing yet to replace.
   const minutes = await Promise.all(
-    (await listMeetingMinutesByYear(year)).map(async (minute) => ({
+    (await listMeetingMinutesByYear(year, book.slug)).map(async (minute) => ({
       ...minute,
       cached: await meetingMinutePdfCacheExists(minute.pdf_path),
     }))
   )
-  const canCreate = user.can('meeting_minutes', 'create')
-  const canUpdate = user.can('meeting_minutes', 'update')
+  const canCreate = user?.can('meeting_minutes', 'create', book.slug) ?? false
+  const canUpdate = user?.can('meeting_minutes', 'update', book.slug) ?? false
 
   return (
     <section className="grid gap-6">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold tracking-normal">Atas de {year}</h2>
+        <h2 className="text-xl font-semibold tracking-normal">
+          Atas {book.genitive} de {year}
+        </h2>
         <div className="flex items-center gap-2">
-          <ExportMeetingMinuteBookButton year={year} />
+          <ExportMeetingMinuteBookButton book={book.slug} year={year} />
           {canCreate ? (
-            <Link href="/admin/meeting-minutes/new" className={cn(buttonVariants())}>
+            <Link href={`/admin/meeting-minutes/${book.slug}/new`} className={cn(buttonVariants())}>
               <Plus data-icon="inline-start" />
               Nova Ata
             </Link>
@@ -73,7 +78,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
             {minutes.map((minute) => (
               <TableRow key={minute.id}>
                 <TableCell>{formatChurchDatePtBR(minute.started_at)}</TableCell>
-                <TableCell className="font-bold whitespace-normal">{meetingMinuteLabel(minute)}</TableCell>
+                <TableCell className="font-bold whitespace-normal">{meetingMinuteLabel(minute, book)}</TableCell>
                 <TableCell className="whitespace-normal">
                   <MeetingMinuteTopicList topics={minute.topics} />
                 </TableCell>
@@ -82,13 +87,13 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
                   <div className="flex items-center justify-end gap-2">
                     {canUpdate && minute.status === 'pending' ? (
                       <Link
-                        href={`/admin/meeting-minutes/${minute.id}/edit`}
+                        href={`/admin/meeting-minutes/${book.slug}/${minute.id}/edit`}
                         className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
                       >
                         Editar
                       </Link>
                     ) : null}
-                    <MeetingMinutePdfButton minute={minute} />
+                    <MeetingMinutePdfButton book={book.slug} minute={minute} />
                     {minute.status === 'approved' ? (
                       <MeetingMinutePdfCacheButton minute={minute} cached={minute.cached} />
                     ) : null}
@@ -101,7 +106,7 @@ export default async function AdminMeetingMinutesPage({ searchParams }: AdminMee
         </Table>
       )}
 
-      <MeetingMinuteYearNav previousYear={previousYear} nextYear={nextYear} />
+      <MeetingMinuteYearNav book={book.slug} previousYear={previousYear} nextYear={nextYear} />
     </section>
   )
 }

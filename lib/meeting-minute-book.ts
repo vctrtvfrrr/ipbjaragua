@@ -1,7 +1,12 @@
 import { z } from 'zod'
 import { formatLongDatePtBR, isISODate, parseISODate } from '@/lib/date'
+import type { MeetingMinuteBookDefinition } from '@/lib/meeting-minute-books'
 
-export const MEETING_MINUTE_BOOK_TITLE = 'Livro de Atas da Mesa Administrativa'
+// The PDF of a period is the Livro in file form, not a concept of its own: the title names
+// which Livro it is, taken from the same genitive the Ata's own label uses.
+export function meetingMinuteBookTitle(book: MeetingMinuteBookDefinition): string {
+  return `Livro de Atas ${book.genitive}`
+}
 
 export const MEETING_MINUTE_BOOK_ORDERS = ['chronological', 'reverse'] as const
 
@@ -66,8 +71,11 @@ export function meetingMinuteBookPeriodLabel(period: { from: string; to: string 
 
 // The interval always reads upwards, whatever order the Atas were bound in: it names the
 // Números the Livro holds, not the sequence the reader will meet them in.
-export function meetingMinuteBookFilename(interval: { firstNumber: number; lastNumber: number }): string {
+export function meetingMinuteBookFilename(
+  book: MeetingMinuteBookDefinition,
+  interval: { firstNumber: number; lastNumber: number }
+): string {
   const [first, last] = [interval.firstNumber, interval.lastNumber].sort((a, b) => a - b)
 
-  return `livro-de-atas-${first}-${last}.pdf`
+  return `livro-de-atas-${book.slug}-${first}-${last}.pdf`
 }

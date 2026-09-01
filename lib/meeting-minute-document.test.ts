@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { meetingMinuteLabel } from './meeting-minute'
+import { meetingMinuteBookBySlug } from './meeting-minute-books'
 import {
   meetingMinutePdfFilename,
   PENDING_WATERMARK,
@@ -23,9 +24,11 @@ const MINUTE: MeetingMinuteDocument = {
   ],
 }
 
+const BOOK = meetingMinuteBookBySlug('mesa-administrativa')!
+
 describe('renderMeetingMinuteDocumentHtml', () => {
   it('presents each Tópico as a subtitle instead of a list item', async () => {
-    const html = await renderMeetingMinuteDocumentHtml(MINUTE)
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE, BOOK)
 
     expect(html).toContain('<h3>Orçamento</h3>')
     expect(html).toContain('<h3>Reforma</h3>')
@@ -33,7 +36,7 @@ describe('renderMeetingMinuteDocumentHtml', () => {
   })
 
   it('carries a mark the printed page repeats on every sheet', async () => {
-    const html = await renderMeetingMinuteDocumentHtml(MINUTE)
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE, BOOK)
 
     expect(html).toContain(PENDING_WATERMARK)
     expect(html).toMatch(/class="watermark"/)
@@ -41,7 +44,7 @@ describe('renderMeetingMinuteDocumentHtml', () => {
   })
 
   it('leaves out everything the model does not carry', async () => {
-    const html = await renderMeetingMinuteDocumentHtml(MINUTE)
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE, BOOK)
 
     expect(html).not.toContain('<footer')
     expect(html).not.toContain('<img')
@@ -50,10 +53,16 @@ describe('renderMeetingMinuteDocumentHtml', () => {
   })
 
   it('heads the document with the label the panel already uses', async () => {
-    const html = await renderMeetingMinuteDocumentHtml(MINUTE)
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE, BOOK)
 
-    expect(html).toContain(`<h1>${meetingMinuteLabel(MINUTE)}</h1>`)
-    expect(html).toContain(`<title>${meetingMinuteLabel(MINUTE)}</title>`)
+    expect(html).toContain(`<h1>${meetingMinuteLabel(MINUTE, BOOK)}</h1>`)
+    expect(html).toContain(`<title>${meetingMinuteLabel(MINUTE, BOOK)}</title>`)
+  })
+
+  it('carries the Livro in the header', async () => {
+    const html = await renderMeetingMinuteDocumentHtml(MINUTE, BOOK)
+
+    expect(html).toContain('<dt>Livro</dt><dd>Mesa Administrativa</dd>')
   })
 
   it('names the download after the Número', () => {

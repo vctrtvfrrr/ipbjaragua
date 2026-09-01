@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import AdminShell from '@/components/admin/AdminShell'
 import { Toaster } from '@/components/ui/sonner'
-import { ADMIN_NAV } from '@/lib/admin/nav'
+import { ADMIN_NAV, visibleAdminNavItems } from '@/lib/admin/nav'
 import { getCurrentUser } from '@/lib/auth/current-user'
 
 export default async function AdminLayout({
@@ -15,7 +15,7 @@ export default async function AdminLayout({
     redirect('/login/revoked')
   }
 
-  const items = ADMIN_NAV.filter((item) => user.can(item.entity, 'read'))
+  const items = visibleAdminNavItems(ADMIN_NAV, user)
 
   return (
     <div className="bg-background text-foreground">

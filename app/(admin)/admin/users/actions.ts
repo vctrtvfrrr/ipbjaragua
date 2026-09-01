@@ -26,8 +26,9 @@ const permissionSchema = z
   .object({
     entity: z.enum(PERMISSION_ENTITIES, { error: 'Permissão inválida.' }),
     action: z.enum(PERMISSION_ACTIONS, { error: 'Permissão inválida.' }),
+    scope: z.string(),
   })
-  .refine(({ entity, action }) => isDeclaredPermission(entity, action), 'Permissão inválida.')
+  .refine(({ entity, action, scope }) => isDeclaredPermission(entity, action, scope), 'Permissão inválida.')
 
 const permissionsSchema = z
   .array(permissionSchema)
@@ -121,8 +122,8 @@ export function parseUserForm(formData: FormData): unknown {
     .getAll('permissions')
     .filter((value): value is string => typeof value === 'string')
     .map((value) => {
-      const [entity, action] = value.split(':')
-      return { entity, action }
+      const [entity, action, scope] = value.split(':')
+      return { entity, action, scope: scope ?? '' }
     })
 
   return {
@@ -138,7 +139,7 @@ export function normalizePermissions(permissions: Permission[]): Permission[] {
 
   for (const permission of permissions) {
     if (permission.action !== 'read') {
-      keys.add(permissionFormValue({ entity: permission.entity, action: 'read' }))
+      keys.add(permissionFormValue({ entity: permission.entity, action: 'read', scope: permission.scope }))
     }
   }
 

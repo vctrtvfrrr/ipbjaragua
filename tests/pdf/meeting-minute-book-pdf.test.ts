@@ -6,8 +6,9 @@ import { approveMeetingMinute, createMeetingMinute } from '@/db/queries/meeting-
 import type { CurrentUser } from '@/lib/auth/current-user'
 import { CHURCH_NAME } from '@/lib/church'
 import { parseChurchDateTime } from '@/lib/date'
-import { MEETING_MINUTE_BOOK_TITLE } from '@/lib/meeting-minute-book'
+import { meetingMinuteBookTitle } from '@/lib/meeting-minute-book'
 import { generateMeetingMinuteBook } from '@/lib/meeting-minute-book-pdf'
+import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 import { closeSharedBrowser } from '@/lib/pdf/browser'
 import { createTestDb, type TestDb } from '@/tests/db'
 import { nodeHeldBytes, sampleMemory } from './memory'
@@ -20,11 +21,14 @@ const SERVICE_MEMORY_LIMIT_BYTES = 512 * 1024 * 1024
 // export is the whole measurement because the queue admits one: the merge holds the queue too.
 const NODE_SERVER_ALLOWANCE_BYTES = 128 * 1024 * 1024
 
+const MESA = meetingMinuteBookBySlug('mesa-administrativa')!
+const TITLE = meetingMinuteBookTitle(MESA)
+
 const READER = async (): Promise<CurrentUser> => ({
   id: 1,
   email: 'ana@example.com',
   name: 'Ana',
-  can: vi.fn((_entity, action) => action === 'read'),
+  can: vi.fn((_entity, action, scope) => action === 'read' && scope === MESA.slug),
 })
 
 const TOKEN = '0e1d2c3b-4a59-4867-8f90-a1b2c3d4e5f6'
@@ -36,6 +40,7 @@ async function approvedMinute(number: number, day: number, topics = 1): Promise<
   const started_at = parseChurchDateTime(`2026-06-${String(day).padStart(2, '0')}T19:30`)
   const created = await createMeetingMinute(
     {
+      book: MESA.slug,
       number,
       title: 'Reunião ordinária',
       started_at,
@@ -55,7 +60,7 @@ async function approvedMinute(number: number, day: number, topics = 1): Promise<
 }
 
 async function exportBook(input: { from: string; to: string; order?: 'chronological' | 'reverse' }): Promise<Buffer> {
-  const result = await generateMeetingMinuteBook(READER, { order: 'chronological', token: TOKEN, ...input }, db)
+  const result = await generateMeetingMinuteBook(READER, MESA, { order: 'chronological', token: TOKEN, ...input }, db)
   if (result.status !== 'ok') throw new Error(`the Livro was not produced: ${result.status}`)
 
   return result.pdf
@@ -87,11 +92,11 @@ describe('the PDF of a Livro de Atas', () => {
 
     const [cover] = readablePages(await exportBook({ from: '2026-01-01', to: '2026-12-31' }))
 
-    expect(cover).toContain(MEETING_MINUTE_BOOK_TITLE)
+    expect(cover).toContain(TITLE)
     expect(cover).toContain(CHURCH_NAME)
     expect(cover).toContain('01 de janeiro de 2026 a 31 de dezembro de 2026')
     expect(cover).toContain('Atas 7 a 9')
-    expect(cover.replace(MEETING_MINUTE_BOOK_TITLE, '').replace(CHURCH_NAME, '')).not.toContain('Ata de Reunião')
+    expect(cover.replace(TITLE, '').replace(CHURCH_NAME, '')).not.toContain('Ata de Reunião')
   })
 
   it('names the interval by the Números it holds, gaps and all', { timeout: 180_000 }, async () => {

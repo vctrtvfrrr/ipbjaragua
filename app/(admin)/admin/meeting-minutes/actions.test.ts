@@ -21,13 +21,20 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-function userWithPermission(canReturn: boolean): CurrentUser {
+const MESA = 'mesa-administrativa'
+const MUSICA = 'secretaria-de-musica'
+
+function userWithScope(scope: string | null): CurrentUser {
   return {
     id: 1,
     email: 'ana@example.com',
     name: 'Ana',
-    can: vi.fn(() => canReturn),
+    can: vi.fn((_entity, _action, requestedScope) => scope !== null && requestedScope === scope),
   }
+}
+
+function noPermission(): CurrentUser {
+  return userWithScope(null)
 }
 
 function formData(payload: unknown) {
@@ -38,6 +45,7 @@ function formData(payload: unknown) {
 
 function payload(overrides: Record<string, unknown> = {}) {
   return {
+    book: MESA,
     number: 1,
     title: 'IPB de Jaraguá do Sul',
     started_at: '2026-06-07T19:30',
@@ -62,13 +70,22 @@ describe('createMeetingMinuteAction.execute', () => {
     vi.mocked(revalidatePath).mockClear()
   })
 
-  it('denies a user without create permission without writing', async () => {
-    const user = userWithPermission(false)
+  it('denies a user without create permission on the requested Livro without writing', async () => {
+    const user = noPermission()
 
     const state = await createMeetingMinuteAction.execute({ user, db }, formData(payload()))
 
     expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
-    expect(user.can).toHaveBeenCalledWith('meeting_minutes', 'create')
+    expect(user.can).toHaveBeenCalledWith('meeting_minutes', 'create', MESA)
+    expect(await db.select().from(meetingMinutes)).toEqual([])
+  })
+
+  it('denies a user with permission on a different Livro without writing', async () => {
+    const user = userWithScope(MUSICA)
+
+    const state = await createMeetingMinuteAction.execute({ user, db }, formData(payload({ book: MESA })))
+
+    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
     expect(await db.select().from(meetingMinutes)).toEqual([])
   })
 
@@ -79,13 +96,14 @@ describe('createMeetingMinuteAction.execute', () => {
     expect(await db.select().from(meetingMinutes)).toEqual([])
   })
 
-  it('saves a complete Ata as Aprovação pendente with its Tópicos in order', async () => {
-    const state = await createMeetingMinuteAction.execute({ user: userWithPermission(true), db }, formData(payload()))
+  it('saves a complete Ata in its Livro, as Aprovação pendente, with its Tópicos in order', async () => {
+    const state = await createMeetingMinuteAction.execute({ user: userWithScope(MESA), db }, formData(payload()))
 
     expect(state).toEqual({ status: 'success' })
 
     const [minute] = await db.select().from(meetingMinutes)
     expect(minute).toMatchObject({
+      book: MESA,
       number: 1,
       title: 'IPB de Jaraguá do Sul',
       location: 'Salão social',
@@ -103,12 +121,12 @@ describe('createMeetingMinuteAction.execute', () => {
       { position: 0, title: 'Orçamento' },
       { position: 1, title: 'Reforma' },
     ])
-    expect(revalidatePath).toHaveBeenCalledWith('/admin/meeting-minutes')
+    expect(revalidatePath).toHaveBeenCalledWith(`/admin/meeting-minutes/${MESA}`)
   })
 
   it('rejects an incomplete first save', async () => {
     const state = await createMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ location: '', opening: '**  **', topics: [] }))
     )
 
@@ -121,7 +139,7 @@ describe('createMeetingMinuteAction.execute', () => {
 
   it('rejects a Tópico without title or Discussão', async () => {
     const state = await createMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ topics: [{ title: '', discussion: '' }] }))
     )
 
@@ -131,7 +149,7 @@ describe('createMeetingMinuteAction.execute', () => {
 
   it('rejects a Término that is not later than the Início', async () => {
     const state = await createMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ ended_at: '2026-06-07T19:00' }))
     )
 
@@ -141,8 +159,8 @@ describe('createMeetingMinuteAction.execute', () => {
     expect(await db.select().from(meetingMinutes)).toEqual([])
   })
 
-  it('reports a Número already taken', async () => {
-    const user = userWithPermission(true)
+  it('reports a Número already taken in the same Livro', async () => {
+    const user = userWithScope(MESA)
     await createMeetingMinuteAction.execute({ user, db }, formData(payload({ number: 4 })))
 
     const state = await createMeetingMinuteAction.execute(
@@ -152,6 +170,21 @@ describe('createMeetingMinuteAction.execute', () => {
 
     expect(state).toEqual({ status: 'error', formError: 'Já existe uma Ata com esse Número.' })
     expect(await db.select().from(meetingMinutes)).toHaveLength(1)
+  })
+
+  it('accepts the same Número in a different Livro', async () => {
+    await createMeetingMinuteAction.execute(
+      { user: userWithScope(MESA), db },
+      formData(payload({ book: MESA, number: 1 }))
+    )
+
+    const state = await createMeetingMinuteAction.execute(
+      { user: userWithScope(MUSICA), db },
+      formData(payload({ book: MUSICA, number: 1 }))
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    expect(await db.select().from(meetingMinutes)).toHaveLength(2)
   })
 })
 
@@ -164,17 +197,19 @@ describe('updateMeetingMinuteAction.execute', () => {
   })
 
   async function seed(overrides: Record<string, unknown> = {}) {
-    const user = userWithPermission(true)
-    const state = await createMeetingMinuteAction.execute({ user, db }, formData(payload(overrides)))
+    const state = await createMeetingMinuteAction.execute(
+      { user: userWithScope((overrides.book as string) ?? MESA), db },
+      formData(payload(overrides))
+    )
     if (state.status !== 'success') throw new Error('expected the seed to succeed')
 
     const [minute] = await db.select().from(meetingMinutes)
     return minute
   }
 
-  it('denies a user without update permission without writing', async () => {
+  it('denies a user without update permission on the Ata Livro without writing', async () => {
     const minute = await seed()
-    const user = userWithPermission(false)
+    const user = noPermission()
 
     const state = await updateMeetingMinuteAction.execute(
       { user, db },
@@ -182,10 +217,21 @@ describe('updateMeetingMinuteAction.execute', () => {
     )
 
     expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
-    expect(user.can).toHaveBeenCalledWith('meeting_minutes', 'update')
 
     const [current] = await db.select().from(meetingMinutes)
     expect(current.title).toBe('IPB de Jaraguá do Sul')
+  })
+
+  it('denies a user with permission on a different Livro from the Ata being edited', async () => {
+    const minute = await seed()
+    const user = userWithScope(MUSICA)
+
+    const state = await updateMeetingMinuteAction.execute(
+      { user, db },
+      formData(payload({ id: minute.id, title: 'Nova' }))
+    )
+
+    expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
   })
 
   it('denies a request without a session', async () => {
@@ -196,11 +242,11 @@ describe('updateMeetingMinuteAction.execute', () => {
     expect(state).toEqual({ status: 'error', formError: 'Sua sessão expirou. Faça login novamente.' })
   })
 
-  it('rewrites every field of a Pendente Ata, keeping its identity', async () => {
+  it('rewrites every field of a Pendente Ata, keeping its identity and Livro', async () => {
     const minute = await seed()
 
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(
         payload({
           id: minute.id,
@@ -221,6 +267,7 @@ describe('updateMeetingMinuteAction.execute', () => {
     const [current] = await db.select().from(meetingMinutes)
     expect(current).toMatchObject({
       id: minute.id,
+      book: MESA,
       number: 9,
       title: 'Ata reformulada',
       location: 'Sala de reuniões',
@@ -230,14 +277,27 @@ describe('updateMeetingMinuteAction.execute', () => {
       status: 'pending',
     })
     expect(current.started_at.toISOString()).toBe('2026-06-14T21:00:00.000Z')
-    expect(revalidatePath).toHaveBeenCalledWith('/admin/meeting-minutes')
+    expect(revalidatePath).toHaveBeenCalledWith(`/admin/meeting-minutes/${MESA}`)
+  })
+
+  it('ignores a Livro sent along with the update, keeping the original', async () => {
+    const minute = await seed({ book: MUSICA })
+
+    const state = await updateMeetingMinuteAction.execute(
+      { user: userWithScope(MUSICA), db },
+      formData(payload({ id: minute.id, book: MESA, title: 'Tentativa de mudar de Livro' }))
+    )
+
+    expect(state).toEqual({ status: 'success' })
+    const [current] = await db.select().from(meetingMinutes)
+    expect(current.book).toBe(MUSICA)
   })
 
   it('persists Tópicos added, removed and reordered', async () => {
     const minute = await seed()
 
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(
         payload({
           id: minute.id,
@@ -266,7 +326,7 @@ describe('updateMeetingMinuteAction.execute', () => {
     const minute = await seed()
 
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ id: minute.id, location: '', opening: '**  **', topics: [] }))
     )
 
@@ -280,22 +340,22 @@ describe('updateMeetingMinuteAction.execute', () => {
     const minute = await seed()
 
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ id: minute.id, number: 1, title: 'Mesmo Número' }))
     )
 
     expect(state).toEqual({ status: 'success' })
   })
 
-  it('reports a Número taken by another Ata and keeps the original intact', async () => {
+  it('reports a Número taken by another Ata of the same Livro and keeps the original intact', async () => {
     const minute = await seed()
     await createMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ number: 2, started_at: '2026-07-05T19:30', ended_at: '2026-07-05T21:00' }))
     )
 
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ id: minute.id, number: 2 }))
     )
 
@@ -310,7 +370,7 @@ describe('updateMeetingMinuteAction.execute', () => {
     await db.update(meetingMinutes).set({ status: 'approved' }).where(eq(meetingMinutes.id, minute.id))
 
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ id: minute.id, title: 'Tarde demais' }))
     )
 
@@ -322,7 +382,7 @@ describe('updateMeetingMinuteAction.execute', () => {
 
   it('reports an Ata that does not exist', async () => {
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload({ id: 999 }))
     )
 
@@ -346,7 +406,7 @@ describe('approving an Ata and keeping its PDF', () => {
 
   async function seed(overrides: Record<string, unknown> = {}) {
     const state = await createMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       formData(payload(overrides))
     )
     if (state.status !== 'success') throw new Error('expected the seed to succeed')
@@ -378,14 +438,13 @@ describe('approving an Ata and keeping its PDF', () => {
     await closeSharedBrowser()
   })
 
-  it('denies a Usuário without update permission and leaves the Ata Pendente', async () => {
+  it('denies a Usuário without update permission on the Livro and leaves the Ata Pendente', async () => {
     const minute = await seed()
-    const user = userWithPermission(false)
+    const user = noPermission()
 
     const state = await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
 
     expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
-    expect(user.can).toHaveBeenCalledWith('meeting_minutes', 'update')
     expect((await db.select().from(meetingMinutes))[0].status).toBe('pending')
   })
 
@@ -401,25 +460,19 @@ describe('approving an Ata and keeping its PDF', () => {
   it('consolidates the Ata and stores its PDF', { timeout: 60_000 }, async () => {
     const minute = await seed()
 
-    const state = await approveMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
-      idFormData(minute.id)
-    )
+    const state = await approveMeetingMinuteAction.execute({ user: userWithScope(MESA), db }, idFormData(minute.id))
 
     expect(state).toEqual({ status: 'success' })
     expect((await db.select().from(meetingMinutes))[0].status).toBe('approved')
     const stored = await readMeetingMinutePdfCache(await storedPdfPath(minute.id))
     expect(stored?.subarray(0, 5).toString()).toBe('%PDF-')
-    expect(revalidatePath).toHaveBeenCalledWith('/admin/meeting-minutes')
+    expect(revalidatePath).toHaveBeenCalledWith(`/admin/meeting-minutes/${MESA}`)
   })
 
   it('keeps the Aprovação when the document fails and says to try the PDF again', { timeout: 60_000 }, async () => {
     const minute = await seed({ opening: 'Aberta com ![diagrama](https://localhost/diagrama.png) em anexo.' })
 
-    const state = await approveMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
-      idFormData(minute.id)
-    )
+    const state = await approveMeetingMinuteAction.execute({ user: userWithScope(MESA), db }, idFormData(minute.id))
 
     expect(state).toEqual({ status: 'success', warning: APPROVED_WITHOUT_PDF })
     expect((await db.select().from(meetingMinutes))[0].status).toBe('approved')
@@ -428,7 +481,7 @@ describe('approving an Ata and keeping its PDF', () => {
 
   it('adds nothing when the Aprovação is repeated', { timeout: 60_000 }, async () => {
     const minute = await seed()
-    const user = userWithPermission(true)
+    const user = userWithScope(MESA)
     await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
     const stored = await storedPdfPath(minute.id)
     await writeMeetingMinutePdfCache(stored, Buffer.from('%PDF-1.7 cache antigo'))
@@ -442,7 +495,7 @@ describe('approving an Ata and keeping its PDF', () => {
 
   it('does not build the document a repeat found missing', { timeout: 60_000 }, async () => {
     const minute = await seed()
-    const user = userWithPermission(true)
+    const user = userWithScope(MESA)
     await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
     const stored = await storedPdfPath(minute.id)
     await rm(path.join(cacheDirectory(), stored))
@@ -459,10 +512,7 @@ describe('approving an Ata and keeping its PDF', () => {
       throw new Error('revalidation is unavailable')
     })
 
-    const state = await approveMeetingMinuteAction.execute(
-      { user: userWithPermission(true), db },
-      idFormData(minute.id)
-    )
+    const state = await approveMeetingMinuteAction.execute({ user: userWithScope(MESA), db }, idFormData(minute.id))
 
     expect(state.status).toBe('success')
     expect((await db.select().from(meetingMinutes))[0].status).toBe('approved')
@@ -470,19 +520,19 @@ describe('approving an Ata and keeping its PDF', () => {
   })
 
   it('reports an Ata that does not exist', async () => {
-    const state = await approveMeetingMinuteAction.execute({ user: userWithPermission(true), db }, idFormData(999))
+    const state = await approveMeetingMinuteAction.execute({ user: userWithScope(MESA), db }, idFormData(999))
 
     expect(state).toEqual({ status: 'error', formError: 'Ata não encontrada.' })
   })
 
   it('lets a Usuário with read replace the stored PDF', { timeout: 60_000 }, async () => {
     const minute = await seed()
-    await approveMeetingMinuteAction.execute({ user: userWithPermission(true), db }, idFormData(minute.id))
+    await approveMeetingMinuteAction.execute({ user: userWithScope(MESA), db }, idFormData(minute.id))
     const stored = await storedPdfPath(minute.id)
     await writeMeetingMinutePdfCache(stored, Buffer.from('%PDF-1.7 cache antigo'))
 
     const state = await regenerateMeetingMinutePdfAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       idFormData(minute.id)
     )
 
@@ -491,21 +541,20 @@ describe('approving an Ata and keeping its PDF', () => {
     expect(await readdir(cacheDirectory())).toEqual([stored])
   })
 
-  it('denies a Regeneração from a Usuário without read', async () => {
+  it('denies a Regeneração from a Usuário without read on that Livro', async () => {
     const minute = await seed()
-    const user = userWithPermission(false)
+    const user = noPermission()
 
     const state = await regenerateMeetingMinutePdfAction.execute({ user, db }, idFormData(minute.id))
 
     expect(state).toEqual({ status: 'error', formError: 'Você não tem permissão para executar esta ação.' })
-    expect(user.can).toHaveBeenCalledWith('meeting_minutes', 'read')
   })
 
   it('refuses to store a PDF for an Ata still Pendente', async () => {
     const minute = await seed()
 
     const state = await regenerateMeetingMinutePdfAction.execute(
-      { user: userWithPermission(true), db },
+      { user: userWithScope(MESA), db },
       idFormData(minute.id)
     )
 

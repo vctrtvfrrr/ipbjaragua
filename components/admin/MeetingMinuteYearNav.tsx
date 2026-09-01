@@ -4,11 +4,12 @@ import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 type Props = {
+  book: string
   previousYear: number | null
   nextYear: number | null
 }
 
-export function MeetingMinuteYearNav({ previousYear, nextYear }: Props) {
+export function MeetingMinuteYearNav({ book, previousYear, nextYear }: Props) {
   if (previousYear === null && nextYear === null) return null
 
   return (
@@ -17,7 +18,7 @@ export function MeetingMinuteYearNav({ previousYear, nextYear }: Props) {
         <span />
       ) : (
         <Link
-          href={`/admin/meeting-minutes?year=${previousYear}`}
+          href={`/admin/meeting-minutes/${book}?year=${previousYear}`}
           aria-label={`Atas de ${previousYear}`}
           className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
         >
@@ -27,7 +28,7 @@ export function MeetingMinuteYearNav({ previousYear, nextYear }: Props) {
       )}
       {nextYear === null ? null : (
         <Link
-          href={`/admin/meeting-minutes?year=${nextYear}`}
+          href={`/admin/meeting-minutes/${book}?year=${nextYear}`}
           aria-label={`Atas de ${nextYear}`}
           className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
         >

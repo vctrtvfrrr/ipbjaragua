@@ -30,6 +30,10 @@ type EntityActionOptions<Schema extends z.ZodType, WriteResult> = {
   action: Action
   schema: Schema
   parse?: (formData: FormData) => unknown
+  // Present only for a scoped entity (the Ata's Livro): resolved from the parsed, validated
+  // data, so it can come from the payload itself (creation) or from a database read keyed by
+  // an id in it (edition) — either way it runs, and denies, before `write` ever touches a row.
+  scope?: (context: { user: CurrentUser; db: Database; data: ParsedData<Schema> }) => string | Promise<string>
   write: (context: WriteContext<Schema>) => WriteResult | Promise<WriteResult>
   revalidate?: (result: Awaited<WriteResult>, context: WriteContext<Schema>) => void | Promise<void>
   notify?: (
@@ -66,11 +70,15 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
   options: EntityActionOptions<Schema, WriteResult>
 ) {
   async function execute(context: EntityActionContext, formData: FormData): Promise<ActionState> {
-    const permissionError = requirePermission(context.user, options.entity, options.action)
-    if (permissionError) return permissionError
-
     const user = context.user
     if (!user) return { status: 'error', formError: SESSION_ERROR }
+
+    // An unscoped entity keeps its permission decided up front, exactly as before — only a
+    // scoped one (the Ata) defers it, because the scope is not known until the data is parsed.
+    if (!options.scope) {
+      const permissionError = requirePermission(user, options.entity, options.action)
+      if (permissionError) return permissionError
+    }
 
     try {
       const parsedForm = options.parse ? options.parse(formData) : parseForm(formData)
@@ -82,6 +90,13 @@ export function defineEntityAction<Schema extends z.ZodType, WriteResult>(
         return options.parse
           ? { status: 'error', fieldErrors, formError }
           : { status: 'error', fieldErrors, formError, values: stringValues(parsedForm) }
+      }
+
+      if (options.scope) {
+        const scope = await options.scope({ user, db: context.db, data: parsedData.data })
+        if (!user.can(options.entity, options.action, scope)) {
+          return { status: 'error', formError: PERMISSION_ERROR }
+        }
       }
 
       const writeContext: WriteContext<Schema> = { user, db: context.db, data: parsedData.data }

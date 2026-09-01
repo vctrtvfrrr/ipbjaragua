@@ -8,9 +8,13 @@ import {
   resolveMeetingMinuteYearNavigation,
 } from './meeting-minute'
 import { CHURCH_NAME } from './church'
+import { meetingMinuteBookBySlug } from './meeting-minute-books'
+
+const BOOK = meetingMinuteBookBySlug('mesa-administrativa')!
 
 function payload(overrides: Record<string, unknown> = {}) {
   return {
+    book: BOOK.slug,
     number: 1,
     title: CHURCH_NAME,
     started_at: '2026-06-07T19:30',
@@ -60,6 +64,7 @@ describe('createMeetingMinuteSchema', () => {
   it('requires every field of the model', () => {
     expect(
       errorPaths({
+        book: BOOK.slug,
         number: '',
         title: ' ',
         started_at: '',
@@ -106,6 +111,10 @@ describe('createMeetingMinuteSchema', () => {
     )
 
     expect(result.ended_at.getTime() - result.started_at.getTime()).toBe(150 * 60 * 1000)
+  })
+
+  it('rejects a Livro outside the closed list', () => {
+    expect(errorPaths(payload({ book: 'conselho' }))).toEqual(['book'])
   })
 })
 
@@ -167,9 +176,9 @@ describe('resolveMeetingMinuteYearNavigation', () => {
 })
 
 describe('meetingMinuteLabel', () => {
-  it('names the Ata by its Número and Título', () => {
-    expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' })).toBe(
-      `42ª Ata de Reunião ordinária da ${CHURCH_NAME}`
+  it('names the Ata by its Número, Título and Livro', () => {
+    expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' }, BOOK)).toBe(
+      `42ª Ata de Reunião ordinária ${BOOK.genitive} da ${CHURCH_NAME}`
     )
   })
 })

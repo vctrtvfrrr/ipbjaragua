@@ -1,6 +1,7 @@
 import type { MeetingMinuteStatus } from '@/db/schema'
 import { formatChurchDatePtBR, formatChurchTimePtBR } from '@/lib/date'
 import { MEETING_MINUTE_STATUS_LABELS, meetingMinuteLabel } from '@/lib/meeting-minute'
+import type { MeetingMinuteBookDefinition } from '@/lib/meeting-minute-books'
 import { loadPdfFontFaceCss } from '@/lib/pdf/fonts'
 import { escapeHtml } from '@/lib/pdf/html'
 import { renderMarkdownToHtml } from '@/lib/pdf/markdown'
@@ -29,7 +30,10 @@ export function meetingMinutePdfFilename(minute: { number: number }): string {
 
 // The mark is not a rendering option but a reading of the Status: an Approved Ata printed
 // with it would deny its own consolidation, and a Pending one without it would claim one.
-export async function renderMeetingMinuteDocumentHtml(minute: MeetingMinuteDocument): Promise<string> {
+export async function renderMeetingMinuteDocumentHtml(
+  minute: MeetingMinuteDocument,
+  book: MeetingMinuteBookDefinition
+): Promise<string> {
   const budget = createImageBudget()
   const fontFaces = await loadPdfFontFaceCss()
   const attendees = await renderMarkdownToHtml(minute.attendees, budget)
@@ -41,7 +45,7 @@ export async function renderMeetingMinuteDocumentHtml(minute: MeetingMinuteDocum
     topics.push({ title: topic.title, discussion: await renderMarkdownToHtml(topic.discussion, budget) })
   }
 
-  const documentTitle = meetingMinuteLabel(minute)
+  const documentTitle = meetingMinuteLabel(minute, book)
 
   const watermark =
     minute.status === 'pending'
@@ -55,6 +59,7 @@ ${watermark}
     <h1>${escapeHtml(documentTitle)}</h1>
   </header>
   <dl class="facts">
+    <div><dt>Livro</dt><dd>${escapeHtml(book.label)}</dd></div>
     <div><dt>Data</dt><dd>${formatChurchDatePtBR(minute.started_at)}</dd></div>
     <div><dt>Horário</dt><dd>${formatChurchTimePtBR(minute.started_at)} às ${formatChurchTimePtBR(minute.ended_at)}</dd></div>
     <div><dt>Local</dt><dd>${escapeHtml(minute.location)}</dd></div>

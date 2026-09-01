@@ -5,6 +5,7 @@ import {
   MEETING_MINUTE_BOOK_INVALID,
 } from '@/lib/meeting-minute-book'
 import { generateMeetingMinuteBook, type MeetingMinuteBookResult } from '@/lib/meeting-minute-book-pdf'
+import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 import { GET } from './route'
 
 vi.mock('@/lib/auth/current-user', () => ({ readCurrentUser: vi.fn() }))
@@ -13,11 +14,16 @@ vi.mock('@/lib/meeting-minute-book-pdf', () => ({ generateMeetingMinuteBook: vi.
 const generate = vi.mocked(generateMeetingMinuteBook)
 
 const TOKEN = '0e1d2c3b-4a59-4867-8f90-a1b2c3d4e5f6'
+const BOOK = meetingMinuteBookBySlug('mesa-administrativa')!
 
 function request(): Request {
   const query = new URLSearchParams({ from: '2026-01-01', to: '2026-12-31', order: 'chronological', token: TOKEN })
 
-  return new Request(`https://ipbjaragua.org.br/admin/meeting-minutes/book?${query}`)
+  return new Request(`https://ipbjaragua.org.br/admin/meeting-minutes/${BOOK.slug}/export?${query}`)
+}
+
+function context(book: string = BOOK.slug) {
+  return { params: Promise.resolve({ book }) }
 }
 
 function answering(result: MeetingMinuteBookResult): void {
@@ -29,12 +35,12 @@ beforeEach(() => {
 })
 
 describe('the Livro de Atas route', () => {
-  it('passes the requested period, order and operation on', async () => {
+  it('passes the requested Livro, período, order and operation on', async () => {
     answering({ status: 'empty' })
 
-    await GET(request())
+    await GET(request(), context())
 
-    expect(generate).toHaveBeenCalledWith(expect.any(Function), {
+    expect(generate).toHaveBeenCalledWith(expect.any(Function), BOOK, {
       from: '2026-01-01',
       to: '2026-12-31',
       order: 'chronological',
@@ -42,10 +48,17 @@ describe('the Livro de Atas route', () => {
     })
   })
 
+  it('answers a Livro that does not exist as an access denial', async () => {
+    const response = await GET(request(), context('livro-inexistente'))
+
+    expect(response.status).toBe(403)
+    expect(generate).not.toHaveBeenCalled()
+  })
+
   it('refuses a request the Permissão does not cover', async () => {
     answering({ status: 'forbidden' })
 
-    const response = await GET(request())
+    const response = await GET(request(), context())
 
     expect(response.status).toBe(403)
     expect(await response.json()).toEqual({ message: 'Acesso negado.' })
@@ -54,7 +67,7 @@ describe('the Livro de Atas route', () => {
   it('reports a period it cannot read as a period', async () => {
     answering({ status: 'invalid' })
 
-    const response = await GET(request())
+    const response = await GET(request(), context())
 
     expect(response.status).toBe(400)
     expect(await response.json()).toEqual({ message: MEETING_MINUTE_BOOK_INVALID })
@@ -63,7 +76,7 @@ describe('the Livro de Atas route', () => {
   it('refuses to answer with an empty Livro', async () => {
     answering({ status: 'empty' })
 
-    const response = await GET(request())
+    const response = await GET(request(), context())
 
     expect(response.status).toBe(422)
     expect(await response.json()).toEqual({ message: MEETING_MINUTE_BOOK_EMPTY })
@@ -72,20 +85,26 @@ describe('the Livro de Atas route', () => {
   it('passes a failure on with the way out of it', async () => {
     answering({ status: 'failed', message: MEETING_MINUTE_BOOK_FAILURE })
 
-    const response = await GET(request())
+    const response = await GET(request(), context())
 
     expect(response.status).toBe(502)
     expect(await response.json()).toEqual({ message: MEETING_MINUTE_BOOK_FAILURE })
   })
 
   it('hands the Livro over as a download that no cache may keep', async () => {
-    answering({ status: 'ok', pdf: Buffer.from('%PDF-1.7 livro'), filename: 'livro-de-atas-7-9.pdf' })
+    answering({
+      status: 'ok',
+      pdf: Buffer.from('%PDF-1.7 livro'),
+      filename: 'livro-de-atas-mesa-administrativa-7-9.pdf',
+    })
 
-    const response = await GET(request())
+    const response = await GET(request(), context())
 
     expect(response.status).toBe(200)
     expect(response.headers.get('Content-Type')).toBe('application/pdf')
-    expect(response.headers.get('Content-Disposition')).toBe('attachment; filename="livro-de-atas-7-9.pdf"')
+    expect(response.headers.get('Content-Disposition')).toBe(
+      'attachment; filename="livro-de-atas-mesa-administrativa-7-9.pdf"'
+    )
     expect(response.headers.get('Cache-Control')).toBe('no-store, private')
     expect(Buffer.from(await response.arrayBuffer()).toString()).toBe('%PDF-1.7 livro')
   })

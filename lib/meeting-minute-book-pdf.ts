@@ -16,6 +16,7 @@ import {
   type MeetingMinuteBookSummary,
 } from '@/lib/meeting-minute-book'
 import { renderMeetingMinuteBookCoverHtml, type MeetingMinuteBookCover } from '@/lib/meeting-minute-book-document'
+import type { MeetingMinuteBookDefinition } from '@/lib/meeting-minute-books'
 import { storedMeetingMinutePdf } from '@/lib/meeting-minute-pdf'
 import { pdfJobState, renderPdf, runPdfJob, type PdfJobState } from '@/lib/pdf/browser'
 
@@ -33,24 +34,29 @@ export type MeetingMinuteBookResult =
   | { status: 'empty' }
   | { status: 'failed'; message: string }
 
-export function meetingMinuteBookState(user: CurrentUser | null, token: string | null): PdfJobState | null {
-  if (!user?.can('meeting_minutes', 'read')) return null
+export function meetingMinuteBookState(
+  user: CurrentUser | null,
+  book: MeetingMinuteBookDefinition,
+  token: string | null
+): PdfJobState | null {
+  if (!user?.can('meeting_minutes', 'read', book.slug)) return null
 
   return token ? pdfJobState(meetingMinuteBookJob(token)) : 'idle'
 }
 
 export async function meetingMinuteBookSummary(
   user: CurrentUser | null,
+  book: MeetingMinuteBookDefinition,
   input: unknown,
   db: Database = defaultDb
 ): Promise<MeetingMinuteBookSummaryResult> {
-  if (!user?.can('meeting_minutes', 'read')) return { status: 'forbidden' }
+  if (!user?.can('meeting_minutes', 'read', book.slug)) return { status: 'forbidden' }
 
   const parsed = meetingMinuteBookSchema.safeParse(input)
   if (!parsed.success) return { status: 'invalid' }
 
   const period = parsed.data
-  const selection = await summarizeApprovedMeetingMinutes(churchDayRange(period.from, period.to), db)
+  const selection = await summarizeApprovedMeetingMinutes(book.slug, churchDayRange(period.from, period.to), db)
 
   return { status: 'ok', summary: { ...period, ...selection } }
 }
@@ -62,16 +68,22 @@ class RevokedDuringExportError extends Error {}
 // lost the Permissão halfway through receives no document at all.
 export async function generateMeetingMinuteBook(
   read: MeetingMinuteReader,
+  book: MeetingMinuteBookDefinition,
   input: unknown,
   db: Database = defaultDb
 ): Promise<MeetingMinuteBookResult> {
-  if (!(await mayRead(read))) return { status: 'forbidden' }
+  if (!(await mayRead(read, book))) return { status: 'forbidden' }
 
   const parsed = meetingMinuteBookRequestSchema.safeParse(input)
   if (!parsed.success) return { status: 'invalid' }
 
   const request = parsed.data
-  const entries = await listApprovedMeetingMinutesForBook(churchDayRange(request.from, request.to), request.order, db)
+  const entries = await listApprovedMeetingMinutesForBook(
+    book.slug,
+    churchDayRange(request.from, request.to),
+    request.order,
+    db
+  )
   if (entries.length === 0) return { status: 'empty' }
 
   const numbers = entries.map((entry) => entry.number)
@@ -84,9 +96,9 @@ export async function generateMeetingMinuteBook(
 
   try {
     const job = meetingMinuteBookJob(request.token)
-    const pdf = await runPdfJob(job, () => bindMeetingMinuteBook(entries, cover, job, read, db))
+    const pdf = await runPdfJob(job, () => bindMeetingMinuteBook(entries, book, cover, job, read, db))
 
-    return { status: 'ok', pdf, filename: meetingMinuteBookFilename(cover) }
+    return { status: 'ok', pdf, filename: meetingMinuteBookFilename(book, cover) }
   } catch (error) {
     if (error instanceof RevokedDuringExportError) return { status: 'forbidden' }
 
@@ -99,34 +111,35 @@ export async function generateMeetingMinuteBook(
 // invent one. A single failure throws, and an aborted Livro is never handed over in part.
 async function bindMeetingMinuteBook(
   entries: MeetingMinuteBookEntry[],
+  book: MeetingMinuteBookDefinition,
   cover: MeetingMinuteBookCover,
   job: string,
   read: MeetingMinuteReader,
   db: Database
 ): Promise<Buffer> {
-  const book = await PDFDocument.create()
+  const document = await PDFDocument.create()
 
-  await appendPdf(book, await renderPdf(job, () => renderMeetingMinuteBookCoverHtml(cover)))
+  await appendPdf(document, await renderPdf(job, () => renderMeetingMinuteBookCoverHtml(book, cover)))
 
   for (const entry of entries) {
-    if (!(await mayRead(read))) throw new RevokedDuringExportError()
+    if (!(await mayRead(read, book))) throw new RevokedDuringExportError()
 
-    await appendPdf(book, await storedMeetingMinutePdf(entry, db))
+    await appendPdf(document, await storedMeetingMinutePdf(entry, book, db))
   }
 
-  if (!(await mayRead(read))) throw new RevokedDuringExportError()
+  if (!(await mayRead(read, book))) throw new RevokedDuringExportError()
 
-  return Buffer.from(await book.save())
+  return Buffer.from(await document.save())
 }
 
-async function mayRead(read: MeetingMinuteReader): Promise<boolean> {
-  return (await read())?.can('meeting_minutes', 'read') ?? false
+async function mayRead(read: MeetingMinuteReader, book: MeetingMinuteBookDefinition): Promise<boolean> {
+  return (await read())?.can('meeting_minutes', 'read', book.slug) ?? false
 }
 
-async function appendPdf(book: PDFDocument, pdf: Buffer): Promise<void> {
-  const document = await PDFDocument.load(pdf)
+async function appendPdf(target: PDFDocument, pdf: Buffer): Promise<void> {
+  const source = await PDFDocument.load(pdf)
 
-  for (const page of await book.copyPages(document, document.getPageIndices())) {
-    book.addPage(page)
+  for (const page of await target.copyPages(source, source.getPageIndices())) {
+    target.addPage(page)
   }
 }

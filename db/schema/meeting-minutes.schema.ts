@@ -1,15 +1,21 @@
 import { sql } from 'drizzle-orm'
-import { check, index, integer, pgEnum, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { check, index, integer, pgEnum, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
+import { MEETING_MINUTE_BOOK_SLUGS } from '../../lib/meeting-minute-books'
 import { id, timestamps } from './common-fields'
 
 export const meetingMinuteStatus = pgEnum('meeting_minute_status', ['pending', 'approved'])
 export type MeetingMinuteStatus = (typeof meetingMinuteStatus.enumValues)[number]
 
+export const meetingMinuteBook = pgEnum('meeting_minute_book', MEETING_MINUTE_BOOK_SLUGS)
+export type MeetingMinuteBook = (typeof meetingMinuteBook.enumValues)[number]
+
 export const meetingMinutes = pgTable(
   'meeting_minutes',
   {
     id: id(),
-    number: integer('number').notNull().unique(),
+    // Set once, on creation, from the route the form was opened in — never written again.
+    book: meetingMinuteBook('book').notNull(),
+    number: integer('number').notNull(),
     title: text('title').notNull(),
     started_at: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull(),
     ended_at: timestamp('ended_at', { withTimezone: true, mode: 'date' }).notNull(),
@@ -25,6 +31,7 @@ export const meetingMinutes = pgTable(
   },
   (t) => [
     check('meeting_minutes_ended_after_started', sql`${t.ended_at} > ${t.started_at}`),
+    unique('meeting_minutes_book_number_unique').on(t.book, t.number),
     index('meeting_minutes_started_at_index').on(t.started_at),
   ]
 )

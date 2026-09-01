@@ -10,7 +10,7 @@ test('an authenticated user walks an Ata from creation to an exported Livro', as
   test.slow()
   await authenticateAsE2eAdmin(context, baseURL)
 
-  await page.goto('/admin/meeting-minutes/new')
+  await page.goto('/admin/meeting-minutes/mesa-administrativa/new')
   await expect(page.getByLabel('Número')).toHaveValue(String(NUMBER))
   await page.getByLabel('Título', { exact: true }).fill('Reunião extraordinária')
   await page.getByLabel('Início da reunião').fill(`${YEAR}-06-07T19:30`)
@@ -39,8 +39,8 @@ test('an authenticated user walks an Ata from creation to an exported Livro', as
   await page.getByRole('button', { name: 'Mover para cima' }).nth(1).click()
   await expect(page.getByLabel('Título do Tópico').nth(0)).toHaveValue('Orçamento anual')
 
-  await page.getByRole('button', { name: 'Salvar' }).click()
-  await expect(page).toHaveURL(new RegExp(`/admin/meeting-minutes\\?year=${YEAR}$`))
+  await page.getByRole('button', { name: `Criar a ${NUMBER}ª Ata da Mesa Administrativa` }).click()
+  await expect(page).toHaveURL(new RegExp(`/admin/meeting-minutes/mesa-administrativa\\?year=${YEAR}$`))
 
   const row = page.getByRole('row', { name: new RegExp(`${NUMBER}ª Ata de Reunião extraordinária`) })
   await expect(row).toContainText('Aprovação pendente')
@@ -77,6 +77,8 @@ test('an authenticated user walks an Ata from creation to an exported Livro', as
 
   const book = page.waitForEvent('download')
   await exportDialog.getByRole('button', { name: 'Exportar Livro' }).click()
-  expect((await book).suggestedFilename()).toBe(`livro-de-atas-${E2E_MEETING_MINUTE.number}-${NUMBER}.pdf`)
+  expect((await book).suggestedFilename()).toBe(
+    `livro-de-atas-mesa-administrativa-${E2E_MEETING_MINUTE.number}-${NUMBER}.pdf`
+  )
   await expect(exportDialog).toBeHidden()
 })

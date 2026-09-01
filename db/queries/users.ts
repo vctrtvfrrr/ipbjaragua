@@ -114,7 +114,12 @@ async function attachPermissions<T extends User>(
   if (rows.length === 0) return []
 
   const permissions = await db
-    .select({ user_id: userPermissions.user_id, entity: userPermissions.entity, action: userPermissions.action })
+    .select({
+      user_id: userPermissions.user_id,
+      entity: userPermissions.entity,
+      action: userPermissions.action,
+      scope: userPermissions.scope,
+    })
     .from(userPermissions)
     .where(
       inArray(
@@ -127,7 +132,7 @@ async function attachPermissions<T extends User>(
     ...row,
     permissions: permissions
       .filter((permission) => permission.user_id === row.id)
-      .map(({ entity, action }) => ({ entity, action })),
+      .map(({ entity, action, scope }) => ({ entity, action, scope })),
   }))
 }
 
@@ -141,6 +146,7 @@ async function replacePermissions(userId: number, permissions: Permission[], db:
       user_id: userId,
       entity: permission.entity,
       action: permission.action,
+      scope: permission.scope ?? '',
     }))
   )
 }

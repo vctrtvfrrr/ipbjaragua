@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { MeetingMinuteStatus } from '@/db/schema'
 import { isChurchDateTime, parseChurchDateTime } from '@/lib/date'
+import { MEETING_MINUTE_BOOK_SLUGS } from '@/lib/meeting-minute-books'
 import { requiredTrimmedString } from '@/lib/validation'
 import { CHURCH_NAME } from './church'
 
@@ -70,13 +71,19 @@ function parseChurchTimes<T extends z.output<typeof meetingMinuteFields>>(
   return { ...raw, started_at, ended_at }
 }
 
-export const createMeetingMinuteSchema = meetingMinuteFields.transform(parseChurchTimes)
+export const createMeetingMinuteSchema = meetingMinuteFields
+  .extend({ book: z.enum(MEETING_MINUTE_BOOK_SLUGS, { error: 'Livro inválido' }) })
+  .transform(parseChurchTimes)
 
 export const updateMeetingMinuteSchema = meetingMinuteFields
   .extend({ id: z.coerce.number().int().positive('ID é obrigatório') })
   .transform(parseChurchTimes)
 
 export type CreateMeetingMinuteInput = z.output<typeof createMeetingMinuteSchema>
+export type UpdateMeetingMinuteInput = z.output<typeof updateMeetingMinuteSchema>
+// The Livro rides the creation input only: an update never carries one, because the column it
+// would set is never touched — see the comment on `updateMeetingMinute`.
+export type MeetingMinuteContentInput = Omit<CreateMeetingMinuteInput, 'book'>
 
 export const meetingMinuteIdSchema = z.object({ id: z.coerce.number().int().positive('ID é obrigatório') })
 
@@ -115,8 +122,8 @@ export function meetingMinuteTopicLabel(topic: { title: string }, index: number)
   return topic.title.trim() || `Tópico ${index + 1}`
 }
 
-export function meetingMinuteLabel(minute: { number: number; title: string }): string {
-  return `${minute.number}ª Ata de ${minute.title} da ${CHURCH_NAME}`
+export function meetingMinuteLabel(minute: { number: number; title: string }, book: { genitive: string }): string {
+  return `${minute.number}ª Ata de ${minute.title} ${book.genitive} da ${CHURCH_NAME}`
 }
 
 export const MEETING_MINUTE_TOPIC_TITLE_LIMIT = 60

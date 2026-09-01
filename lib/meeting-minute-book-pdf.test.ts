@@ -13,17 +13,23 @@ import {
   type MeetingMinuteReader,
 } from '@/lib/meeting-minute-book-pdf'
 import { ensureMeetingMinutePdfCache } from '@/lib/meeting-minute-pdf'
+import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 import { writeMeetingMinutePdfCache } from '@/lib/meeting-minute-pdf-cache'
 import { closeSharedBrowser, renderPdf, type PdfJobState } from '@/lib/pdf/browser'
 import { createTestDb, type TestDb } from '@/tests/db'
 import { pdfPageTexts } from '@/tests/pdf/pdf-text'
 
-function user(permissions: 'read' | 'none'): CurrentUser {
+const MESA = meetingMinuteBookBySlug('mesa-administrativa')!
+const MUSICA = meetingMinuteBookBySlug('secretaria-de-musica')!
+
+function user(permissions: 'read' | 'none', scope = MESA.slug): CurrentUser {
   return {
     id: 1,
     email: 'ana@example.com',
     name: 'Ana',
-    can: vi.fn((_entity, action) => permissions === 'read' && action === 'read'),
+    can: vi.fn(
+      (_entity, action, requestedScope) => permissions === 'read' && action === 'read' && requestedScope === scope
+    ),
   }
 }
 
@@ -45,11 +51,12 @@ let storagePath: string
 async function minute(
   number: number,
   startedAt: string,
-  options: { approved?: boolean; opening?: string } = {}
+  options: { approved?: boolean; opening?: string; book?: string } = {}
 ): Promise<number> {
   const started_at = parseChurchDateTime(startedAt)
   const created = await createMeetingMinute(
     {
+      book: (options.book ?? MESA.slug) as 'mesa-administrativa',
       number,
       title: 'Reunião ordinária',
       started_at,
@@ -94,22 +101,23 @@ const PERIOD = { from: YEAR.from, to: YEAR.to, order: YEAR.order }
 
 describe('meetingMinuteBookSummary', () => {
   it('refuses a request without an active session', async () => {
-    expect(await meetingMinuteBookSummary(null, PERIOD, db)).toEqual({ status: 'forbidden' })
+    expect(await meetingMinuteBookSummary(null, MESA, PERIOD, db)).toEqual({ status: 'forbidden' })
   })
 
-  it('refuses a Usuário without read on Atas', async () => {
+  it('refuses a Usuário without read on that Livro', async () => {
     const refused = user('none')
 
-    expect(await meetingMinuteBookSummary(refused, PERIOD, db)).toEqual({ status: 'forbidden' })
-    expect(refused.can).toHaveBeenCalledWith('meeting_minutes', 'read')
+    expect(await meetingMinuteBookSummary(refused, MESA, PERIOD, db)).toEqual({ status: 'forbidden' })
+    expect(refused.can).toHaveBeenCalledWith('meeting_minutes', 'read', MESA.slug)
   })
 
-  it('reports the period, the order and the Números it would bind', async () => {
+  it('reports the period, the order and the Números it would bind, restricted to the Livro', async () => {
     await minute(4, '2026-06-07T19:30')
     await minute(9, '2026-06-08T19:30')
     await minute(12, '2026-07-01T19:30', { approved: false })
+    await minute(1, '2026-06-07T19:30', { book: MUSICA.slug })
 
-    expect(await meetingMinuteBookSummary(user('read'), PERIOD, db)).toEqual({
+    expect(await meetingMinuteBookSummary(user('read'), MESA, PERIOD, db)).toEqual({
       status: 'ok',
       summary: { ...PERIOD, count: 2, firstNumber: 4, lastNumber: 9 },
     })
@@ -119,7 +127,7 @@ describe('meetingMinuteBookSummary', () => {
     await minute(1, '2026-06-07T19:30')
 
     expect(
-      await meetingMinuteBookSummary(user('read'), { ...PERIOD, from: '2025-01-01', to: '2025-12-31' }, db)
+      await meetingMinuteBookSummary(user('read'), MESA, { ...PERIOD, from: '2025-01-01', to: '2025-12-31' }, db)
     ).toEqual({
       status: 'ok',
       summary: {
@@ -134,37 +142,37 @@ describe('meetingMinuteBookSummary', () => {
   })
 
   it('refuses a period that is not a period', async () => {
-    expect(await meetingMinuteBookSummary(user('read'), { ...PERIOD, to: '2025-12-31' }, db)).toEqual({
+    expect(await meetingMinuteBookSummary(user('read'), MESA, { ...PERIOD, to: '2025-12-31' }, db)).toEqual({
       status: 'invalid',
     })
-    expect(await meetingMinuteBookSummary(user('read'), { ...PERIOD, from: '07/06/2026' }, db)).toEqual({
+    expect(await meetingMinuteBookSummary(user('read'), MESA, { ...PERIOD, from: '07/06/2026' }, db)).toEqual({
       status: 'invalid',
     })
-    expect(await meetingMinuteBookSummary(user('read'), { ...PERIOD, order: 'alphabetical' }, db)).toEqual({
+    expect(await meetingMinuteBookSummary(user('read'), MESA, { ...PERIOD, order: 'alphabetical' }, db)).toEqual({
       status: 'invalid',
     })
   })
 })
 
 describe('generateMeetingMinuteBook', () => {
-  it('refuses a request without read on Atas', async () => {
-    expect(await generateMeetingMinuteBook(NOBODY, YEAR, db)).toEqual({ status: 'forbidden' })
-    expect(await generateMeetingMinuteBook(reader('none'), YEAR, db)).toEqual({ status: 'forbidden' })
+  it('refuses a request without read on that Livro', async () => {
+    expect(await generateMeetingMinuteBook(NOBODY, MESA, YEAR, db)).toEqual({ status: 'forbidden' })
+    expect(await generateMeetingMinuteBook(reader('none'), MESA, YEAR, db)).toEqual({ status: 'forbidden' })
   })
 
   it('refuses to bind a period with no Ata Aprovada', async () => {
     await minute(1, '2026-06-07T19:30', { approved: false })
 
-    expect(await generateMeetingMinuteBook(reader('read'), YEAR, db)).toEqual({ status: 'empty' })
+    expect(await generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)).toEqual({ status: 'empty' })
   })
 
   it('binds the capa and the Atas Aprovadas in chronological order', { timeout: 180_000 }, async () => {
     await minute(9, '2026-06-08T19:30')
     await minute(7, '2026-06-07T19:30')
 
-    const result = await generateMeetingMinuteBook(reader('read'), YEAR, db)
+    const result = await generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)
 
-    expect(result).toMatchObject({ status: 'ok', filename: 'livro-de-atas-7-9.pdf' })
+    expect(result).toMatchObject({ status: 'ok', filename: 'livro-de-atas-mesa-administrativa-7-9.pdf' })
     const pages = bookPages(result.status === 'ok' ? result.pdf : Buffer.alloc(0))
     expect(pages).toHaveLength(3)
     expect(pageOf(pages, 'Livro de Atas da Mesa Administrativa')).toBe(0)
@@ -172,13 +180,24 @@ describe('generateMeetingMinuteBook', () => {
     expect(pageOf(pages, '9ª Ata')).toBe(2)
   })
 
+  it('never binds an Ata of another Livro', { timeout: 180_000 }, async () => {
+    await minute(7, '2026-06-07T19:30')
+    await minute(9, '2026-06-08T19:30', { book: MUSICA.slug })
+
+    const result = await generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)
+
+    const pages = bookPages(result.status === 'ok' ? result.pdf : Buffer.alloc(0))
+    expect(pages).toHaveLength(2)
+    expect(pageOf(pages, '9ª Ata')).toBe(-1)
+  })
+
   it('binds the Atas the other way round when the order is reversed', { timeout: 180_000 }, async () => {
     await minute(9, '2026-06-08T19:30')
     await minute(7, '2026-06-07T19:30')
 
-    const result = await generateMeetingMinuteBook(reader('read'), { ...YEAR, order: 'reverse' }, db)
+    const result = await generateMeetingMinuteBook(reader('read'), MESA, { ...YEAR, order: 'reverse' }, db)
 
-    expect(result).toMatchObject({ status: 'ok', filename: 'livro-de-atas-7-9.pdf' })
+    expect(result).toMatchObject({ status: 'ok', filename: 'livro-de-atas-mesa-administrativa-7-9.pdf' })
     const pages = bookPages(result.status === 'ok' ? result.pdf : Buffer.alloc(0))
     expect(pageOf(pages, '9ª Ata')).toBe(1)
     expect(pageOf(pages, '7ª Ata')).toBe(2)
@@ -188,9 +207,9 @@ describe('generateMeetingMinuteBook', () => {
     await minute(7, '2026-06-07T19:30')
     await minute(9, '2026-07-01T19:30')
 
-    const result = await generateMeetingMinuteBook(reader('read'), { ...YEAR, to: '2026-06-30' }, db)
+    const result = await generateMeetingMinuteBook(reader('read'), MESA, { ...YEAR, to: '2026-06-30' }, db)
 
-    expect(result).toMatchObject({ status: 'ok', filename: 'livro-de-atas-7-7.pdf' })
+    expect(result).toMatchObject({ status: 'ok', filename: 'livro-de-atas-mesa-administrativa-7-7.pdf' })
     const pages = bookPages(result.status === 'ok' ? result.pdf : Buffer.alloc(0))
     expect(pages).toHaveLength(2)
     expect(pageOf(pages, '9ª Ata')).toBe(-1)
@@ -199,7 +218,7 @@ describe('generateMeetingMinuteBook', () => {
   it('fills a missing cache on the way out', { timeout: 180_000 }, async () => {
     const id = await minute(7, '2026-06-07T19:30')
 
-    await generateMeetingMinuteBook(reader('read'), YEAR, db)
+    await generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)
 
     const stored = (await getMeetingMinuteById(id, db))?.pdf_path
     expect(stored).toMatch(/^[a-f0-9]{48}\.pdf$/)
@@ -207,12 +226,12 @@ describe('generateMeetingMinuteBook', () => {
 
   it('binds the cache an Ata already has instead of a new document', { timeout: 180_000 }, async () => {
     const id = await minute(7, '2026-06-07T19:30')
-    await ensureMeetingMinutePdfCache(id, db)
+    await ensureMeetingMinutePdfCache(id, MESA, db)
     const stored = (await getMeetingMinuteById(id, db))!.pdf_path!
     const marker = await renderPdf('marker', async () => '<!doctype html><html><body>CACHE ANTERIOR</body></html>')
     await writeMeetingMinutePdfCache(stored, marker)
 
-    const result = await generateMeetingMinuteBook(reader('read'), YEAR, db)
+    const result = await generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)
 
     const pages = bookPages(result.status === 'ok' ? result.pdf : Buffer.alloc(0))
     expect(pageOf(pages, 'CACHE ANTERIOR')).toBe(1)
@@ -220,7 +239,7 @@ describe('generateMeetingMinuteBook', () => {
   })
 
   it('refuses a request that does not name the operation it belongs to', async () => {
-    expect(await generateMeetingMinuteBook(reader('read'), { ...YEAR, token: 'livro' }, db)).toEqual({
+    expect(await generateMeetingMinuteBook(reader('read'), MESA, { ...YEAR, token: 'livro' }, db)).toEqual({
       status: 'invalid',
     })
   })
@@ -229,7 +248,7 @@ describe('generateMeetingMinuteBook', () => {
     await minute(7, '2026-06-07T19:30')
     await minute(9, '2026-06-08T19:30', { opening: 'Aberta com ![diagrama](https://localhost/diagrama.png) em anexo.' })
 
-    expect(await generateMeetingMinuteBook(reader('read'), YEAR, db)).toEqual({
+    expect(await generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)).toEqual({
       status: 'failed',
       message: MEETING_MINUTE_BOOK_FAILURE,
     })
@@ -240,14 +259,14 @@ describe('the queue a Livro passes through', () => {
   const OTHER_TOKEN = '11112222-3333-4444-5555-666677778888'
 
   function state(token: string): PdfJobState | null {
-    return meetingMinuteBookState(user('read'), token)
+    return meetingMinuteBookState(user('read'), MESA, token)
   }
 
   it('reports the state of one export and not of exports in general', async () => {
     await minute(7, '2026-06-07T19:30')
 
     expect(state(TOKEN)).toBe('idle')
-    const exporting = generateMeetingMinuteBook(reader('read'), YEAR, db)
+    const exporting = generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)
 
     // The operation reaches the queue only after it knows who is asking and what it will bind.
     await vi.waitFor(() => expect(state(TOKEN)).not.toBe('idle'))
@@ -263,8 +282,8 @@ describe('the queue a Livro passes through', () => {
     const seen: (PdfJobState | null)[][] = []
     const sampling = setInterval(() => seen.push([state(TOKEN), state(OTHER_TOKEN)]), 20)
     const [first, second] = await Promise.all([
-      generateMeetingMinuteBook(reader('read'), YEAR, db),
-      generateMeetingMinuteBook(reader('read'), { ...YEAR, token: OTHER_TOKEN }, db),
+      generateMeetingMinuteBook(reader('read'), MESA, YEAR, db),
+      generateMeetingMinuteBook(reader('read'), MESA, { ...YEAR, token: OTHER_TOKEN }, db),
     ])
     clearInterval(sampling)
 
@@ -288,13 +307,13 @@ describe('a Permissão revoked while the Livro is being bound', () => {
     await minute(7, '2026-06-07T19:30')
     await minute(9, '2026-06-08T19:30')
 
-    expect(await generateMeetingMinuteBook(revokedAfter(2), YEAR, db)).toEqual({ status: 'forbidden' })
+    expect(await generateMeetingMinuteBook(revokedAfter(2), MESA, YEAR, db)).toEqual({ status: 'forbidden' })
   })
 
   it('hands over nothing when the Permissão goes away just before the bytes leave', { timeout: 180_000 }, async () => {
     await minute(7, '2026-06-07T19:30')
     await minute(9, '2026-06-08T19:30')
 
-    expect(await generateMeetingMinuteBook(revokedAfter(3), YEAR, db)).toEqual({ status: 'forbidden' })
+    expect(await generateMeetingMinuteBook(revokedAfter(3), MESA, YEAR, db)).toEqual({ status: 'forbidden' })
   })
 })

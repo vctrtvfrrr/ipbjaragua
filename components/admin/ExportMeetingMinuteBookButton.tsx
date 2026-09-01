@@ -18,6 +18,7 @@ import {
 import { FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import type { MeetingMinuteBookSlug } from '@/lib/meeting-minute-books'
 import {
   meetingMinuteBookPeriodLabel,
   MEETING_MINUTE_BOOK_COUNTING,
@@ -41,6 +42,7 @@ const CONFIRM_LABELS: Record<PdfPhase, string> = {
 const ASK_DELAY_MS = 300
 
 type Props = {
+  book: MeetingMinuteBookSlug
   year: number
 }
 
@@ -48,7 +50,7 @@ function sameSelection(summary: MeetingMinuteBookSummary, period: MeetingMinuteB
   return summary.from === period.from && summary.to === period.to && summary.order === period.order
 }
 
-export function ExportMeetingMinuteBookButton({ year }: Props) {
+export function ExportMeetingMinuteBookButton({ book, year }: Props) {
   const [open, setOpen] = useState(false)
   const [period, setPeriod] = useState<MeetingMinuteBookInput>({
     from: `${year}-01-01`,
@@ -68,7 +70,7 @@ export function ExportMeetingMinuteBookButton({ year }: Props) {
 
   async function refresh(asked: MeetingMinuteBookInput) {
     const token = ++lastAsked.current
-    const result = await meetingMinuteBookSummaryFormAction(asked)
+    const result = await meetingMinuteBookSummaryFormAction(book, asked)
     if (token !== lastAsked.current) return
 
     setSummary(result.status === 'ok' ? result.summary : null)
@@ -97,10 +99,13 @@ export function ExportMeetingMinuteBookButton({ year }: Props) {
     setPhase('waiting')
     setFormError(undefined)
     const query = new URLSearchParams({ ...period, token: crypto.randomUUID() })
-    const stopWatching = watchPdfJobState(`/admin/meeting-minutes/book/state?token=${query.get('token')}`, setPhase)
+    const stopWatching = watchPdfJobState(
+      `/admin/meeting-minutes/${book}/export/state?token=${query.get('token')}`,
+      setPhase
+    )
 
     try {
-      const response = await fetch(`/admin/meeting-minutes/book?${query}`)
+      const response = await fetch(`/admin/meeting-minutes/${book}/export?${query}`)
       if (!response.ok) throw new Error(await pdfFailureMessage(response, MEETING_MINUTE_BOOK_FAILURE))
 
       savePdf(await response.blob(), pdfFilename(response, 'livro-de-atas.pdf'))

@@ -12,14 +12,14 @@ vi.mock('@/app/(admin)/admin/meeting-minutes/form-actions', () => ({
 const summary = vi.mocked(meetingMinuteBookSummaryFormAction)
 
 function found(count: number, firstNumber: number | null = 7, lastNumber: number | null = 9) {
-  summary.mockImplementation(async (input) => ({
+  summary.mockImplementation(async (_book, input) => ({
     status: 'ok',
     summary: { ...(input as { from: string; to: string; order: 'chronological' }), count, firstNumber, lastNumber },
   }))
 }
 
 async function openDialog() {
-  render(<ExportMeetingMinuteBookButton year={2026} />)
+  render(<ExportMeetingMinuteBookButton book="mesa-administrativa" year={2026} />)
   fireEvent.click(screen.getByRole('button', { name: 'Exportar Livro de Atas' }))
 
   return waitFor(() => screen.getByRole('dialog'))
@@ -32,7 +32,7 @@ beforeEach(() => {
 
 describe('ExportMeetingMinuteBookButton', () => {
   it('does not export before the confirmation is shown', () => {
-    render(<ExportMeetingMinuteBookButton year={2026} />)
+    render(<ExportMeetingMinuteBookButton book="mesa-administrativa" year={2026} />)
 
     expect(screen.queryByRole('button', { name: 'Exportar Livro' })).not.toBeInTheDocument()
   })
@@ -69,11 +69,11 @@ describe('ExportMeetingMinuteBookButton', () => {
 
   it('closes the confirmation until the new period has an answer', async () => {
     let answer = () => {}
-    summary.mockImplementationOnce(async (input) => ({
+    summary.mockImplementationOnce(async (_book, input) => ({
       status: 'ok',
       summary: { ...(input as MeetingMinuteBookInput), count: 2, firstNumber: 7, lastNumber: 9 },
     }))
-    summary.mockImplementationOnce(async (input) => {
+    summary.mockImplementationOnce(async (_book, input) => {
       await new Promise<void>((resolve) => {
         answer = resolve
       })
@@ -106,7 +106,7 @@ describe('ExportMeetingMinuteBookButton', () => {
     fireEvent.click(screen.getByLabelText('Cronológica inversa'))
 
     await waitFor(() =>
-      expect(summary).toHaveBeenLastCalledWith({
+      expect(summary).toHaveBeenLastCalledWith('mesa-administrativa', {
         from: '2026-01-01',
         to: '2026-06-30',
         order: 'reverse',
@@ -134,7 +134,7 @@ describe('ExportMeetingMinuteBookButton', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Aguardando…' })).toBeDisabled())
     expect(fetch).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^\/admin\/meeting-minutes\/book\?from=2026-01-01&to=2026-12-31&order=chronological&token=[0-9a-f-]{36}$/
+        /^\/admin\/meeting-minutes\/mesa-administrativa\/export\?from=2026-01-01&to=2026-12-31&order=chronological&token=[0-9a-f-]{36}$/
       )
     )
 

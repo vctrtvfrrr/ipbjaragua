@@ -11,7 +11,7 @@ export type CurrentUser = {
   id: number
   email: string
   name: string | null
-  can: (entity: Entity, action: Action) => boolean
+  can: (entity: Entity, action: Action, scope?: string) => boolean
 }
 
 export async function getCurrentUserFromToken(
@@ -32,7 +32,7 @@ export async function getCurrentUserFromToken(
   if (!user || user.status !== 'active') return null
 
   const permissions = (await authDb
-    .select({ entity: userPermissions.entity, action: userPermissions.action })
+    .select({ entity: userPermissions.entity, action: userPermissions.action, scope: userPermissions.scope })
     .from(userPermissions)
     .where(eq(userPermissions.user_id, user.id))) satisfies Permission[]
 
@@ -40,7 +40,7 @@ export async function getCurrentUserFromToken(
     id: user.id,
     email: user.email,
     name: user.name,
-    can: (entity, action) => can(permissions, entity, action),
+    can: (entity, action, scope) => can(permissions, entity, action, scope),
   }
 }
 

@@ -147,9 +147,9 @@ export const E2E_ADMIN_PERMISSIONS = [
   { entity: 'articles', action: 'update' },
   { entity: 'articles', action: 'delete' },
   { entity: 'liturgies', action: 'read' },
-  { entity: 'meeting_minutes', action: 'read' },
-  { entity: 'meeting_minutes', action: 'create' },
-  { entity: 'meeting_minutes', action: 'update' },
+  { entity: 'meeting_minutes', action: 'read', scope: 'mesa-administrativa' },
+  { entity: 'meeting_minutes', action: 'create', scope: 'mesa-administrativa' },
+  { entity: 'meeting_minutes', action: 'update', scope: 'mesa-administrativa' },
 ] as const
 
 // The journey through the Atas needs a year behind the current one: it is what gives the annual
@@ -303,6 +303,7 @@ export async function seedE2eDatabase() {
   const [seededMinute] = await db
     .insert(meetingMinutes)
     .values({
+      book: 'mesa-administrativa',
       number: E2E_MEETING_MINUTE.number,
       title: E2E_MEETING_MINUTE.title,
       started_at: new Date(Date.UTC(E2E_MEETING_MINUTE.year, 5, 10, 22, 30)),

@@ -1,11 +1,15 @@
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { generateMeetingMinutePdf } from '@/lib/meeting-minute-pdf'
+import { meetingMinuteBookBySlug } from '@/lib/meeting-minute-books'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params
-  const result = await generateMeetingMinutePdf(await getCurrentUser(), Number(id))
+export async function GET(_request: Request, context: { params: Promise<{ book: string; id: string }> }) {
+  const { book: bookSlug, id } = await context.params
+  const book = meetingMinuteBookBySlug(bookSlug)
+  if (!book) return Response.json({ message: 'Ata não encontrada.' }, { status: 404 })
+
+  const result = await generateMeetingMinutePdf(await getCurrentUser(), book, Number(id))
 
   if (result.status === 'forbidden') return Response.json({ message: 'Acesso negado.' }, { status: 403 })
   if (result.status === 'not-found') return Response.json({ message: 'Ata não encontrada.' }, { status: 404 })

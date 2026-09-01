@@ -1,9 +1,9 @@
 import { and, asc, count, desc, eq, gte, lt, max, min, sql } from 'drizzle-orm'
 import { db as defaultDb, type Database } from '@/db'
-import { meetingMinuteTopics, meetingMinutes, type MeetingMinuteStatus } from '@/db/schema'
+import { meetingMinuteTopics, meetingMinutes, type MeetingMinuteBook, type MeetingMinuteStatus } from '@/db/schema'
 import { churchYear, churchYearRange } from '@/lib/date'
 import type { MeetingMinuteBookOrder, MeetingMinuteBookSelection } from '@/lib/meeting-minute-book'
-import type { CreateMeetingMinuteInput } from '@/lib/meeting-minute'
+import type { CreateMeetingMinuteInput, MeetingMinuteContentInput } from '@/lib/meeting-minute'
 
 export type MeetingMinute = typeof meetingMinutes.$inferSelect
 
@@ -23,7 +23,7 @@ export type MeetingMinuteListItem = {
 
 export class MeetingMinuteNumberTakenError extends Error {
   constructor(readonly number: number) {
-    super(`Meeting minute number ${number} is already taken`)
+    super(`Meeting minute number ${number} is already taken in its book`)
     this.name = 'MeetingMinuteNumberTakenError'
   }
 }
@@ -37,6 +37,7 @@ export async function createMeetingMinute(
       const [minute] = await tx
         .insert(meetingMinutes)
         .values({
+          book: input.book,
           number: input.number,
           title: input.title,
           started_at: input.started_at,
@@ -81,6 +82,13 @@ export async function getMeetingMinuteById(
   return { ...minute, topics }
 }
 
+// The permission check that gates every write needs only the Livro a row already belongs to,
+// never the rest of the Ata: a lighter read keeps the authorization step cheap.
+export async function getMeetingMinuteBookOf(id: number, db: Database = defaultDb): Promise<MeetingMinuteBook | null> {
+  const [row] = await db.select({ book: meetingMinutes.book }).from(meetingMinutes).where(eq(meetingMinutes.id, id))
+  return row?.book ?? null
+}
+
 export class MeetingMinuteNotFoundError extends Error {
   constructor(id: number) {
     super(`Meeting minute ${id} was not found`)
@@ -95,9 +103,11 @@ export class MeetingMinuteImmutableError extends Error {
   }
 }
 
+// The Livro never rides this UPDATE: leaving it out of the SET list is what makes it immutable
+// after creation, not a check that could be bypassed by a payload that includes one anyway.
 export async function updateMeetingMinute(
   id: number,
-  input: CreateMeetingMinuteInput,
+  input: MeetingMinuteContentInput,
   db: Database = defaultDb
 ): Promise<MeetingMinute> {
   try {
@@ -191,13 +201,17 @@ export async function claimMeetingMinutePdfPath(
   throw existing ? new MeetingMinuteNotApprovedError(id) : new MeetingMinuteNotFoundError(id)
 }
 
-export async function nextMeetingMinuteNumber(db: Database = defaultDb): Promise<number> {
-  const [row] = await db.select({ value: max(meetingMinutes.number) }).from(meetingMinutes)
+export async function nextMeetingMinuteNumber(book: MeetingMinuteBook, db: Database = defaultDb): Promise<number> {
+  const [row] = await db
+    .select({ value: max(meetingMinutes.number) })
+    .from(meetingMinutes)
+    .where(eq(meetingMinutes.book, book))
   return (row?.value ?? 0) + 1
 }
 
 export async function listMeetingMinutesByYear(
   year: number,
+  book: MeetingMinuteBook,
   db: Database = defaultDb
 ): Promise<MeetingMinuteListItem[]> {
   const { from, to } = churchYearRange(year)
@@ -205,15 +219,19 @@ export async function listMeetingMinutesByYear(
   return db.query.meetingMinutes.findMany({
     columns: { id: true, number: true, title: true, started_at: true, status: true, pdf_path: true },
     with: { topics: { columns: { title: true }, orderBy: { position: 'asc' } } },
-    where: { started_at: { gte: from, lt: to } },
+    where: { book, started_at: { gte: from, lt: to } },
     orderBy: { number: 'asc' },
   })
 }
 
-export async function earliestMeetingMinuteYear(db: Database = defaultDb): Promise<number | null> {
+export async function earliestMeetingMinuteYear(
+  book: MeetingMinuteBook,
+  db: Database = defaultDb
+): Promise<number | null> {
   const [row] = await db
     .select({ started_at: meetingMinutes.started_at })
     .from(meetingMinutes)
+    .where(eq(meetingMinutes.book, book))
     .orderBy(asc(meetingMinutes.started_at))
     .limit(1)
 
@@ -223,6 +241,7 @@ export async function earliestMeetingMinuteYear(db: Database = defaultDb): Promi
 export type MeetingMinutePeriod = { from: Date; to: Date }
 
 export async function summarizeApprovedMeetingMinutes(
+  book: MeetingMinuteBook,
   period: MeetingMinutePeriod,
   db: Database = defaultDb
 ): Promise<MeetingMinuteBookSelection> {
@@ -233,7 +252,7 @@ export async function summarizeApprovedMeetingMinutes(
       lastNumber: max(meetingMinutes.number),
     })
     .from(meetingMinutes)
-    .where(approvedWithin(period))
+    .where(approvedWithin(book, period))
 
   return {
     count: Number(row?.count ?? 0),
@@ -247,6 +266,7 @@ export type MeetingMinuteBookEntry = { id: number; number: number; pdf_path: str
 // The Livro is bound from stored documents, so the listing carries only what it takes to find
 // each one: the whole Ata is read again only when its cache has to be rebuilt.
 export async function listApprovedMeetingMinutesForBook(
+  book: MeetingMinuteBook,
   period: MeetingMinutePeriod,
   order: MeetingMinuteBookOrder,
   db: Database = defaultDb
@@ -256,12 +276,13 @@ export async function listApprovedMeetingMinutesForBook(
   return db
     .select({ id: meetingMinutes.id, number: meetingMinutes.number, pdf_path: meetingMinutes.pdf_path })
     .from(meetingMinutes)
-    .where(approvedWithin(period))
+    .where(approvedWithin(book, period))
     .orderBy(direction(meetingMinutes.started_at), direction(meetingMinutes.number))
 }
 
-function approvedWithin(period: MeetingMinutePeriod) {
+function approvedWithin(book: MeetingMinuteBook, period: MeetingMinutePeriod) {
   return and(
+    eq(meetingMinutes.book, book),
     eq(meetingMinutes.status, 'approved'),
     gte(meetingMinutes.started_at, period.from),
     lt(meetingMinutes.started_at, period.to)
@@ -274,8 +295,8 @@ function translateMeetingMinuteWriteError(error: unknown, number: number): unkno
 
 function violatesNumberUnique(error: unknown, depth = 0): boolean {
   if (typeof error !== 'object' || error === null || depth > 4) return false
-  if ('constraint' in error && error.constraint === 'meeting_minutes_number_unique') return true
-  if (error instanceof Error && error.message.includes('meeting_minutes_number_unique')) return true
+  if ('constraint' in error && error.constraint === 'meeting_minutes_book_number_unique') return true
+  if (error instanceof Error && error.message.includes('meeting_minutes_book_number_unique')) return true
 
   return 'cause' in error ? violatesNumberUnique(error.cause, depth + 1) : false
 }

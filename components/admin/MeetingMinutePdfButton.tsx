@@ -15,12 +15,13 @@ const LABELS: Record<PdfPhase, string> = {
 const GENERIC_ERROR = 'Não foi possível gerar o PDF da Ata. Tente novamente.'
 
 type Props = {
+  book: string
   minute: { id: number; number: number }
 }
 
-export function MeetingMinutePdfButton({ minute }: Props) {
+export function MeetingMinutePdfButton({ book, minute }: Props) {
   const [phase, setPhase] = useState<PdfPhase>('idle')
-  const base = `/admin/meeting-minutes/${minute.id}/pdf`
+  const base = `/admin/meeting-minutes/${book}/${minute.id}/pdf`
 
   async function download() {
     setPhase('waiting')
