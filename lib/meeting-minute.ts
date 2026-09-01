@@ -122,8 +122,8 @@ export function meetingMinuteTopicLabel(topic: { title: string }, index: number)
   return topic.title.trim() || `Tópico ${index + 1}`
 }
 
-export function meetingMinuteLabel(minute: { number: number; title: string }, book: { genitive: string }): string {
-  return `${minute.number}ª Ata de ${minute.title} ${book.genitive} da ${CHURCH_NAME}`
+export function meetingMinuteLabel(minute: { number: number; title: string }): string {
+  return `${minute.number}ª Ata de ${minute.title} da ${CHURCH_NAME}`
 }
 
 export const MEETING_MINUTE_TOPIC_TITLE_LIMIT = 60

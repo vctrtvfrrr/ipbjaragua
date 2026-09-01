@@ -176,9 +176,9 @@ describe('resolveMeetingMinuteYearNavigation', () => {
 })
 
 describe('meetingMinuteLabel', () => {
-  it('names the Ata by its Número, Título and Livro', () => {
-    expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' }, BOOK)).toBe(
-      `42ª Ata de Reunião ordinária ${BOOK.genitive} da ${CHURCH_NAME}`
+  it('names the Ata by its Número and Título', () => {
+    expect(meetingMinuteLabel({ number: 42, title: 'Reunião ordinária' })).toBe(
+      `42ª Ata de Reunião ordinária da ${CHURCH_NAME}`
     )
   })
 })

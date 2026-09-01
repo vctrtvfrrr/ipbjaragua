@@ -65,7 +65,7 @@ export async function generateMeetingMinutePdf(
 
   try {
     if (minute.status === 'pending') {
-      return { status: 'ok', pdf: await renderMeetingMinutePdf(minute, book), filename }
+      return { status: 'ok', pdf: await renderMeetingMinutePdf(minute), filename }
     }
 
     return { status: 'ok', pdf: await storedMeetingMinutePdf(minute, book, db), filename }
@@ -125,7 +125,7 @@ async function storeMeetingMinutePdf(
   db: Database
 ): Promise<Buffer> {
   const name = await claimMeetingMinutePdfPath(minute.id, newMeetingMinutePdfCacheName(), db)
-  const pdf = await renderMeetingMinutePdf(minute, book)
+  const pdf = await renderMeetingMinutePdf(minute)
   await writeMeetingMinutePdfCache(name, pdf)
 
   return pdf
@@ -133,6 +133,6 @@ async function storeMeetingMinutePdf(
 
 // Inside a Livro this render is already holding the queue, and the job it names is the Livro's;
 // on its own the Ata is its own job, which is what the operator's control watches.
-function renderMeetingMinutePdf(minute: MeetingMinuteWithTopics, book: MeetingMinuteBookDefinition): Promise<Buffer> {
-  return renderPdf(meetingMinutePdfJob(minute.id), () => renderMeetingMinuteDocumentHtml(minute, book))
+function renderMeetingMinutePdf(minute: MeetingMinuteWithTopics): Promise<Buffer> {
+  return renderPdf(meetingMinutePdfJob(minute.id), () => renderMeetingMinuteDocumentHtml(minute))
 }

@@ -10,7 +10,7 @@ status: accepted
 
 A **Ata** vivia num único conjunto, implicitamente da Mesa Administrativa: a numeração era global, a capa do Livro exportado dizia "Mesa Administrativa" em texto fixo e uma única Permissão (`meeting_minutes`) liberava tudo. Mas a igreja registra atas de vários corpos de naturezas distintas — Mesa Administrativa, Conselho, Assembleia Geral, Sociedades Internas, secretarias — e essas atas são sigilosas entre si.
 
-Sem separação, três coisas ficavam impossíveis: a **numeração** de cada corpo não podia existir (uma sequência única mistura a 2ª Ata da Secretaria de Música com a 40ª da Mesa); o **sigilo** não existia (quem lia a ata de um corpo lia a de todos); e o **rótulo** de uma Ata não dizia de quem ela era.
+Sem separação, duas coisas ficavam impossíveis: a **numeração** de cada corpo não podia existir (uma sequência única mistura a 2ª Ata da Secretaria de Música com a 40ª da Mesa); e o **sigilo** não existia (quem lia a ata de um corpo lia a de todos).
 
 ## Decisão
 
@@ -19,6 +19,8 @@ A Ata passa a pertencer a exatamente um **Livro de Atas**, escolhido na criaçã
 A Permissão de Ata passa a ser concedida **por Livro**: a tabela de Permissões ganha um `scope` (cadeia vazia para toda entidade sem escopo), e o verificador ganha um terceiro parâmetro opcional — os pontos de chamada das outras entidades permanecem intactos. Uma concessão sem escopo declarado nunca autoriza, na mesma linha da regra que já valia para par entidade × ação não declarado.
 
 A numeração passa a ser única por **(Livro, Número)**, não mais globalmente única. A navegação do painel troca o item "Livros de Atas" por uma seção com um filho por Livro legível. As rotas passam a levar o Livro como primeiro segmento; uma Ata pedida pelo Livro errado responde "não encontrado", nunca "acesso negado" — a segunda confirmaria a existência do registro a quem não pode saber dele.
+
+O rótulo da Ata e o documento PDF individual **não mencionam o Livro**: nem no rótulo (`<Número>ª Ata de <Título> da <Nome_da_Igreja>`, sem alteração), nem em campo algum do cabeçalho. Uma primeira versão desta decisão incluía o genitivo do Livro no rótulo e uma linha "Livro" no cabeçalho — revertida por decisão explícita, registrada abaixo.
 
 ## Justificativa
 
@@ -30,8 +32,10 @@ A numeração passa a ser única por **(Livro, Número)**, não mais globalmente
 
 **Por que "não encontrado" para uma Ata de outro Livro, e não "acesso negado"?** O identificador da Ata é global, mas a Permissão é por Livro. Se a rota respondesse "acesso negado" para uma Ata que existe mas pertence a outro Livro, ela confirmaria a existência do registro a um Usuário que não tem por que sabê-la. "Não encontrado" é a resposta que não vaza informação.
 
+**Por que o rótulo e o cabeçalho da Ata não dizem de qual Livro ela é?** A primeira versão desta decisão levava o genitivo do Livro ao rótulo (`<Número>ª Ata de <Título> <genitivo> da <Nome_da_Igreja>`) e uma linha "Livro" ao cabeçalho do documento, para que a Ata se identificasse sozinha fora do painel. Essa composição foi abandonada: o rótulo é o texto mais citado e mais estável da Ata — aparece no título do PDF, na aba do navegador, na listagem —, e complicá-lo com uma cláusula que muda por Livro pesou mais do que a autoidentificação valia. Quem precisa saber o Livro de uma Ata isolada já sabe pela rota de onde a baixou ou pelo Livro de Atas exportado que a encaderna, cuja capa segue nomeando o Livro. A Ata deixa de se autoidentificar por Livro fora desses dois contextos — uma troca deliberada, não um esquecimento.
+
 ## Consequências
 
-A migração desta decisão tem quatro efeitos, na mesma migração: cria o enum do Livro e a coluna, preenchendo toda Ata existente com `mesa-administrativa`; troca a unicidade do Número pela unicidade por Livro e Número; atribui escopo `mesa-administrativa` a toda concessão de Ata já existente, para que ninguém perca nem ganhe acesso; e zera o `pdf_path` de toda Ata, para que o próximo acesso regenere o PDF com o cabeçalho novo — os arquivos órfãos em si permanecem no volume até uma limpeza operacional, porque a linha é canônica e o arquivo é derivado.
+A migração desta decisão tem quatro efeitos, na mesma migração: cria o enum do Livro e a coluna, preenchendo toda Ata existente com `mesa-administrativa`; troca a unicidade do Número pela unicidade por Livro e Número; atribui escopo `mesa-administrativa` a toda concessão de Ata já existente, para que ninguém perca nem ganhe acesso; e zera o `pdf_path` de toda Ata. Esse último efeito antecede a reversão do rótulo e do cabeçalho registrada acima — hoje o documento gerado é byte a byte o mesmo de antes da migração, então a limpeza não troca conteúdo nenhum, só força uma regeneração ociosa. Manter o passo é o custo aceito de não reescrever uma migração já aplicada; os arquivos órfãos em si permanecem no volume até uma limpeza operacional, porque a linha é canônica e o arquivo é derivado.
 
 Conselho, Sociedades Internas e Superintendência da Escola Bíblica Dominical ficam fora da lista até existirem de fato. Não há CRUD de Livros pelo painel, não há como mover uma Ata de Livro, e não há página de índice de Livros — a navegação é o submenu, na ordem da lista no código.
