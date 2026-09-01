@@ -18,7 +18,10 @@ test('an authenticated user walks an Ata from creation to an exported Livro', as
   await page.getByLabel('Local').fill('Salão social')
 
   await page.getByRole('button', { name: 'Tópico', exact: true }).click()
-  await page.getByLabel('Título do Tópico').nth(0).fill('Reforma do telhado')
+  await page
+    .getByLabel('Título do Tópico')
+    .nth(0)
+    .fill('Funcionamento orçamentário da JMN e expectativas para o campo em Jaraguá do Sul')
   await page.getByLabel('Título do Tópico').nth(1).fill('Orçamento anual')
 
   const editors = page.locator('[contenteditable="true"]')
@@ -45,6 +48,7 @@ test('an authenticated user walks an Ata from creation to an exported Livro', as
   const card = page.getByRole('article', { name: new RegExp(`${NUMBER}ª Ata Reunião extraordinária`) })
   await expect(card).toContainText('Aprovação pendente')
   await expect(card).toContainText('Orçamento anual')
+  await expect(card).toContainText('Funcionamento orçamentário da JMN e expectativas para o campo em Jaraguá do Sul')
 
   const pending = page.waitForEvent('download')
   await card.getByRole('button', { name: 'Baixar PDF' }).click()
