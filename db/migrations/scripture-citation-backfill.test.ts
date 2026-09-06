@@ -1,14 +1,20 @@
 import { PGlite } from '@electric-sql/pglite'
 import { describe, expect, it } from 'vitest'
 import { parseBibleReference, type BibleCitation } from '@/lib/bible-reference'
-import { acervoPassages, type AcervoPassage } from '@/tests/acervo'
+import { acervoReferences } from '@/tests/acervo'
 import { applyMigration, applyMigrationsBefore } from '@/tests/migrations'
 
-type StoredPassage = AcervoPassage & { citation: BibleCitation | null }
+type StoredPassage = { reference: string; citation: BibleCitation | null; text: string; version: string }
+
+// Every row gets its own text so a passage written back under the wrong reference is a failure
+// and not a coincidence; the Versão is the label the Acervo actually carries.
+function asStored(reference: string, index: number) {
+  return { reference, text: `Texto revisado ${index}`, version: 'Bíblia Online' }
+}
 
 const MIGRATION = 'scripture_citation_backfill'
 
-async function seed(client: PGlite, passages: AcervoPassage[]) {
+async function seed(client: PGlite, passages: ReturnType<typeof asStored>[]) {
   await client.exec(`
     INSERT INTO liturgies (date, theme, time) VALUES ('2025-02-09', 'Culto Solene', '09:00');
     INSERT INTO liturgy_acts (liturgy_id, position, name)
@@ -38,7 +44,7 @@ async function storedPassages(client: PGlite, momentId: number) {
 describe('scripture citation backfill migration', () => {
   it('interprets the Acervo Histórico without touching its text or its Versão', async () => {
     const client = new PGlite()
-    const passages = await acervoPassages()
+    const passages = (await acervoReferences()).map(asStored)
     await applyMigrationsBefore(client, MIGRATION)
     const moments = await seed(client, passages)
 
@@ -58,7 +64,7 @@ describe('scripture citation backfill migration', () => {
   it('leaves the three references written without a book uninterpreted', async () => {
     const client = new PGlite()
     await applyMigrationsBefore(client, MIGRATION)
-    const moments = await seed(client, await acervoPassages())
+    const moments = await seed(client, (await acervoReferences()).map(asStored))
 
     await applyMigration(client, MIGRATION)
     const stored = (await storedPassages(client, moments.acervo)) ?? []
@@ -73,7 +79,7 @@ describe('scripture citation backfill migration', () => {
   it('changes nothing when it runs again over rows it already converted', async () => {
     const client = new PGlite()
     await applyMigrationsBefore(client, MIGRATION)
-    const moments = await seed(client, await acervoPassages())
+    const moments = await seed(client, (await acervoReferences()).map(asStored))
 
     await applyMigration(client, MIGRATION)
     const converted = await storedPassages(client, moments.acervo)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { acervoPassages } from '@/tests/acervo'
+import { acervoReferences } from '@/tests/acervo'
 import { parseBibleReference, sliceBibleText, type BibleCitation } from './bible-reference'
 
 function parse(input: string) {
@@ -117,7 +117,7 @@ describe('parseBibleReference', () => {
 
 describe('the Acervo Histórico corpus', () => {
   it('parses every reference except the three written without a book', async () => {
-    const references = (await acervoPassages()).map((passage) => passage.reference)
+    const references = await acervoReferences()
     const rejected = references.filter((reference) => 'error' in parseBibleReference(reference))
 
     expect(references).toHaveLength(340)
