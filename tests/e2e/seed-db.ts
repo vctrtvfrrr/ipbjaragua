@@ -16,6 +16,7 @@ import {
   songs,
   userPermissions,
   users,
+  type ScripturePassage,
 } from '../../db/schema'
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_DURATION_SECONDS } from '../../lib/auth/session'
 import { parseISODate } from '../../lib/date'
@@ -80,21 +81,24 @@ export const E2E_SONG = {
   ],
 }
 
+const E2E_SCRIPTURE: ScripturePassage = {
+  reference: 'Salmo 119:1-48',
+  citation: { book: 'PSA', ranges: [{ chapter: 119, verses: Array.from({ length: 48 }, (_, index) => index + 1) }] },
+  version: 'NAA',
+  text: Array.from(
+    { length: 48 },
+    (_, index) =>
+      `${index + 1} Bem-aventurados os irrepreensíveis no seu caminho, que andam na lei do Senhor e guardam os seus testemunhos.`
+  ).join('\n'),
+}
+
 export const E2E_LITURGY_ACTS = [
   {
     name: 'Adoração',
     position: 1,
     moment: 'Chamada à adoração',
     song: E2E_SONG,
-    scripture: {
-      reference: 'Salmo 119.1–48',
-      version: 'NAA',
-      text: Array.from(
-        { length: 48 },
-        (_, index) =>
-          `${index + 1} Bem-aventurados os irrepreensíveis no seu caminho, que andam na lei do Senhor e guardam os seus testemunhos.`
-      ).join('\n'),
-    },
+    scripture: E2E_SCRIPTURE,
   },
   { name: 'Consagração', position: 2, moment: 'Bênção apostólica' },
 ] as const

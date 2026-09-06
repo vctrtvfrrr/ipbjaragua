@@ -3,6 +3,7 @@
 import type { ActionState } from '@/lib/entity-action'
 import { liturgyDescriptionInput } from '@/lib/description-input'
 import { generatePublicationDescription } from '@/lib/generate-description'
+import { resolveScripturePassage } from '@/lib/resolve-passage'
 import { createLiturgyAction, deleteLiturgyAction, unpublishLiturgyAction, updateLiturgyAction } from './actions'
 
 export async function createLiturgyFormAction(prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -31,5 +32,17 @@ export async function generateLiturgyDescriptionAction(input: {
     input: liturgyDescriptionInput(input.acts),
     missingMessage: 'Preencha o sermão ou o primeiro Ato antes de gerar a descrição.',
     failedMessage: 'Não foi possível gerar a descrição agora. Tente novamente.',
+  })
+}
+
+export async function resolveScripturePassageAction(input: {
+  mode: 'create' | 'edit'
+  reference: string
+  version: string
+}) {
+  return resolveScripturePassage({
+    action: input.mode === 'edit' ? 'update' : 'create',
+    reference: input.reference,
+    version: input.version,
   })
 }

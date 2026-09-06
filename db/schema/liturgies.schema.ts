@@ -1,9 +1,15 @@
 import { sql } from 'drizzle-orm'
 import { check, date, integer, jsonb, pgEnum, pgTable, text, time, unique } from 'drizzle-orm/pg-core'
+import type { BibleCitation } from '@/lib/bible-reference'
 import { deletedAt, id, timestamps } from './common-fields'
 import { songs } from './songs.schema'
 
-export type ScripturePassage = { reference: string | null; text: string | null; version: string | null }
+export type ScripturePassage = {
+  reference: string | null
+  citation: BibleCitation | null
+  text: string | null
+  version: string | null
+}
 
 export const momentType = pgEnum('moment_type', [
   'bible_reading',

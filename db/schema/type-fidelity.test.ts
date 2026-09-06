@@ -108,7 +108,14 @@ describe('jsonb round-trip', () => {
 
   it('preserves scripture passages on a moment', async () => {
     const actId = await seedAct(db)
-    const passages = [{ reference: 'Salmos 23', text: 'O Senhor é o meu pastor', version: 'ARA' }]
+    const passages = [
+      {
+        reference: 'Salmo 23',
+        citation: { book: 'PSA', ranges: [{ chapter: 23, verses: null }] },
+        text: 'O Senhor é o meu pastor',
+        version: 'ARA',
+      },
+    ]
 
     await db
       .insert(liturgyMoments)

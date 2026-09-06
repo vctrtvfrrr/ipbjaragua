@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parseBibleReference } from '@/lib/bible-reference'
 import { parseISODate } from '@/lib/date'
 import { nullableTrimmedString, requiredTrimmedString } from '@/lib/validation'
 
@@ -32,17 +33,37 @@ const optionalId = z
   .optional()
   .transform((value) => value ?? null)
 
-export const scripturePassageSchema = z.object({
-  reference: requiredTrimmedString('Campo obrigatório'),
-  text: requiredTrimmedString('Campo obrigatório'),
-  version: requiredTrimmedString('Campo obrigatório'),
-})
+type IssueSink = { addIssue: (issue: { code: 'custom'; path: PropertyKey[]; message: string }) => void }
 
-export const draftScripturePassageSchema = z.object({
-  reference: nullableTrimmedString,
-  text: nullableTrimmedString,
-  version: nullableTrimmedString,
-})
+// The Referência Bíblica is interpreted here rather than trusted from the form: what reaches
+// the database is always the parser's own canonical spelling and citation.
+function withCitation<Passage extends { reference: string | null }>(passage: Passage, context: IssueSink) {
+  if (!passage.reference) return { ...passage, citation: null }
+
+  const parsed = parseBibleReference(passage.reference)
+  if ('error' in parsed) {
+    context.addIssue({ code: 'custom', path: ['reference'], message: parsed.error })
+    return { ...passage, citation: null }
+  }
+
+  return { ...passage, reference: parsed.reference, citation: parsed.citation }
+}
+
+export const scripturePassageSchema = z
+  .object({
+    reference: requiredTrimmedString('Campo obrigatório'),
+    text: requiredTrimmedString('Campo obrigatório'),
+    version: requiredTrimmedString('Campo obrigatório'),
+  })
+  .transform(withCitation)
+
+export const draftScripturePassageSchema = z
+  .object({
+    reference: nullableTrimmedString,
+    text: nullableTrimmedString,
+    version: nullableTrimmedString,
+  })
+  .transform(withCitation)
 
 const liturgyMomentFields = z.object({
   id: z.number().int().positive().optional(),
@@ -57,8 +78,6 @@ const liturgyMomentFields = z.object({
 const draftLiturgyMomentFields = liturgyMomentFields.extend({
   scripture_passages: z.array(draftScripturePassageSchema),
 })
-
-type IssueSink = { addIssue: (issue: { code: 'custom'; path: PropertyKey[]; message: string }) => void }
 
 function requireSacramentType(moment: { type: MomentType; sacrament_type?: SacramentType | null }, context: IssueSink) {
   if (moment.type === 'sacrament' && !moment.sacrament_type) {
@@ -211,6 +230,7 @@ export function normalizeMomentForType(moment: LiturgyMomentInput) {
       moment.type === 'bible_reading' || moment.type === 'sermon'
         ? moment.scripture_passages.map((passage) => ({
             reference: passage.reference,
+            citation: passage.citation,
             text: passage.text,
             version: passage.version,
           }))

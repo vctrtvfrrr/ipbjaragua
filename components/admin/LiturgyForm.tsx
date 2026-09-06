@@ -10,8 +10,12 @@ import {
   unpublishLiturgyFormAction,
   updateLiturgyFormAction,
 } from '@/app/(admin)/admin/liturgies/form-actions'
-import { generateLiturgyDescriptionAction } from '@/app/(admin)/admin/liturgies/form-actions'
+import {
+  generateLiturgyDescriptionAction,
+  resolveScripturePassageAction,
+} from '@/app/(admin)/admin/liturgies/form-actions'
 import type { LiturgyEditorData, SongPickerOption } from '@/db/queries/liturgies'
+import { BIBLE_VERSIONS, DEFAULT_BIBLE_VERSION } from '@/lib/bible'
 import { formatISODate } from '@/lib/date'
 import {
   buildLiturgyActErrorSummary,
@@ -49,7 +53,7 @@ import { FieldError, FormError } from './FormFeedback'
 
 const INITIAL_STATE: ActionState = { status: 'idle' }
 
-type PassageDraft = { reference: string; text: string; version: string }
+type PassageDraft = { key: string; reference: string; text: string; version: string }
 type MomentDraft = {
   key: string
   id?: number
@@ -105,7 +109,11 @@ export function LiturgyForm(props: Props) {
             type: moment.type,
             description: moment.description,
             song_id: moment.song_id,
-            scripture_passages: moment.scripture_passages,
+            scripture_passages: moment.scripture_passages.map(({ reference, text, version }) => ({
+              reference,
+              text,
+              version,
+            })),
             sermon_speaker: moment.sermon_speaker,
             sacrament_type: moment.sacrament_type,
           })),
@@ -254,6 +262,7 @@ export function LiturgyForm(props: Props) {
                         actIndex={actIndex}
                         momentIndex={momentIndex}
                         moment={moment}
+                        mode={props.mode}
                         songs={props.songs}
                         errors={clientErrors}
                         onUpdate={(next) => updateMoment(actIndex, momentIndex, next)}
@@ -416,6 +425,7 @@ function MomentFields({
   actIndex,
   momentIndex,
   moment,
+  mode,
   songs,
   errors,
   onUpdate,
@@ -427,6 +437,7 @@ function MomentFields({
   actIndex: number
   momentIndex: number
   moment: MomentDraft
+  mode: 'create' | 'edit'
   songs: SongPickerOption[]
   errors: FormErrors
   onUpdate: (next: Partial<MomentDraft>) => void
@@ -534,6 +545,7 @@ function MomentFields({
         {moment.type === 'bible_reading' || moment.type === 'sermon' ? (
           <PassagesEditor
             passages={moment.scripture_passages}
+            mode={mode}
             errors={errors}
             base={base}
             onChange={(scripture_passages) => onUpdate({ scripture_passages })}
@@ -619,19 +631,17 @@ function SongCombobox({
 
 function PassagesEditor({
   passages,
+  mode,
   errors,
   base,
   onChange,
 }: {
   passages: PassageDraft[]
+  mode: 'create' | 'edit'
   errors: FormErrors
   base: string
   onChange: (passages: PassageDraft[]) => void
 }) {
-  function update(index: number, next: Partial<PassageDraft>) {
-    onChange(passages.map((passage, i) => (i === index ? { ...passage, ...next } : passage)))
-  }
-
   return (
     <FormField>
       <div className="flex items-center justify-between gap-3">
@@ -645,40 +655,132 @@ function PassagesEditor({
 
       <div className="grid gap-2">
         {passages.map((passage, index) => (
-          <div key={index} className="grid gap-2 rounded-lg border p-3">
-            <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
-              <Input
-                placeholder="Referência"
-                value={passage.reference}
-                onChange={(event) => update(index, { reference: event.target.value })}
-              />
-              <Input
-                placeholder="Versão"
-                value={passage.version}
-                onChange={(event) => update(index, { version: event.target.value })}
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon-sm"
-                aria-label="Remover passagem"
-                onClick={() => onChange(passages.filter((_, i) => i !== index))}
-              >
-                <Trash2 />
-              </Button>
-            </div>
-            <Textarea
-              placeholder="Texto"
-              value={passage.text}
-              onChange={(event) => update(index, { text: event.target.value })}
-            />
-            <FieldError messages={errors[`${base}.scripture_passages.${index}.reference`]} />
-            <FieldError messages={errors[`${base}.scripture_passages.${index}.version`]} />
-            <FieldError messages={errors[`${base}.scripture_passages.${index}.text`]} />
-          </div>
+          <PassageEditor
+            key={passage.key}
+            passage={passage}
+            mode={mode}
+            errors={errors}
+            base={`${base}.scripture_passages.${index}`}
+            onChange={(next) =>
+              onChange(passages.map((current, i) => (i === index ? { ...current, ...next } : current)))
+            }
+            onRemove={() => onChange(passages.filter((_, i) => i !== index))}
+          />
         ))}
       </div>
     </FormField>
+  )
+}
+
+type PassageResolution = { reference: string; verses: number } | { error: string } | 'searching'
+
+function PassageEditor({
+  passage,
+  mode,
+  errors,
+  base,
+  onChange,
+  onRemove,
+}: {
+  passage: PassageDraft
+  mode: 'create' | 'edit'
+  errors: FormErrors
+  base: string
+  onChange: (next: Partial<PassageDraft>) => void
+  onRemove: () => void
+}) {
+  const [resolution, setResolution] = useState<PassageResolution | null>(null)
+  // A Passagem already in the database keeps the text and the Versão it was saved with: the
+  // search only runs once the operator edits this Passagem, so opening a Liturgia never
+  // rewrites the Acervo Histórico behind their back.
+  const [edited, setEdited] = useState(false)
+  const apply = useRef(onChange)
+
+  useEffect(() => {
+    apply.current = onChange
+  })
+
+  useEffect(() => {
+    if (!edited || !passage.reference.trim()) return
+
+    let active = true
+    const timer = setTimeout(async () => {
+      setResolution('searching')
+      const result = await resolveScripturePassageAction({
+        mode,
+        reference: passage.reference,
+        version: passage.version,
+      })
+      if (!active) return
+      if ('error' in result) return setResolution({ error: result.error })
+      setResolution({ reference: result.reference, verses: result.verses })
+      apply.current({ text: result.text })
+    }, 1000)
+
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [edited, mode, passage.reference, passage.version])
+
+  const legacyVersion = passage.version && !BIBLE_VERSIONS.includes(passage.version as (typeof BIBLE_VERSIONS)[number])
+
+  return (
+    <div className="grid gap-2 rounded-lg border p-3">
+      <div className="grid gap-2 sm:grid-cols-[1fr_10rem_auto]">
+        <Input
+          placeholder="Referência"
+          value={passage.reference}
+          onChange={(event) => {
+            setEdited(true)
+            onChange({ reference: event.target.value })
+          }}
+        />
+        <Select
+          value={passage.version}
+          onValueChange={(value) => {
+            setEdited(true)
+            onChange({ version: value as string })
+          }}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue>{(value) => (value ? String(value) : 'Versão')}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {legacyVersion ? (
+              <SelectItem value={passage.version} disabled>
+                {passage.version}
+              </SelectItem>
+            ) : null}
+            {BIBLE_VERSIONS.map((version) => (
+              <SelectItem key={version} value={version}>
+                {version}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button type="button" variant="destructive" size="icon-sm" aria-label="Remover passagem" onClick={onRemove}>
+          <Trash2 />
+        </Button>
+      </div>
+      <PassageResolutionHint resolution={resolution} />
+      <Textarea placeholder="Texto" value={passage.text} onChange={(event) => onChange({ text: event.target.value })} />
+      <FieldError messages={errors[`${base}.reference`]} />
+      <FieldError messages={errors[`${base}.version`]} />
+      <FieldError messages={errors[`${base}.text`]} />
+    </div>
+  )
+}
+
+function PassageResolutionHint({ resolution }: { resolution: PassageResolution | null }) {
+  if (!resolution) return null
+  if (resolution === 'searching') return <p className="text-muted-foreground text-xs">Buscando o texto…</p>
+  if ('error' in resolution) return <p className="text-destructive text-xs">{resolution.error}</p>
+
+  return (
+    <p className="text-muted-foreground text-xs">
+      {resolution.reference} · {resolution.verses} {resolution.verses === 1 ? 'versículo' : 'versículos'}
+    </p>
   )
 }
 
@@ -736,6 +838,7 @@ function fromEditorData(liturgy: LiturgyEditorData): ActDraft[] {
       description: moment.description ?? '',
       song_id: moment.song_id,
       scripture_passages: (moment.scripture_passages ?? []).map((passage) => ({
+        key: key(),
         reference: passage.reference ?? '',
         text: passage.text ?? '',
         version: passage.version ?? '',
@@ -755,7 +858,7 @@ function fromDefaults(defaults: LiturgyFormDefaults): ActDraft[] {
       type: moment.type,
       description: moment.description,
       song_id: moment.song_id,
-      scripture_passages: moment.scripture_passages,
+      scripture_passages: moment.scripture_passages.map((passage) => ({ key: key(), ...passage })),
       sermon_speaker: moment.sermon_speaker,
       sacrament_type: moment.sacrament_type,
     })),
@@ -779,7 +882,7 @@ function emptyMoment(): MomentDraft {
 }
 
 function emptyPassage(): PassageDraft {
-  return { reference: '', text: '', version: '' }
+  return { key: key(), reference: '', text: '', version: DEFAULT_BIBLE_VERSION }
 }
 
 function key(): string {

@@ -306,6 +306,68 @@ describe('draftLiturgyTreeSchema', () => {
       expect(paths).toContain('acts.0.moments.0.scripture_passages.0.version')
     }
   })
+
+  it('rejects a Referência Bíblica it cannot read, in a draft as much as in a published Liturgia', () => {
+    const actsWithUnreadableReference = [
+      {
+        name: 'Leitura',
+        moments: [
+          {
+            type: 'bible_reading',
+            description: '',
+            song_id: null,
+            scripture_passages: [{ reference: '2:1-5', text: 'Texto', version: 'ARA' }],
+            sermon_speaker: '',
+            sacrament_type: null,
+          },
+        ],
+      },
+    ]
+
+    for (const schema of [draftLiturgyTreeSchema, liturgyTreeSchema]) {
+      const result = schema.safeParse({ ...incompleteTree, acts: actsWithUnreadableReference })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues).toContainEqual(
+          expect.objectContaining({
+            path: ['acts', 0, 'moments', 0, 'scripture_passages', 0, 'reference'],
+            message: 'Informe o livro da referência bíblica.',
+          })
+        )
+      }
+    }
+  })
+
+  it('stores the Referência Bíblica interpreted and rewritten, whatever spelling was submitted', () => {
+    const result = draftLiturgyTreeSchema.safeParse({
+      ...incompleteTree,
+      acts: [
+        {
+          name: 'Leitura',
+          moments: [
+            {
+              type: 'bible_reading',
+              description: '',
+              song_id: null,
+              scripture_passages: [{ reference: 'sl 32.7,10-11', text: 'Texto', version: 'ARA' }],
+              sermon_speaker: '',
+              sacrament_type: null,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.acts[0].moments[0].scripture_passages[0]).toEqual({
+        reference: 'Salmo 32:7,10-11',
+        citation: { book: 'PSA', ranges: [{ chapter: 32, verses: [7, 10, 11] }] },
+        text: 'Texto',
+        version: 'ARA',
+      })
+    }
+  })
 })
 
 describe('liturgyTreeSchema', () => {

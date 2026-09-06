@@ -73,8 +73,20 @@ Uma divisão ordenada de uma **Liturgia** ("Adoração ao Rei", "Confissão ao R
 _Avoid_: Parte, seção.
 
 **Momento** (`liturgy_moments`):
-A menor unidade de uma **Liturgia**, dentro de um **Ato**, com um tipo: leitura bíblica, cântico, oração, sermão, sacramento ou outro. Conforme o tipo, carrega dados próprios (um Momento de cântico referencia um **Cântico**; um sermão tem pregador; uma leitura tem passagens; um **Sacramento** tem seu tipo).
+A menor unidade de uma **Liturgia**, dentro de um **Ato**, com um tipo: leitura bíblica, cântico, oração, sermão, sacramento ou outro. Conforme o tipo, carrega dados próprios (um Momento de cântico referencia um **Cântico**; um sermão tem pregador; uma leitura carrega **Passagens**; um **Sacramento** tem seu tipo).
 _Avoid_: Etapa, item.
+
+**Passagem** (estrutura interna de `liturgy_moments.scripture_passages`, JSON):
+O trecho bíblico lido num **Momento** de leitura bíblica ou de sermão. Um Momento carrega zero ou mais Passagens em ordem, e cada uma reúne uma **Referência Bíblica**, uma **Versão** e o texto correspondente. O texto é buscado a partir da Referência Bíblica e da Versão, e permanece editável pelo operador — a garantia de procedência vem da Referência e da Versão, não do texto.
+_Avoid_: Perícope (jargão litúrgico que a casa não usa), leitura (a leitura é o **Momento**; a Passagem é o trecho), versículo (uma Passagem pode ser um capítulo inteiro).
+
+**Referência Bíblica** (`citation` na **Passagem**):
+A localização canônica de uma **Passagem** — livro, capítulo e versículos. O operador a escreve em texto corrido, na grafia que quiser (`Sl 32.7,10-11`), e o sistema a interpreta: grava a forma estruturada e reescreve a forma exibida na grafia canônica (`Salmo 32:7,10-11`). Uma Referência Bíblica que o sistema não interpreta impede o salvamento, tanto em Rascunho quanto em Publicado. Não confundir com a **Referência** do **Cântico**, que é atribuição de catálogo e não tem relação com esta.
+_Avoid_: Referência (sozinho é ambíguo com a do **Cântico**), citação, endereço, passagem (a Passagem é o conjunto; a Referência Bíblica é só sua localização).
+
+**Versão** (`version` na **Passagem**):
+A tradução da Bíblia de onde vem o texto de uma **Passagem**, identificada pela sigla. O Painel oferece sete — ARA, NAA, ACF, ARC, NVI, NTLH e NVT —, e toda Passagem nova nasce em ARA. É escolhida por Passagem, então uma mesma **Liturgia** pode misturar traduções. O leitor a vê ao lado da Referência Bíblica.
+_Avoid_: Tradução (tecnicamente mais correto, mas a casa diz Versão), Edição (é do **Boletim**).
 
 **Tema do Sermão**:
 A frase-tese da mensagem pregada — "O Senhor da Igreja é benigno e nos concede valiosos antídotos contra o desânimo". Pertence ao **Momento** de sermão, não ao culto: não confundir com o **Tipo de Culto**. Junto do pregador, é o que identifica o culto para o leitor, e por isso aparece no destaque da home, na listagem de **Liturgias** e na listagem do painel. Mora na Descrição do Momento (ver _Ambiguidades sinalizadas_); um Momento de sermão não carrega anotação livre além do Tema. Havendo mais de um Momento de sermão, o Tema e o pregador da Liturgia são os do primeiro. No site, Tema e pregador só aparecem juntos: sem pregador, nada é exibido — é ele quem confirma o Tema.
@@ -94,7 +106,7 @@ _Avoid_: Estrofe (é apenas um tipo de Bloco; não nomeia o conceito geral).
 
 **Referência** (campo calculado, não armazenado):
 A atribuição de um **Cântico** para exibição, derivada dos campos de catálogo por ordem de prioridade: (1) `track` + `album` → `"<track>. <album>"` (ex: `"45. Novo Cântico"`); (2) `performer`; (3) `songwriter`; (4) `null` se nenhum estiver preenchido. Hinos têm `track`+`album`; cânticos contemporâneos têm `performer`; composições sem intérprete têm apenas `songwriter`.
-_Avoid_: Autor, intérprete (são campos individuais; Referência é o campo calculado de exibição), crédito.
+_Avoid_: Autor, intérprete (são campos individuais; Referência é o campo calculado de exibição), crédito, Referência Bíblica (é da **Passagem**, e não tem relação com esta).
 
 ### Comunidade
 
@@ -204,6 +216,7 @@ _Avoid_: Papel/role (a alçada é uma lista de Permissões por Usuário, não um
 - **A Descrição do Momento é polimórfica.** `liturgy_moments.description` significa coisas diferentes por tipo: no sermão é o **Tema do Sermão**; no Momento de tipo _outro_ é o próprio rótulo exibido; nos demais é anotação livre. Por isso o formulário rotula esse campo conforme o tipo. Não há coluna própria para o Tema porque um sermão não carrega Tema e anotação ao mesmo tempo.
 - **A tabela `announcements` guarda Avisos.** O termo de domínio é **Aviso**; `announcements` (tradução de "Anúncio") é resíduo do código, a ser reconciliado num futuro rename, não um conceito distinto.
 - **As pontas da Janela de Exibição têm nomes assimétricos.** `starts_at` e `expires_at` são as duas pontas do mesmo intervalo, mas só uma leva o par do nome: `expires_at` nasceu quando o Aviso tinha uma ponta só, e renomeá-la para `ends_at` custaria um rename espalhado por query, seed, testes e migrações. A assimetria é resíduo aceito; o par de domínio é **Início da Exibição / Fim da Exibição**.
+- **`version: "Bíblia Online"` não é uma Versão.** As 340 **Passagens** do **Acervo Histórico** trazem no campo da **Versão** o nome do site de onde o texto foi copiado, não a sigla de uma tradução. Não há registro de qual tradução era, então o rótulo foi preservado em vez de corrigido por suposição — afirmar "ARA" seria inventar procedência. É resíduo aceito, não uma Versão a mais, e não deve ser oferecido no Painel.
 - **Dominical vs Excepcional não é coluna.** O tipo do **Boletim** é derivado do dia da semana da data (domingo = Dominical), não um campo armazenado. Se um dia surgir um boletim de domingo que não seja Dominical (ou vice-versa), será preciso modelar o tipo explicitamente.
 
 ## Diálogo de exemplo

@@ -233,7 +233,14 @@ describe('updateLiturgyAction.execute', () => {
                   type: 'sermon',
                   description: 'Graça',
                   song_id: null,
-                  scripture_passages: [{ reference: 'Ef 2.8', text: 'Pela graça', version: 'ARA' }],
+                  scripture_passages: [
+                    {
+                      reference: 'Efésios 2:8',
+                      citation: { book: 'EPH', ranges: [{ chapter: 2, verses: [8] }] },
+                      text: 'Pela graça',
+                      version: 'ARA',
+                    },
+                  ],
                   sermon_speaker: 'Calvino',
                   sacrament_type: null,
                 },
@@ -377,7 +384,14 @@ describe('updateLiturgyAction.execute', () => {
         type: 'sermon',
         description: 'Graça',
         sermon_speaker: 'Calvino',
-        scripture_passages: [{ reference: 'Ef 2.8', text: 'Pela graça', version: 'ARA' }],
+        scripture_passages: [
+          {
+            reference: 'Efésios 2:8',
+            citation: { book: 'EPH', ranges: [{ chapter: 2, verses: [8] }] },
+            text: 'Pela graça',
+            version: 'ARA',
+          },
+        ],
       })
       .returning({ id: liturgyMoments.id })
 
