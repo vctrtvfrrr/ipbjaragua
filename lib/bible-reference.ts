@@ -88,6 +88,10 @@ const MISSING_BOOK = 'Informe o livro da referência bíblica.'
 const MISSING_CHAPTER = 'Informe o capítulo da referência bíblica.'
 const CROSS_CHAPTER = 'Intervalo entre capítulos não é aceito: registre uma Passagem por capítulo.'
 
+// No book has more than 150 chapters and no chapter more than 176 verses, so a number past
+// this ceiling is a typo, not a reference — and expanding it would be an unbounded loop.
+const HIGHEST_NUMBER = 999
+
 const REFERENCE = /^\s*([1-3])?\s*(\p{L}[\p{L}\s.]*?)\s*(\d.*?)\s*$/u
 const CHAPTER = /^(\d+)(?:\s*[.:]\s*(.+))?$/
 const VERSES = /^(\d+)([ab])?(?:\s*-\s*(\d+)([ab])?)?$/
@@ -104,6 +108,7 @@ export function parseBibleReference(input: string): ParsedBibleReference | Bible
   if (!chapterMatch) return { error: `Trecho inválido: "${rest}".` }
 
   const chapter = Number(chapterMatch[1])
+  if (!numbered(chapter)) return { error: `Trecho inválido: "${rest}".` }
   if (!chapterMatch[2]) {
     return { reference: `${book.name} ${chapter}`, citation: { book: book.code, ranges: [{ chapter, verses: null }] } }
   }
@@ -118,9 +123,12 @@ export function parseBibleReference(input: string): ParsedBibleReference | Bible
     }
 
     const [, from, fromHalf = '', to, toHalf = ''] = match
-    if (to && Number(to) < Number(from)) return { error: `Trecho inválido: "${piece.trim()}".` }
+    const last = Number(to ?? from)
+    if (!numbered(Number(from)) || !numbered(last) || last < Number(from)) {
+      return { error: `Trecho inválido: "${piece.trim()}".` }
+    }
 
-    for (let verse = Number(from); verse <= Number(to ?? from); verse += 1) verses.push(verse)
+    for (let verse = Number(from); verse <= last; verse += 1) verses.push(verse)
     written.push(to ? `${Number(from)}${fromHalf}-${Number(to)}${toHalf}` : `${Number(from)}${fromHalf}`)
   }
 
@@ -157,6 +165,10 @@ for (const book of BIBLE_BOOKS) {
 function findBook(raw: string): BibleBookEntry | undefined {
   const key = normalize(raw)
   return spelled.get(key) ?? unaccented.get(unaccent(key))
+}
+
+function numbered(value: number): boolean {
+  return value >= 1 && value <= HIGHEST_NUMBER
 }
 
 function normalize(value: string): string {

@@ -41,6 +41,7 @@ describe('resolveScripturePassage', () => {
       reference: 'Salmo 32:7,10-11',
       text: 'Tu és o meu esconderijo\nMuitas são as dores\nAlegrai-vos no SENHOR',
       verses: 3,
+      missing: 0,
     })
     expect(fetchBibleBook).toHaveBeenCalledWith('ARA', 'PSA')
   })
@@ -74,6 +75,14 @@ describe('resolveScripturePassage', () => {
       resolveScripturePassage({ action: 'create', reference: 'Salmo 32:7', version: 'Bíblia Online' })
     ).resolves.toEqual({ error: 'Escolha uma Versão para buscar o texto.' })
     expect(fetchBibleBook).not.toHaveBeenCalled()
+  })
+
+  it('says how many verses the chosen Versão is missing instead of passing a short cut as whole', async () => {
+    vi.mocked(fetchBibleBook).mockResolvedValue(psalm32)
+
+    await expect(
+      resolveScripturePassage({ action: 'create', reference: 'Salmo 32:1-11', version: 'ARA' })
+    ).resolves.toMatchObject({ verses: 3, missing: 8 })
   })
 
   it('reports a reference the chosen Versão does not cover', async () => {

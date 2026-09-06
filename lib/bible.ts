@@ -15,8 +15,9 @@ export function isBibleVersion(value: string): value is BibleVersion {
   return (BIBLE_VERSIONS as readonly string[]).includes(value)
 }
 
-// A book file at a given ref is immutable, so the entry never expires: jsDelivr's own ~12h
-// cache for branch refs is already the upper bound on how stale it can be.
+// The entry lives as long as the process. A book file only changes when the fork is synced,
+// and a sync is a maintenance act expected to reach the Painel on its next deploy — not one
+// that has to overtake a cached book mid-session.
 const books = new Map<string, Promise<BibleBook>>()
 
 export function fetchBibleBook(version: BibleVersion, book: string): Promise<BibleBook> {

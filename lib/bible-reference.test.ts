@@ -105,6 +105,14 @@ describe('parseBibleReference', () => {
     expect(errorFor('Marcos 8:1--3')).toBe('Trecho inválido: "1--3".')
     expect(errorFor('Marcos 8:18-1')).toBe('Trecho inválido: "18-1".')
   })
+
+  it('rejects a number no chapter or verse could have, instead of expanding it', () => {
+    expect(errorFor('João 3:9007199254740992')).toBe('Trecho inválido: "9007199254740992".')
+    expect(errorFor('João 3:1-100000')).toBe('Trecho inválido: "1-100000".')
+    expect(errorFor('João 100000:1')).toBe('Trecho inválido: "100000:1".')
+    expect(errorFor('João 0:1')).toBe('Trecho inválido: "0:1".')
+    expect(errorFor('João 3:0')).toBe('Trecho inválido: "0".')
+  })
 })
 
 describe('the Acervo Histórico corpus', () => {

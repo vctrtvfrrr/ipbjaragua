@@ -6,7 +6,8 @@ import { requirePermission } from '@/lib/entity-action'
 
 const UNAVAILABLE = 'Não foi possível buscar o texto agora. Tente novamente.'
 
-export type ScripturePassageResolution = { reference: string; text: string; verses: number } | { error: string }
+export type ScripturePassageResolution =
+  { reference: string; text: string; verses: number; missing: number } | { error: string }
 
 export async function resolveScripturePassage(options: {
   action: Action
@@ -25,7 +26,16 @@ export async function resolveScripturePassage(options: {
   try {
     const verses = sliceBibleText(parsed.citation, await fetchBibleBook(options.version, parsed.citation.book))
     if (verses.length === 0) return { error: 'Não encontramos esta referência na Versão escolhida.' }
-    return { reference: parsed.reference, text: verses.join('\n'), verses: verses.length }
+
+    // A shortfall is reported rather than refused: it means either a reference past the end of
+    // the chapter or a verse the translation genuinely omits, and only the operator knows which.
+    const asked = parsed.citation.ranges.reduce((total, range) => total + (range.verses?.length ?? 0), 0)
+    return {
+      reference: parsed.reference,
+      text: verses.join('\n'),
+      verses: verses.length,
+      missing: Math.max(0, asked - verses.length),
+    }
   } catch {
     return { error: UNAVAILABLE }
   }

@@ -672,7 +672,7 @@ function PassagesEditor({
   )
 }
 
-type PassageResolution = { reference: string; verses: number } | { error: string } | 'searching'
+type PassageResolution = { reference: string; verses: number; missing: number } | { error: string } | 'searching'
 
 function PassageEditor({
   passage,
@@ -695,9 +695,11 @@ function PassageEditor({
   // rewrites the Acervo Histórico behind their back.
   const [edited, setEdited] = useState(false)
   const apply = useRef(onChange)
+  const current = useRef(passage)
 
   useEffect(() => {
     apply.current = onChange
+    current.current = passage
   })
 
   useEffect(() => {
@@ -706,6 +708,7 @@ function PassageEditor({
     let active = true
     const timer = setTimeout(async () => {
       setResolution('searching')
+      const before = current.current.text
       const result = await resolveScripturePassageAction({
         mode,
         reference: passage.reference,
@@ -713,8 +716,9 @@ function PassageEditor({
       })
       if (!active) return
       if ('error' in result) return setResolution({ error: result.error })
-      setResolution({ reference: result.reference, verses: result.verses })
-      apply.current({ text: result.text })
+      setResolution({ reference: result.reference, verses: result.verses, missing: result.missing })
+      // Whatever the operator wrote while the source was answering is theirs, not ours to replace.
+      if (current.current.text === before) apply.current({ text: result.text })
     }, 1000)
 
     return () => {
@@ -733,14 +737,14 @@ function PassageEditor({
           value={passage.reference}
           onChange={(event) => {
             setEdited(true)
-            onChange({ reference: event.target.value })
+            onChange({ reference: event.target.value, text: '' })
           }}
         />
         <Select
           value={passage.version}
           onValueChange={(value) => {
             setEdited(true)
-            onChange({ version: value as string })
+            onChange({ version: value as string, text: '' })
           }}
         >
           <SelectTrigger className="w-full">
@@ -780,6 +784,7 @@ function PassageResolutionHint({ resolution }: { resolution: PassageResolution |
   return (
     <p className="text-muted-foreground text-xs">
       {resolution.reference} · {resolution.verses} {resolution.verses === 1 ? 'versículo' : 'versículos'}
+      {resolution.missing > 0 ? ` · ${resolution.missing} não estão nesta Versão` : null}
     </p>
   )
 }
