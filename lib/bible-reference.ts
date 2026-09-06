@@ -3,8 +3,10 @@ export type BibleCitation = {
   ranges: Array<{ chapter: number; verses: number[] | null }>
 }
 
+export type BibleVerse = { number: number; text: string }
+
 export type BibleBook = {
-  chapters: Array<{ number: number; verses: Array<{ number: number; text: string }> }>
+  chapters: Array<{ number: number; verses: BibleVerse[] }>
 }
 
 export type ParsedBibleReference = { reference: string; citation: BibleCitation }
@@ -138,12 +140,37 @@ export function parseBibleReference(input: string): ParsedBibleReference | Bible
   }
 }
 
-export function sliceBibleText(citation: BibleCitation, book: BibleBook): string[] {
+const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹'
+const VERSE_NUMBER = new RegExp(`^([${SUPERSCRIPT}]+)\\s*`)
+
+// The verse number rides inside the text because the text is a snapshot: once the operator has
+// edited it, nothing downstream still knows where one verse ended and the next began.
+export function numberBibleVerses(verses: BibleVerse[]): string {
+  return verses
+    .map((verse) => `${String(verse.number).replace(/\d/g, (digit) => SUPERSCRIPT[Number(digit)])} ${verse.text}`)
+    .join('\n')
+}
+
+// The inverse, for whoever renders the snapshot: PT Serif draws ¹²³ heavier than the fallback
+// face that has to serve ⁴ through ⁹, so a reader shown the raw characters sees two sizes in
+// the same number. Handing the digits back lets the page mark them up instead.
+export function readNumberedVerses(text: string): Array<{ number: string | null; text: string }> {
+  return text.split('\n').map((line) => {
+    const match = VERSE_NUMBER.exec(line)
+    if (!match) return { number: null, text: line }
+    return {
+      number: match[1].replace(/./gu, (character) => String(SUPERSCRIPT.indexOf(character))),
+      text: line.slice(match[0].length),
+    }
+  })
+}
+
+export function sliceBibleVerses(citation: BibleCitation, book: BibleBook): BibleVerse[] {
   return citation.ranges.flatMap((range) => {
     const chapter = book.chapters.find((candidate) => candidate.number === range.chapter)
     if (!chapter) return []
-    if (range.verses === null) return chapter.verses.map((verse) => verse.text)
-    return range.verses.flatMap((number) => chapter.verses.find((verse) => verse.number === number)?.text ?? [])
+    if (range.verses === null) return chapter.verses
+    return range.verses.flatMap((number) => chapter.verses.find((verse) => verse.number === number) ?? [])
   })
 }
 

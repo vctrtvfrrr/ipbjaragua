@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { acervoReferences } from '@/tests/acervo'
-import { parseBibleReference, sliceBibleText, type BibleCitation } from './bible-reference'
+import {
+  numberBibleVerses,
+  parseBibleReference,
+  readNumberedVerses,
+  sliceBibleVerses,
+  type BibleCitation,
+} from './bible-reference'
 
 function parse(input: string) {
   const result = parseBibleReference(input)
@@ -125,7 +131,7 @@ describe('the Acervo Histórico corpus', () => {
   })
 })
 
-describe('sliceBibleText', () => {
+describe('sliceBibleVerses', () => {
   const book = {
     chapters: [
       {
@@ -142,19 +148,49 @@ describe('sliceBibleText', () => {
 
   it('cuts the listed verses, in order', () => {
     const citation: BibleCitation = { book: 'PSA', ranges: [{ chapter: 32, verses: [7, 10, 11] }] }
-    expect(sliceBibleText(citation, book)).toEqual([
-      'Tu és o meu esconderijo',
-      'Muitas são as dores',
-      'Alegrai-vos no SENHOR',
+    expect(sliceBibleVerses(citation, book)).toEqual([
+      { number: 7, text: 'Tu és o meu esconderijo' },
+      { number: 10, text: 'Muitas são as dores' },
+      { number: 11, text: 'Alegrai-vos no SENHOR' },
     ])
   })
 
   it('cuts a whole chapter without being told how long it is', () => {
     const citation: BibleCitation = { book: 'PSA', ranges: [{ chapter: 32, verses: null }] }
-    expect(sliceBibleText(citation, book)).toHaveLength(4)
+    expect(sliceBibleVerses(citation, book)).toHaveLength(4)
   })
 
   it('cuts nothing when the chapter is not in the book', () => {
-    expect(sliceBibleText({ book: 'PSA', ranges: [{ chapter: 99, verses: null }] }, book)).toEqual([])
+    expect(sliceBibleVerses({ book: 'PSA', ranges: [{ chapter: 99, verses: null }] }, book)).toEqual([])
+  })
+})
+
+describe('verse numbering', () => {
+  const verses = [
+    { number: 7, text: 'Tu és o meu esconderijo' },
+    { number: 15, text: 'Alegrai-vos no SENHOR' },
+    { number: 176, text: 'Desgarrei-me como ovelha perdida' },
+  ]
+
+  it('writes the number of each verse in superscript digits, one verse per line', () => {
+    expect(numberBibleVerses(verses)).toBe(
+      '⁷ Tu és o meu esconderijo\n¹⁵ Alegrai-vos no SENHOR\n¹⁷⁶ Desgarrei-me como ovelha perdida'
+    )
+  })
+
+  it('reads the numbers back out, so a renderer can mark them up itself', () => {
+    expect(readNumberedVerses(numberBibleVerses(verses))).toEqual([
+      { number: '7', text: 'Tu és o meu esconderijo' },
+      { number: '15', text: 'Alegrai-vos no SENHOR' },
+      { number: '176', text: 'Desgarrei-me como ovelha perdida' },
+    ])
+  })
+
+  it('leaves an unnumbered line alone, as the Acervo Histórico text is', () => {
+    expect(readNumberedVerses('O Senhor é o meu pastor\n\nnada me faltará')).toEqual([
+      { number: null, text: 'O Senhor é o meu pastor' },
+      { number: null, text: '' },
+      { number: null, text: 'nada me faltará' },
+    ])
   })
 })

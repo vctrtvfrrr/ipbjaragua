@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/lib/auth/current-user'
 import type { Action } from '@/lib/authz'
 import { fetchBibleBook, isBibleVersion } from '@/lib/bible'
-import { parseBibleReference, sliceBibleText } from '@/lib/bible-reference'
+import { numberBibleVerses, parseBibleReference, sliceBibleVerses } from '@/lib/bible-reference'
 import { requirePermission } from '@/lib/entity-action'
 
 const UNAVAILABLE = 'Não foi possível buscar o texto agora. Tente novamente.'
@@ -24,7 +24,7 @@ export async function resolveScripturePassage(options: {
   if (!isBibleVersion(options.version)) return { error: 'Escolha uma Versão para buscar o texto.' }
 
   try {
-    const verses = sliceBibleText(parsed.citation, await fetchBibleBook(options.version, parsed.citation.book))
+    const verses = sliceBibleVerses(parsed.citation, await fetchBibleBook(options.version, parsed.citation.book))
     if (verses.length === 0) return { error: 'Não encontramos esta referência na Versão escolhida.' }
 
     // A shortfall is reported rather than refused: it means either a reference past the end of
@@ -32,7 +32,7 @@ export async function resolveScripturePassage(options: {
     const asked = parsed.citation.ranges.reduce((total, range) => total + (range.verses?.length ?? 0), 0)
     return {
       reference: parsed.reference,
-      text: verses.join('\n'),
+      text: numberBibleVerses(verses),
       verses: verses.length,
       missing: Math.max(0, asked - verses.length),
     }

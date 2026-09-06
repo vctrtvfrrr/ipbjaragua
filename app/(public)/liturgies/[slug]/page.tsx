@@ -1,11 +1,12 @@
 import { ChevronRightIcon } from 'lucide-react'
 import { notFound } from 'next/navigation'
-import { cache } from 'react'
+import { Fragment, cache } from 'react'
 import KeepOneLiturgyActOpen from '@/components/public/KeepOneLiturgyActOpen'
 import OpenDetailsOnPrint from '@/components/public/OpenDetailsOnPrint'
 import PageHeader from '@/components/public/PageHeader'
 import { getLiturgyBySlug, type LiturgyDetail } from '@/db/queries/liturgies'
 import { getCurrentUser } from '@/lib/auth/current-user'
+import { readNumberedVerses } from '@/lib/bible-reference'
 import { formatLongDatePtBR } from '@/lib/date'
 import { liturgySermonSummary } from '@/lib/liturgy'
 import { liturgyVisibilityForUser } from '@/lib/liturgy-visibility'
@@ -89,6 +90,22 @@ function MomentLabel({ children }: { children: React.ReactNode }) {
   return <h3 className="font-narrow text-brand-ridge text-xl font-bold print:break-after-avoid">{children}</h3>
 }
 
+function PassageText({ text }: { text: string | null }) {
+  if (!text) return null
+
+  return (
+    <p className="mt-2 font-serif whitespace-pre-line">
+      {readNumberedVerses(text).map((verse, i) => (
+        <Fragment key={i}>
+          {i > 0 ? '\n' : null}
+          {verse.number ? <sup className="text-muted-foreground mr-1">{verse.number}</sup> : null}
+          {verse.text}
+        </Fragment>
+      ))}
+    </p>
+  )
+}
+
 function PassagesCard({
   passages,
   description,
@@ -104,7 +121,7 @@ function PassagesCard({
             {passage.reference}{' '}
             <small className="text-muted-foreground font-sans text-sm font-normal italic">({passage.version})</small>
           </MomentLabel>
-          <p className="mt-2 font-serif whitespace-pre-line">{passage.text}</p>
+          <PassageText text={passage.text} />
         </div>
       ))}
       {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}

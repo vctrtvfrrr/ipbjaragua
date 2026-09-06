@@ -39,7 +39,7 @@ describe('resolveScripturePassage', () => {
       resolveScripturePassage({ action: 'create', reference: 'sl 32.7,10-11', version: 'ARA' })
     ).resolves.toEqual({
       reference: 'Salmo 32:7,10-11',
-      text: 'Tu és o meu esconderijo\nMuitas são as dores\nAlegrai-vos no SENHOR',
+      text: '⁷ Tu és o meu esconderijo\n¹⁰ Muitas são as dores\n¹¹ Alegrai-vos no SENHOR',
       verses: 3,
       missing: 0,
     })

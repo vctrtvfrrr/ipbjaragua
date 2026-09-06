@@ -19,6 +19,7 @@ import {
   type ScripturePassage,
 } from '../../db/schema'
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_DURATION_SECONDS } from '../../lib/auth/session'
+import { numberBibleVerses } from '../../lib/bible-reference'
 import { parseISODate } from '../../lib/date'
 
 export const E2E_DATABASE_URL =
@@ -85,11 +86,12 @@ const E2E_SCRIPTURE: ScripturePassage = {
   reference: 'Salmo 119:1-48',
   citation: { book: 'PSA', ranges: [{ chapter: 119, verses: Array.from({ length: 48 }, (_, index) => index + 1) }] },
   version: 'NAA',
-  text: Array.from(
-    { length: 48 },
-    (_, index) =>
-      `${index + 1} Bem-aventurados os irrepreensíveis no seu caminho, que andam na lei do Senhor e guardam os seus testemunhos.`
-  ).join('\n'),
+  text: numberBibleVerses(
+    Array.from({ length: 48 }, (_, index) => ({
+      number: index + 1,
+      text: 'Bem-aventurados os irrepreensíveis no seu caminho, que andam na lei do Senhor e guardam os seus testemunhos.',
+    }))
+  ),
 }
 
 export const E2E_LITURGY_ACTS = [
