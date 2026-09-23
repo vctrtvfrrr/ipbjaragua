@@ -3,3 +3,7 @@ allowBuilds:
   lefthook: true
   sharp: true
   unrs-resolver: true
+overrides:
+  # Next 16.2 still declares a sharp below 0.35, which carries the libvips flaws of
+  # GHSA-f88m-g3jw-g9cj and would ship a second libvips beside ours. Next 16.3 moved to 0.35.
+  next>sharp: $sharp
