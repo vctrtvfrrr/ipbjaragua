@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['playwright'],
   experimental: {
     authInterrupts: true,
+    // next/image brings its own sharp, which drops its glibc single-thread default once the
+    // production image sets MALLOC_ARENA_MAX.
+    imgOptConcurrency: 1,
     proxyClientMaxBodySize: '16mb',
     serverActions: {
       bodySizeLimit: '16mb',

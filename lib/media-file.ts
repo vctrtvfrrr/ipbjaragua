@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs'
 import { access, mkdir, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import sharp from 'sharp'
+import sharp from '@/lib/sharp'
 
 type MediaFileOptions = {
   directory: string

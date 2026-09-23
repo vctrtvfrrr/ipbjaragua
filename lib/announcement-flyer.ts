@@ -1,5 +1,5 @@
 import { normalizeAndStoreMediaFile, removeMediaFile, storageDirectory, streamMediaFile } from '@/lib/media-file'
-import sharp from 'sharp'
+import sharp from '@/lib/sharp'
 export {
   announcementFlyerUrl,
   ANNOUNCEMENT_FLYER_TYPES,

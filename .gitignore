@@ -49,7 +49,5 @@ yarn-error.log*
 next-env.d.ts
 
 # Claude Code
-.claude/worktrees/
-.claude/settings.local.json
-.claude-octopus
+.claude/
 CLAUDE.local.md
