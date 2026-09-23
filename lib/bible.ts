@@ -20,7 +20,7 @@ export function isBibleVersion(value: string): value is BibleVersion {
 // to overtake a cached book mid-session.
 //
 // The bound keeps a Painel that walks the whole Bible in every Versão (~46 MB of heap) from
-// holding it all; 20 of the largest books stay near 4 MB — see #80.
+// holding it all; even the 20 largest books across Versões stay near 7 MB — see #80.
 export const BIBLE_BOOK_CACHE_SIZE = 20
 
 // Map iteration follows insertion order, so re-inserting on every read keeps the least recently

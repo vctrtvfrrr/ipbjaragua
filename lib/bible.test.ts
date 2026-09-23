@@ -38,6 +38,12 @@ describe('fetchBibleBook', () => {
     expect(downloadsOf('PSA')).toBe(1)
   })
 
+  it('shares one download between concurrent requests for the same book', async () => {
+    await Promise.all([bible.fetchBibleBook('ARA', 'PSA'), bible.fetchBibleBook('ARA', 'PSA')])
+
+    expect(downloadsOf('PSA')).toBe(1)
+  })
+
   it('never holds more than the limit and evicts the least recently used book', async () => {
     const books = booksNamed(bible.BIBLE_BOOK_CACHE_SIZE + 1)
     await fetchBooks(books)
