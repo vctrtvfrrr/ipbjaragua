@@ -4,6 +4,9 @@ services:
     pull_policy: always
     container_name: ipbjaragua
     restart: unless-stopped
+    # The PDF Chromium is closed whenever its queue goes idle, and Node as PID 1 never reaps the
+    # helpers it orphans: without an init every close leaves two zombies behind.
+    init: true
     env_file:
       - .env
     volumes:
