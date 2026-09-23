@@ -26,6 +26,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+# glibc gives every thread that touches malloc an arena of its own, up to 8 per core, and the
+# libvips and Node worker threads fragment them until the service outgrows its 512 MB.
+ENV MALLOC_ARENA_MAX=2
 # Ata PDFs are rendered by Chromium, so the browser is part of the runtime and not of the
 # toolchain. The path is outside /app because the standalone bundle owns that directory.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
