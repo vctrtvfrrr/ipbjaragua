@@ -12,3 +12,9 @@ it('processes each image on a single libvips thread even when the malloc arenas 
 
   expect(sharp.concurrency()).toBe(1)
 })
+
+it('keeps no libvips operation cache between images', async () => {
+  const { default: sharp } = await import('@/lib/sharp')
+
+  expect(sharp.cache()).toMatchObject({ memory: { max: 0 }, files: { max: 0 }, items: { max: 0 } })
+})
