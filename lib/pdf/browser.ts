@@ -3,11 +3,17 @@ import { chromium, type Browser } from 'playwright'
 
 export type PdfJobState = 'idle' | 'waiting' | 'generating'
 
+// An idle Chromium still holds 100–200 MB of the service's 512 MB, and PDFs are occasional:
+// the browser only lives while the queue has work, plus a window that spares a burst of
+// generations the cold start.
+export const PDF_BROWSER_IDLE_MS = 60_000
+
 let browserPromise: Promise<Browser> | null = null
 let tail: Promise<unknown> = Promise.resolve()
 const queued = new Map<string, number>()
 let running: string | null = null
 const holding = new AsyncLocalStorage<string>()
+let idleTimer: NodeJS.Timeout | undefined
 
 // One Chromium per instance, one page at a time: the service runs under 512 MB, and a
 // second browser — or a second concurrent render — is what puts it over.
@@ -52,6 +58,7 @@ export function runPdfJob<T>(job: string, run: () => Promise<T>): Promise<T> {
 }
 
 function enqueue<T>(job: string, task: () => Promise<T>): Promise<T> {
+  clearTimeout(idleTimer)
   queued.set(job, (queued.get(job) ?? 0) + 1)
 
   const result = tail.then(async () => {
@@ -61,12 +68,22 @@ function enqueue<T>(job: string, task: () => Promise<T>): Promise<T> {
       return await task()
     } finally {
       running = null
+      if (queued.size === 0) closeWhenIdle()
     }
   })
 
   // The queue only serializes; a failed job must not poison the jobs behind it.
   tail = result.catch(() => undefined)
   return result
+}
+
+// The close runs as a step of the queue, so a job that arrives while the browser is closing
+// waits for it and launches a fresh one instead of being handed an instance on its way out.
+function closeWhenIdle(): void {
+  idleTimer = setTimeout(() => {
+    tail = tail.then(closeSharedBrowser)
+  }, PDF_BROWSER_IDLE_MS)
+  idleTimer.unref()
 }
 
 function release(job: string): void {
@@ -96,6 +113,7 @@ async function print(html: string): Promise<Buffer> {
 }
 
 export async function closeSharedBrowser(): Promise<void> {
+  clearTimeout(idleTimer)
   const browser = browserPromise
   browserPromise = null
   await browser?.then((instance) => instance.close()).catch(() => undefined)
