@@ -97,7 +97,7 @@ Um **Momento** do tipo sacramento, que deve especificar qual: batismo ou eucaris
 _Avoid_: Ordenança.
 
 **Cântico** (`songs`):
-Uma peça do repertório musical (hinos, cânticos), com letra estruturada e quatro campos de catálogo: `track` (índice no hinário), `album` (nome do hinário), `performer` e `songwriter`. Referenciada por **Momentos** de cântico. O nome é deliberadamente compartilhado com o tipo de Momento que executa a peça.
+Uma peça do repertório musical (hinos, cânticos), com letra estruturada e quatro campos de catálogo: `track` (índice no hinário), `album` (nome do hinário), `performer` e `songwriter`. Referenciada por **Momentos** de cântico. O nome é deliberadamente compartilhado com o tipo de Momento que executa a peça. O título não identifica um Cântico: o hinário repete títulos (os hinos 66 e 67 do Novo Cântico são ambos "Coração Quebrantado", com letras diferentes), e um hino é identificado pela faixa no hinário.
 _Avoid_: Música (termo aposentado; use Cântico), Hino (hino é uma espécie de Cântico, não sinônimo), canção, faixa.
 
 **Bloco de Letra** (estrutura interna de `songs.lyrics`, JSON):
