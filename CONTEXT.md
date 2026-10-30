@@ -50,6 +50,10 @@ _Avoid_: meta description (é o uso técnico do texto, não o conceito), SEO tex
 Imagem **decorativa** de um banco compartilhado, associável a recursos do site. O operador a envia pelo painel e ela é normalizada (WEBP, máx. 1600px de largura); os bytes vivem em disco, a linha guarda só o `id` e um `path` opaco (token aleatório). No **Artigo** — hoje seu único consumidor —, o vínculo é sorteado uma vez na criação e depois estável; sem imagem vinculada, o Artigo usa uma imagem de fallback estática. Excluir uma Imagem desfaz seus vínculos sem excluir os recursos associados. O banco é genérico por design, não pertence a um tipo específico de recurso. Não confundir com o **Flyer Digital**, que é conteúdo de um único **Aviso** e não vive neste banco.
 _Avoid_: Thumbnail, capa, banner, imagem de artigo (o banco não pertence a um recurso específico), imagem informativa (é decorativa — o `alt` vem do contexto do recurso, não da imagem), Flyer Digital.
 
+**Figura**:
+Imagem **informativa** que pertence ao texto em Markdown onde foi inserida — a Discussão de um **Tópico**, o conteúdo de um **Artigo**, a Descrição de um **Aviso**. É enviada pelo próprio editor, no ponto do texto em que aparece, e não vem de banco compartilhado nem é reaproveitada em outro recurso. Herda a visibilidade do texto que a contém: a Figura de uma **Ata** só é vista por quem pode ler aquele **Livro de Atas**, e a de um Artigo é pública. Por ser feita para o papel tanto quanto para a tela, entra no PDF da Ata como foi enviada. Uma Figura que sai do texto continua guardada.
+_Avoid_: Anexo (só imagens são aceitas), Imagem Destacada (banco decorativo compartilhado), Flyer Digital (pertence ao Aviso, não ao texto).
+
 ### Culto
 
 **Liturgia** (`liturgies`):
@@ -190,8 +194,12 @@ _Avoid_: Rascunho/Publicado (são do Boletim e da Liturgia, e ali a transição 
 
 ### Acesso ao painel
 
+**Painel Administrativo**:
+A área privada do site onde **Usuários** autenticados cadastram e editam o conteúdo e os registros da igreja. Tudo nele exige login e é recortado por **Permissão**. Seu endereço começa em `/secretaria`, mas "Secretaria" é só o caminho, não o nome do conceito, e também não tem relação com o **Livro de Atas** "Secretaria de Música".
+_Avoid_: Secretaria (é só a URL), admin, backoffice.
+
 **Usuário** (`users`):
-Pessoa autenticada que opera o painel administrativo, cadastrando e editando o conteúdo do site. Não tem relação com **Membro** — a membresia eclesiástica não concede acesso ao painel. Autentica-se via Google (OAuth), mas só consegue entrar se o seu e-mail estiver na lista de autorizados, formada por **Convite**. Cada Usuário carrega uma lista de **Permissões** que delimita o que pode fazer. O nome de exibição (`name`) é opcional no **Convite** e, quando vazio, é preenchido a partir do Google no primeiro login (sem nunca sobrescrever um nome já definido). Um Usuário **assina Artigos** (é o autor referenciado em `articles.author_id`); só Usuários `active` são ofertados como autor, e um Usuário com artigos não pode ser apagado (`ON DELETE RESTRICT`) — a revogação é sempre via _Desabilitado_. O primeiro Usuário é cadastrado manualmente no banco.
+Pessoa autenticada que opera o painel administrativo, cadastrando e editando o conteúdo do site. Não tem relação com **Membro** — a membresia eclesiástica não concede acesso ao painel. Autentica-se via Google (OAuth), mas só consegue entrar se o seu e-mail estiver na lista de autorizados, formada por **Convite**. Cada Usuário carrega uma lista de **Permissões** que delimita o que pode fazer, e uma **Página Inicial** obrigatória — uma das seções do menu do **Painel Administrativo** — para onde vai ao entrar; se perder a Permissão de ler essa seção, entra na primeira seção do menu que ainda pode ler. O nome de exibição (`name`) é opcional no **Convite** e, quando vazio, é preenchido a partir do Google no primeiro login (sem nunca sobrescrever um nome já definido). Um Usuário **assina Artigos** (é o autor referenciado em `articles.author_id`); só Usuários `active` são ofertados como autor, e um Usuário com artigos não pode ser apagado (`ON DELETE RESTRICT`) — a revogação é sempre via _Desabilitado_. O primeiro Usuário é cadastrado manualmente no banco.
 _Avoid_: Membro, administrador (todo Usuário do painel é administrativo; a alçada se distingue por Permissão, não por um papel à parte), conta.
 
 **Convite**:
