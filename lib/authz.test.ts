@@ -115,7 +115,7 @@ describe('can', () => {
   })
 
   it('denies a scoped action when the Livro does not match', () => {
-    expect(can(permissions, 'meeting_minutes', 'read', 'secretaria-de-musica')).toBe(false)
+    expect(can(permissions, 'meeting_minutes', 'read', 'saf')).toBe(false)
   })
 
   it('denies a scoped grant with no scope declared, even for the matching entity/action', () => {

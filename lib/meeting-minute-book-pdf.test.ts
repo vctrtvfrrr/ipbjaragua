@@ -20,7 +20,7 @@ import { createTestDb, type TestDb } from '@/tests/db'
 import { pdfPageTexts } from '@/tests/pdf/pdf-text'
 
 const MESA = meetingMinuteBookBySlug('mesa-administrativa')!
-const MUSICA = meetingMinuteBookBySlug('secretaria-de-musica')!
+const SAF = meetingMinuteBookBySlug('saf')!
 
 function user(permissions: 'read' | 'none', scope = MESA.slug): CurrentUser {
   return {
@@ -115,7 +115,7 @@ describe('meetingMinuteBookSummary', () => {
     await minute(4, '2026-06-07T19:30')
     await minute(9, '2026-06-08T19:30')
     await minute(12, '2026-07-01T19:30', { approved: false })
-    await minute(1, '2026-06-07T19:30', { book: MUSICA.slug })
+    await minute(1, '2026-06-07T19:30', { book: SAF.slug })
 
     expect(await meetingMinuteBookSummary(user('read'), MESA, PERIOD, db)).toEqual({
       status: 'ok',
@@ -182,7 +182,7 @@ describe('generateMeetingMinuteBook', () => {
 
   it('never binds an Ata of another Livro', { timeout: 180_000 }, async () => {
     await minute(7, '2026-06-07T19:30')
-    await minute(9, '2026-06-08T19:30', { book: MUSICA.slug })
+    await minute(9, '2026-06-08T19:30', { book: SAF.slug })
 
     const result = await generateMeetingMinuteBook(reader('read'), MESA, YEAR, db)
 

@@ -43,7 +43,7 @@ describe('meeting minute books migration', () => {
     await insertMinute('mesa-administrativa', 1)
 
     await expect(insertMinute('mesa-administrativa', 1)).rejects.toThrow()
-    await expect(insertMinute('secretaria-de-musica', 1)).resolves.toBeDefined()
+    await expect(insertMinute('saf', 1)).resolves.toBeDefined()
   })
 
   it('grants every existing Ata permission the Mesa Administrativa scope, and no other', async () => {

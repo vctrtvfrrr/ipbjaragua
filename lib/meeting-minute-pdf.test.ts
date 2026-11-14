@@ -16,7 +16,7 @@ import { closeSharedBrowser } from '@/lib/pdf/browser'
 import { createTestDb, type TestDb } from '@/tests/db'
 
 const MESA = meetingMinuteBookBySlug('mesa-administrativa')!
-const MUSICA = meetingMinuteBookBySlug('secretaria-de-musica')!
+const SAF = meetingMinuteBookBySlug('saf')!
 
 function user(permissions: 'read' | 'none', scope = MESA.slug): CurrentUser {
   return {
@@ -102,7 +102,7 @@ describe('generateMeetingMinutePdf', () => {
   it('reports as not found an Ata that belongs to another Livro', async () => {
     const created = await createMeetingMinute(minute(), db)
 
-    expect(await generateMeetingMinutePdf(user('read', MUSICA.slug), MUSICA, created.id, db)).toEqual({
+    expect(await generateMeetingMinutePdf(user('read', SAF.slug), SAF, created.id, db)).toEqual({
       status: 'not-found',
     })
   })
@@ -220,7 +220,7 @@ describe('meetingMinutePdfState', () => {
   // The queue is keyed by id alone, so without this check a reader of one Livro could watch
   // the job state of an Ata in another just by asking for its id under their own Livro's route.
   it('answers nothing for an Ata that belongs to another Livro', async () => {
-    const created = await createMeetingMinute(minute({ book: MUSICA.slug }), db)
+    const created = await createMeetingMinute(minute({ book: SAF.slug }), db)
 
     expect(await meetingMinutePdfState(user('read', MESA.slug), MESA, created.id, db)).toBeNull()
   })

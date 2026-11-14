@@ -60,7 +60,7 @@ describe('PermissionGrid', () => {
     fireEvent.click(checkbox(container, 'meeting_minutes:update:mesa-administrativa')!)
 
     expect(checkbox(container, 'meeting_minutes:read:mesa-administrativa')).toBeChecked()
-    expect(checkbox(container, 'meeting_minutes:read:secretaria-de-musica')).not.toBeChecked()
+    expect(checkbox(container, 'meeting_minutes:read:saf')).not.toBeChecked()
   })
 
   it('locks permissions the current user cannot drop', () => {

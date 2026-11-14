@@ -22,7 +22,7 @@ vi.mock('next/cache', () => ({
 }))
 
 const MESA = 'mesa-administrativa'
-const MUSICA = 'secretaria-de-musica'
+const SAF = 'saf'
 
 function userWithScope(scope: string | null): CurrentUser {
   return {
@@ -81,7 +81,7 @@ describe('createMeetingMinuteAction.execute', () => {
   })
 
   it('denies a user with permission on a different Livro without writing', async () => {
-    const user = userWithScope(MUSICA)
+    const user = userWithScope(SAF)
 
     const state = await createMeetingMinuteAction.execute({ user, db }, formData(payload({ book: MESA })))
 
@@ -179,8 +179,8 @@ describe('createMeetingMinuteAction.execute', () => {
     )
 
     const state = await createMeetingMinuteAction.execute(
-      { user: userWithScope(MUSICA), db },
-      formData(payload({ book: MUSICA, number: 1 }))
+      { user: userWithScope(SAF), db },
+      formData(payload({ book: SAF, number: 1 }))
     )
 
     expect(state).toEqual({ status: 'success' })
@@ -226,7 +226,7 @@ describe('updateMeetingMinuteAction.execute', () => {
   // from one that truly does not exist, just by trying ids — so both answer "não encontrada".
   it('answers an Ata of a Livro the Usuário cannot act on as not found, not as denied', async () => {
     const minute = await seed()
-    const user = userWithScope(MUSICA)
+    const user = userWithScope(SAF)
 
     const state = await updateMeetingMinuteAction.execute(
       { user, db },
@@ -283,16 +283,16 @@ describe('updateMeetingMinuteAction.execute', () => {
   })
 
   it('ignores a Livro sent along with the update, keeping the original', async () => {
-    const minute = await seed({ book: MUSICA })
+    const minute = await seed({ book: SAF })
 
     const state = await updateMeetingMinuteAction.execute(
-      { user: userWithScope(MUSICA), db },
+      { user: userWithScope(SAF), db },
       formData(payload({ id: minute.id, book: MESA, title: 'Tentativa de mudar de Livro' }))
     )
 
     expect(state).toEqual({ status: 'success' })
     const [current] = await db.select().from(meetingMinutes)
-    expect(current.book).toBe(MUSICA)
+    expect(current.book).toBe(SAF)
   })
 
   it('persists Tópicos added, removed and reordered', async () => {
@@ -452,7 +452,7 @@ describe('approving an Ata and keeping its PDF', () => {
 
   it('answers an Ata of another Livro as not found, not as denied, on Aprovação', async () => {
     const minute = await seed()
-    const user = userWithScope(MUSICA)
+    const user = userWithScope(SAF)
 
     const state = await approveMeetingMinuteAction.execute({ user, db }, idFormData(minute.id))
 
@@ -564,7 +564,7 @@ describe('approving an Ata and keeping its PDF', () => {
 
   it('answers an Ata of another Livro as not found, not as denied, on Regeneração', async () => {
     const minute = await seed()
-    const user = userWithScope(MUSICA)
+    const user = userWithScope(SAF)
 
     const state = await regenerateMeetingMinutePdfAction.execute({ user, db }, idFormData(minute.id))
 

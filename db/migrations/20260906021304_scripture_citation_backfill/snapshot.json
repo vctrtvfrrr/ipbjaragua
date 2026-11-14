@@ -80,7 +80,7 @@
       "values": [
         "mesa-administrativa",
         "assembleia-geral",
-        "secretaria-de-musica"
+        "saf"
       ],
       "name": "meeting_minute_book",
       "entityType": "enums",

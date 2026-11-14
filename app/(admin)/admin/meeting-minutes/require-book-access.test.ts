@@ -37,9 +37,9 @@ describe('requireMeetingMinuteBookAccess', () => {
   })
 
   it('returns the Livro definition when the Usuário can read it', () => {
-    expect(requireMeetingMinuteBookAccess(fakeUser(true), 'secretaria-de-musica')).toMatchObject({
-      slug: 'secretaria-de-musica',
-      label: 'Secretaria de Música',
+    expect(requireMeetingMinuteBookAccess(fakeUser(true), 'saf')).toMatchObject({
+      slug: 'saf',
+      label: 'SAF',
     })
   })
 })

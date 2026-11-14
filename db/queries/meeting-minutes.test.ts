@@ -23,7 +23,7 @@ import {
 } from './meeting-minutes'
 
 const MESA = 'mesa-administrativa' as const
-const MUSICA = 'secretaria-de-musica' as const
+const SAF = 'saf' as const
 
 function input(overrides: Partial<CreateMeetingMinuteInput> = {}): CreateMeetingMinuteInput {
   return {
@@ -92,9 +92,9 @@ describe('createMeetingMinute', () => {
   it('accepts the same Número in a different Livro', async () => {
     await createMeetingMinute(input({ book: MESA, number: 1 }), db)
 
-    const minute = await createMeetingMinute(input({ book: MUSICA, number: 1 }), db)
+    const minute = await createMeetingMinute(input({ book: SAF, number: 1 }), db)
 
-    expect(minute.book).toBe(MUSICA)
+    expect(minute.book).toBe(SAF)
     expect(await db.select().from(meetingMinutes)).toHaveLength(2)
   })
 
@@ -192,9 +192,9 @@ describe('getMeetingMinuteBookOf', () => {
   })
 
   it('names the Livro of an existing Ata', async () => {
-    const created = await createMeetingMinute(input({ book: MUSICA }), db)
+    const created = await createMeetingMinute(input({ book: SAF }), db)
 
-    expect(await getMeetingMinuteBookOf(created.id, db)).toBe(MUSICA)
+    expect(await getMeetingMinuteBookOf(created.id, db)).toBe(SAF)
   })
 
   it('returns null when the Ata does not exist', async () => {
@@ -307,11 +307,11 @@ describe('updateMeetingMinute', () => {
   })
 
   it('leaves the Livro untouched no matter what the write is asked to change', async () => {
-    const created = await createMeetingMinute(input({ book: MUSICA }), db)
+    const created = await createMeetingMinute(input({ book: SAF }), db)
 
     await updateMeetingMinute(created.id, contentInput({ title: 'Nova redação' }), db)
 
-    expect(await getMeetingMinuteBookOf(created.id, db)).toBe(MUSICA)
+    expect(await getMeetingMinuteBookOf(created.id, db)).toBe(SAF)
   })
 
   it('rejects an Ata Aprovada and leaves it untouched', async () => {
@@ -351,7 +351,7 @@ describe('nextMeetingMinuteNumber', () => {
   it('keeps the sequence of one Livro independent of another', async () => {
     await createMeetingMinute(input({ book: MESA, number: 40 }), db)
 
-    expect(await nextMeetingMinuteNumber(MUSICA, db)).toBe(1)
+    expect(await nextMeetingMinuteNumber(SAF, db)).toBe(1)
   })
 })
 
@@ -381,7 +381,7 @@ describe('listMeetingMinutesByYear', () => {
     )
     await createMeetingMinute(
       input({
-        book: MUSICA,
+        book: SAF,
         number: 1,
         started_at: parseChurchDateTime('2026-05-01T19:00'),
         ended_at: parseChurchDateTime('2026-05-01T20:00'),
@@ -446,7 +446,7 @@ describe('earliestMeetingMinuteYear', () => {
   it('ignores the Atas of another Livro', async () => {
     await createMeetingMinute(
       input({
-        book: MUSICA,
+        book: SAF,
         started_at: parseChurchDateTime('1990-01-01T19:00'),
         ended_at: parseChurchDateTime('1990-01-01T20:00'),
       }),
@@ -608,7 +608,7 @@ describe('the Atas a Livro is built from', () => {
     number: number,
     startedAt: string,
     status: 'pending' | 'approved',
-    book: typeof MESA | typeof MUSICA = MESA
+    book: typeof MESA | typeof SAF = MESA
   ): Promise<number> {
     const started_at = parseChurchDateTime(startedAt)
     const created = await createMeetingMinute(
@@ -621,7 +621,7 @@ describe('the Atas a Livro is built from', () => {
   }
 
   async function numbersIn(
-    book: typeof MESA | typeof MUSICA,
+    book: typeof MESA | typeof SAF,
     from: string,
     to: string,
     order: 'chronological' | 'reverse'
@@ -634,7 +634,7 @@ describe('the Atas a Livro is built from', () => {
   it('takes only the Atas Aprovadas of the period, in the same Livro', async () => {
     await minute(1, '2026-06-07T19:30', 'approved')
     await minute(2, '2026-06-08T19:30', 'pending')
-    await minute(1, '2026-06-07T19:30', 'approved', MUSICA)
+    await minute(1, '2026-06-07T19:30', 'approved', SAF)
 
     expect(await numbersIn(MESA, '2026-06-01', '2026-06-30', 'chronological')).toEqual([1])
   })
@@ -668,7 +668,7 @@ describe('the Atas a Livro is built from', () => {
     await minute(4, '2026-06-07T19:30', 'approved')
     await minute(9, '2026-06-08T19:30', 'approved')
     await minute(12, '2026-07-01T19:30', 'pending')
-    await minute(1, '2026-06-07T19:30', 'approved', MUSICA)
+    await minute(1, '2026-06-07T19:30', 'approved', SAF)
 
     expect(await summarizeApprovedMeetingMinutes(MESA, churchDayRange('2026-06-01', '2026-06-30'), db)).toEqual({
       count: 2,

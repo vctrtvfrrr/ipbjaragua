@@ -10,11 +10,11 @@ status: accepted
 
 A **Ata** vivia num único conjunto, implicitamente da Mesa Administrativa: a numeração era global, a capa do Livro exportado dizia "Mesa Administrativa" em texto fixo e uma única Permissão (`meeting_minutes`) liberava tudo. Mas a igreja registra atas de vários corpos de naturezas distintas — Mesa Administrativa, Conselho, Assembleia Geral, Sociedades Internas, secretarias — e essas atas são sigilosas entre si.
 
-Sem separação, duas coisas ficavam impossíveis: a **numeração** de cada corpo não podia existir (uma sequência única mistura a 2ª Ata da Secretaria de Música com a 40ª da Mesa); e o **sigilo** não existia (quem lia a ata de um corpo lia a de todos).
+Sem separação, duas coisas ficavam impossíveis: a **numeração** de cada corpo não podia existir (uma sequência única mistura a 2ª Ata da SAF com a 40ª da Mesa); e o **sigilo** não existia (quem lia a ata de um corpo lia a de todos).
 
 ## Decisão
 
-A Ata passa a pertencer a exatamente um **Livro de Atas**, escolhido na criação e **imutável** depois. O Livro é uma **lista fechada no código** — `mesa-administrativa`, `assembleia-geral`, `secretaria-de-musica` de início — com o enum do banco derivado dela, o mesmo arranjo que a entidade de Permissão já usa. Cada entrada declara `slug` (em português, também usado como segmento de URL — exceção deliberada à convenção de identificadores em inglês), `label` e `genitive` (a expressão flexionada completa, não derivada por regra de gênero).
+A Ata passa a pertencer a exatamente um **Livro de Atas**, escolhido na criação e **imutável** depois. O Livro é uma **lista fechada no código** — `mesa-administrativa`, `assembleia-geral`, `saf` de início — com o enum do banco derivado dela, o mesmo arranjo que a entidade de Permissão já usa. Cada entrada declara `slug` (em português, também usado como segmento de URL — exceção deliberada à convenção de identificadores em inglês), `label` e `genitive` (a expressão flexionada completa, não derivada por regra de gênero).
 
 A Permissão de Ata passa a ser concedida **por Livro**: a tabela de Permissões ganha um `scope` (cadeia vazia para toda entidade sem escopo), e o verificador ganha um terceiro parâmetro opcional — os pontos de chamada das outras entidades permanecem intactos. Uma concessão sem escopo declarado nunca autoriza, na mesma linha da regra que já valia para par entidade × ação não declarado.
 

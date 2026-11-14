@@ -1,4 +1,4 @@
-CREATE TYPE "meeting_minute_book" AS ENUM('mesa-administrativa', 'assembleia-geral', 'secretaria-de-musica');--> statement-breakpoint
+CREATE TYPE "meeting_minute_book" AS ENUM('mesa-administrativa', 'assembleia-geral', 'saf');--> statement-breakpoint
 ALTER TABLE "meeting_minutes" ADD COLUMN "book" "meeting_minute_book";--> statement-breakpoint
 -- Every Ata that exists today was the Mesa Administrativa's, back when it was the only Livro:
 -- the backfill is the definition, not a guess.

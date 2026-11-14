@@ -13,7 +13,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 const MESA = meetingMinuteBookBySlug('mesa-administrativa')!
-const MUSICA = meetingMinuteBookBySlug('secretaria-de-musica')!
+const SAF = meetingMinuteBookBySlug('saf')!
 
 function fakeMinute(status: 'pending' | 'approved', book: string = MESA.slug): MeetingMinuteWithTopics {
   return { id: 1, status, book, topics: [] } as unknown as MeetingMinuteWithTopics
@@ -25,7 +25,7 @@ describe('requireMeetingMinuteEdit', () => {
   })
 
   it('calls notFound() when the Ata belongs to another Livro', () => {
-    expect(() => requireMeetingMinuteEdit(MUSICA, fakeMinute('pending', MESA.slug))).toThrow('NOT_FOUND')
+    expect(() => requireMeetingMinuteEdit(SAF, fakeMinute('pending', MESA.slug))).toThrow('NOT_FOUND')
   })
 
   it('calls forbidden() when the Ata is Aprovada', () => {
