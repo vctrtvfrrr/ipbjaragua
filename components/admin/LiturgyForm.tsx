@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FormEvent, useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { FormEvent, useActionState, useEffect, useId, useMemo, useRef, useState, useTransition } from 'react'
 import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -568,65 +568,174 @@ function SongCombobox({
   onChange: (id: number | null) => void
   error?: string[]
 }) {
-  const selected = songs.find((song) => song.id === value)
-  const [query, setQuery] = useState(selected?.title ?? '')
+  const selected = songs.find((song) => song.id === value) ?? (value === null ? undefined : deletedSong(value))
+  const [isSearching, setIsSearching] = useState(!selected)
+  const [query, setQuery] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
+  const shouldMoveFocus = useRef(false)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const swapRef = useRef<HTMLButtonElement>(null)
+  const id = useId()
+  const listboxId = `${id}-listbox`
+  const optionId = (index: number) => `${id}-option-${index}`
+
   const needle = query.toLowerCase()
   const matches = (text: string | null) => text !== null && text.toLowerCase().includes(needle)
-  const visible = songs.filter((song) => matches(song.title) || matches(song.songReference)).slice(0, 8)
+  const visible = query ? songs.filter((song) => matches(song.title) || matches(song.songReference)).slice(0, 8) : []
+  const showCard = selected && !isSearching
+
+  useEffect(() => {
+    if (!shouldMoveFocus.current) return
+    shouldMoveFocus.current = false
+    if (showCard) swapRef.current?.focus()
+    else searchRef.current?.focus()
+  }, [showCard])
+
+  function search(nextQuery: string) {
+    setQuery(nextQuery)
+    setActiveIndex(0)
+  }
+
+  function openSearch() {
+    shouldMoveFocus.current = true
+    setIsSearching(true)
+    search('')
+  }
+
+  function closeSearch() {
+    shouldMoveFocus.current = true
+    setIsSearching(false)
+    search('')
+  }
+
+  function choose(song: SongPickerOption) {
+    onChange(song.id)
+    closeSearch()
+  }
+
+  function remove() {
+    onChange(null)
+    openSearch()
+  }
+
+  if (showCard) {
+    return (
+      <FormField>
+        <Label>Cântico</Label>
+        <div
+          role="group"
+          aria-label="Cântico selecionado"
+          className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{selected.title}</p>
+            {selected.songReference ? <p className="text-muted-foreground text-xs">{selected.songReference}</p> : null}
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              ref={swapRef}
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`Trocar cântico ${selected.title}`}
+              onClick={openSearch}
+            >
+              Trocar
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label={`Remover cântico ${selected.title}`}
+              onClick={remove}
+            >
+              Remover
+            </Button>
+          </div>
+        </div>
+        <FieldError messages={error} />
+      </FormField>
+    )
+  }
 
   return (
     <FormField>
-      <Label>Cântico</Label>
-      <Input
-        role="combobox"
-        aria-expanded={visible.length > 0}
-        value={query}
-        onChange={(event) => {
-          setQuery(event.target.value)
-          if (value && selected?.title !== event.target.value) onChange(null)
-        }}
-      />
-      {query ? (
-        <div className="grid gap-1 rounded-lg border p-1">
-          {visible.map((song) => (
-            <button
-              key={song.id}
-              type="button"
-              className="hover:bg-accent rounded-md px-2 py-1 text-left text-sm"
-              onClick={() => {
-                onChange(song.id)
-                setQuery(song.title)
-              }}
-            >
-              {song.title}
-              {song.songReference ? (
-                <span className="text-muted-foreground block text-xs">{song.songReference}</span>
-              ) : null}
-            </button>
-          ))}
-          {visible.length === 0 ? (
-            <p className="text-muted-foreground px-2 py-1 text-sm">Nenhum cântico encontrado.</p>
-          ) : null}
-        </div>
-      ) : null}
-      {value ? (
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              onChange(null)
-              setQuery('')
-            }}
-          >
-            Limpar cântico
+      <Label htmlFor={`${id}-search`}>Cântico</Label>
+      <div className="flex gap-2">
+        <Input
+          ref={searchRef}
+          id={`${id}-search`}
+          role="combobox"
+          placeholder="Buscar por título ou hinário"
+          aria-autocomplete="list"
+          aria-controls={listboxId}
+          aria-expanded={visible.length > 0}
+          aria-activedescendant={visible.length > 0 ? optionId(activeIndex) : undefined}
+          aria-invalid={error ? true : undefined}
+          value={query}
+          onChange={(event) => search(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown' && visible.length > 0) {
+              event.preventDefault()
+              setActiveIndex((index) => (index + 1) % visible.length)
+            } else if (event.key === 'ArrowUp' && visible.length > 0) {
+              event.preventDefault()
+              setActiveIndex((index) => (index - 1 + visible.length) % visible.length)
+            } else if (event.key === 'Enter') {
+              event.preventDefault()
+              if (visible[activeIndex]) choose(visible[activeIndex])
+            } else if (event.key === 'Escape' && query) {
+              event.preventDefault()
+              search('')
+            } else if (event.key === 'Escape' && selected) {
+              event.preventDefault()
+              closeSearch()
+            }
+          }}
+        />
+        {selected ? (
+          <Button type="button" variant="outline" onClick={closeSearch}>
+            Cancelar
           </Button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
+      <ul
+        id={listboxId}
+        role="listbox"
+        aria-label="Cânticos encontrados"
+        hidden={visible.length === 0}
+        className="grid gap-1 rounded-lg border p-1"
+      >
+        {visible.map((song, index) => (
+          <li
+            key={song.id}
+            id={optionId(index)}
+            role="option"
+            aria-selected={index === activeIndex}
+            className={cn(
+              'hover:bg-accent cursor-pointer rounded-md px-2 py-1 text-sm',
+              index === activeIndex && 'bg-accent'
+            )}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => choose(song)}
+          >
+            {song.title}
+            {song.songReference ? (
+              <span className="text-muted-foreground block text-xs">{song.songReference}</span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      <p role="status" className="text-muted-foreground text-sm empty:hidden">
+        {query && visible.length === 0 ? 'Nenhum cântico encontrado.' : ''}
+      </p>
       <FieldError messages={error} />
     </FormField>
   )
+}
+
+function deletedSong(id: number): SongPickerOption {
+  return { id, title: 'Cântico excluído', songReference: null }
 }
 
 function PassagesEditor({
