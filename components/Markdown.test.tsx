@@ -11,6 +11,20 @@ describe('Markdown', () => {
     expect(screen.getByRole('cell', { name: 'R$ 100' })).toBeInTheDocument()
   })
 
+  it('renders a single line break as a line break', () => {
+    const { container } = render(<Markdown content={'Rua das Flores, 100\nCentro'} />)
+
+    expect(container.querySelectorAll('p')).toHaveLength(1)
+    expect(container.querySelector('p')?.innerHTML).toBe('Rua das Flores, 100<br>\nCentro')
+  })
+
+  it('keeps a blank line as a paragraph break', () => {
+    const { container } = render(<Markdown content={'Primeiro\n\nSegundo'} />)
+
+    expect(container.querySelectorAll('p')).toHaveLength(2)
+    expect(container.querySelector('br')).not.toBeInTheDocument()
+  })
+
   it('does not render raw HTML', () => {
     render(<Markdown content={'Antes <span data-testid="raw-html">perigo</span> depois'} />)
 

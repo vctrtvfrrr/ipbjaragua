@@ -24,6 +24,18 @@ describe('renderMarkdownToHtml', () => {
     expect(html).toContain('<td>Diácono</td>')
   })
 
+  it('renders a single line break as a line break', async () => {
+    const html = await renderMarkdownToHtml('Pastor João\nPresbítero Pedro')
+
+    expect(html).toBe('<p>Pastor João<br>\nPresbítero Pedro</p>')
+  })
+
+  it('keeps a blank line as a paragraph break', async () => {
+    const html = await renderMarkdownToHtml('Abertura\n\nOração')
+
+    expect(html).toBe('<p>Abertura</p>\n<p>Oração</p>')
+  })
+
   it('keeps arbitrary HTML out of the document', async () => {
     const html = await renderMarkdownToHtml('<script>alert(1)</script>\n\n<b>negrito</b>')
 
