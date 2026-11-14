@@ -16,6 +16,13 @@
   --color-brand-sky: var(--brand-sky);
   --color-brand-current: var(--brand-current);
   --color-brand-deep: var(--brand-deep);
+  --color-moment-bible-reading: var(--moment-bible-reading);
+  --color-moment-song: var(--moment-song);
+  --color-moment-prayer: var(--moment-prayer);
+  --color-moment-sermon: var(--moment-sermon);
+  --color-moment-sacrament: var(--moment-sacrament);
+  --color-moment-pastoral-act: var(--moment-pastoral-act);
+  --color-moment-other: var(--moment-other);
   --text-display: clamp(2.5rem, 6vw, 4rem);
   --text-display--line-height: 1.02;
   --text-display--letter-spacing: -0.02em;
@@ -72,6 +79,17 @@
   --brand-sky: #ebf2fa;
   --brand-current: #427aa1;
   --brand-deep: #064789;
+
+  /* One tint per Momento type in the admin Liturgia form. They sit at the lightness limit
+     where the field border (--input) still reaches 3:1, so a darker tint would hide the
+     inputs; app/moment-tints.test.ts measures every pair. */
+  --moment-bible-reading: #eaf7e3;
+  --moment-song: #e2f5ff;
+  --moment-prayer: #f5eeff;
+  --moment-sermon: #fff0dd;
+  --moment-sacrament: #ddf9f7;
+  --moment-pastoral-act: #fbeff5;
+  --moment-other: #eff3f6;
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

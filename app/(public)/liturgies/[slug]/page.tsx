@@ -56,9 +56,9 @@ export default async function LiturgyDetailPage({ params }: PageProps<'/liturgie
         <KeepOneLiturgyActOpen listId="liturgy-acts" />
         <ol id="liturgy-acts" className="space-y-10 print:space-y-7">
           {liturgy.acts.map((act, i) => (
-            <li key={act.id}>
+            <li key={act.id} id={`ato-${i + 1}`} className="scroll-mt-28">
               <details open={i === 0} className="group">
-                <summary className="border-brand-accent flex cursor-pointer list-none items-baseline gap-4 border-b-2 pb-2 group-open:cursor-default print:break-after-avoid">
+                <summary className="border-brand-accent flex cursor-pointer scroll-mt-28 list-none items-baseline gap-4 border-b-2 pb-2 group-open:cursor-default print:break-after-avoid">
                   <span aria-hidden="true" className="font-narrow text-brand-deep text-sm tabular-nums">
                     {String(i + 1).padStart(2, '0')}
                   </span>

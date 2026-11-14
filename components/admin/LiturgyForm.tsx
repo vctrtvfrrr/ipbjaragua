@@ -17,6 +17,7 @@ import {
 import type { LiturgyEditorData, SongPickerOption } from '@/db/queries/liturgies'
 import { BIBLE_VERSIONS, DEFAULT_BIBLE_VERSION } from '@/lib/bible'
 import { formatISODate } from '@/lib/date'
+import { scrollToHeader } from '@/lib/scroll-to-header'
 import {
   buildLiturgyActErrorSummary,
   liturgyActLabel,
@@ -219,15 +220,21 @@ export function LiturgyForm(props: Props) {
 
           <Accordion
             value={openActKey ? [openActKey] : []}
-            onValueChange={(value) => setOpenActKey((value[0] as string | undefined) ?? null)}
+            onValueChange={(value) => setOpenActKey(openAndScrollToHeader(value))}
           >
             {acts.map((act, actIndex) => (
-              <AccordionItem key={act.key} value={act.key} id={`act-${actIndex}`}>
-                <AccordionTrigger>
+              <AccordionItem key={act.key} value={act.key} id={`act-${actIndex}`} className="border-brand-deep">
+                <AccordionTrigger
+                  id={headerId(act.key)}
+                  className="bg-brand-deep rounded-[calc(var(--radius-lg)-1px)] text-white focus-visible:ring-white/70 data-panel-open:rounded-b-none [&>svg]:text-white"
+                >
                   <span>{liturgyActLabel(act, actIndex)}</span>
                   {actIndexesWithErrors.has(actIndex) ? (
                     <>
-                      <span aria-hidden="true" className="bg-destructive size-2 shrink-0 rounded-full" />
+                      <span
+                        aria-hidden="true"
+                        className="bg-destructive size-2 shrink-0 rounded-full ring-2 ring-white"
+                      />
                       <span className="sr-only">Ato com erro de validação</span>
                     </>
                   ) : null}
@@ -254,7 +261,7 @@ export function LiturgyForm(props: Props) {
 
                   <Accordion
                     value={openMomentKey ? [openMomentKey] : []}
-                    onValueChange={(value) => setOpenMomentKey((value[0] as string | undefined) ?? null)}
+                    onValueChange={(value) => setOpenMomentKey(openAndScrollToHeader(value))}
                   >
                     {act.moments.map((moment, momentIndex) => (
                       <MomentFields
@@ -382,6 +389,26 @@ export function LiturgyForm(props: Props) {
   }
 }
 
+const MOMENT_TINTS: Record<MomentType, string> = {
+  bible_reading: 'bg-moment-bible-reading',
+  song: 'bg-moment-song',
+  prayer: 'bg-moment-prayer',
+  sermon: 'bg-moment-sermon',
+  sacrament: 'bg-moment-sacrament',
+  pastoral_act: 'bg-moment-pastoral-act',
+  other: 'bg-moment-other',
+}
+
+function headerId(key: string) {
+  return `accordion-header-${key}`
+}
+
+function openAndScrollToHeader(value: unknown[]) {
+  const key = (value[0] as string | undefined) ?? null
+  if (key) scrollToHeader(document.getElementById(headerId(key)))
+  return key
+}
+
 function UnpublishLiturgyButton({ liturgyId, theme }: { liturgyId: number; theme: string }) {
   const [state, formAction, isPending] = useActionState(unpublishLiturgyFormAction, INITIAL_STATE)
   const router = useRouter()
@@ -461,8 +488,8 @@ function MomentFields({
   )
 
   return (
-    <AccordionItem value={moment.key} id={`moment-${actIndex}-${momentIndex}`}>
-      <AccordionTrigger>
+    <AccordionItem value={moment.key} id={`moment-${actIndex}-${momentIndex}`} className={MOMENT_TINTS[moment.type]}>
+      <AccordionTrigger id={headerId(moment.key)}>
         <span>
           Momento {momentIndex + 1} — {MOMENT_TYPE_LABELS[moment.type]}
         </span>

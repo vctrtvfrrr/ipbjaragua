@@ -252,3 +252,86 @@ describe('LiturgyForm Cântico', () => {
     expect(screen.getByRole('group', { name: 'Cântico selecionado' })).toHaveTextContent('Castelo Forte')
   })
 })
+
+describe('LiturgyForm navigation', () => {
+  let scrolled: Element[]
+
+  beforeEach(() => {
+    scrolled = []
+    // Frames requested by earlier tests can still fire against their unmounted trees.
+    Element.prototype.scrollIntoView = function () {
+      if (this.isConnected) scrolled.push(this)
+    }
+    window.matchMedia = vi.fn(() => ({ matches: false })) as unknown as typeof window.matchMedia
+  })
+
+  function renderTwoActs() {
+    const moment = (type: 'prayer' | 'song') => ({
+      type,
+      description: '',
+      song_id: null,
+      sermon_speaker: '',
+      sacrament_type: null,
+      scripture_passages: [],
+    })
+    render(
+      <LiturgyForm
+        mode="create"
+        songs={[]}
+        defaults={{
+          date: '2026-09-06',
+          theme: 'Culto Solene',
+          time: '09:00',
+          description: '',
+          acts: [
+            { name: 'Adoração', moments: [moment('prayer')] },
+            { name: 'Edificação', moments: [moment('prayer'), moment('song')] },
+          ],
+        }}
+      />
+    )
+  }
+
+  async function nextFrame() {
+    await act(() => new Promise((resolve) => requestAnimationFrame(() => resolve(null))))
+  }
+
+  it('scrolls to the header of the Ato that was opened', async () => {
+    renderTwoActs()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edificação' }))
+    await nextFrame()
+
+    expect(scrolled).toEqual([screen.getByRole('button', { name: 'Edificação' })])
+  })
+
+  it('scrolls to the header of the Momento that was opened', async () => {
+    renderTwoActs()
+    fireEvent.click(screen.getByRole('button', { name: 'Edificação' }))
+    await nextFrame()
+    scrolled = []
+
+    fireEvent.click(screen.getByRole('button', { name: /Momento 2 — Cântico/ }))
+    await nextFrame()
+
+    expect(scrolled).toEqual([screen.getByRole('button', { name: /Momento 2 — Cântico/ })])
+  })
+
+  it('tints each Momento by its type while it is still closed', () => {
+    renderTwoActs()
+    fireEvent.click(screen.getByRole('button', { name: 'Edificação' }))
+
+    const item = (name: RegExp) => screen.getByRole('button', { name }).closest('[data-slot="accordion-item"]')
+    expect(item(/Momento 1 — Oração/)).toHaveClass('bg-moment-prayer')
+    expect(item(/Momento 2 — Cântico/)).toHaveClass('bg-moment-song')
+  })
+
+  it('does not scroll when an Ato is closed', async () => {
+    renderTwoActs()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Adoração' }))
+    await nextFrame()
+
+    expect(scrolled).toEqual([])
+  })
+})
